@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { defaultFinger, defaultThumb, restFromDims } from "../utils";
 import { useAnthropometry } from "./useAnthropometry";
 import {

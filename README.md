@@ -1,4 +1,4 @@
-﻿# Simulador Mão 3D
+# Simulador Mão 3D
 
 Simulador web para visualização e ajuste da pose de uma mão humana em 3D, com foco em prescrição clínica simplificada de órteses e análise de posicionamento articular.
 
@@ -68,3 +68,4 @@ src/
 ## Licença
 
 MIT
+
