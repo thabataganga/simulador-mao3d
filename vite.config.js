@@ -50,7 +50,8 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       output: {
         manualChunks(id) {
-          if (id.includes('node_modules/three')) return 'three-vendor'
+          if (id.includes('node_modules/three/examples/')) return 'three-examples'
+          if (id.includes('node_modules/three')) return 'three-core'
           if (id.includes('node_modules/react')) return 'react-vendor'
           if (id.includes('node_modules')) return 'vendor'
           return undefined
@@ -59,3 +60,4 @@ export default defineConfig(({ mode }) => ({
     },
   },
 }))
+

@@ -1,4 +1,4 @@
-﻿import { useRef } from "react";
+import { useRef } from "react";
 
 import { useThreeScene } from "../hooks/useThreeScene";
 import { useHandRig } from "../hooks/useHandRig";
