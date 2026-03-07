@@ -31,8 +31,37 @@ function applyMainLabels(rig, fingers, thumb, wrist) {
   setLabelText(thumbLabels.ip, `IP: ${formatDegree(thumb.IP)}`);
 }
 
+function applyPoseToRig(rig, fingers, thumb, wrist) {
+  if (!rig) return;
+
+  fingers.forEach((fingerState, index) => {
+    const finger = rig.fingers[index];
+    finger.mcp.rotation.z = deg2rad(clamp(fingerState.MCP, RANGES.MCP));
+    finger.pip.rotation.z = deg2rad(clamp(fingerState.PIP, RANGES.PIP));
+    finger.dip.rotation.z = deg2rad(clamp(fingerState.DIP, RANGES.DIP));
+  });
+
+  rig.wrist.dev.rotation.x = deg2rad(clamp(wrist.dev, RANGES.WRIST_DEV));
+  rig.wrist.flex.rotation.z = deg2rad(clamp(wrist.flex, RANGES.WRIST_FLEX));
+
+  const thumbRig = rig.thumb;
+  thumbRig.cmcAbd.rotation.y = deg2rad(clamp(thumb.CMC_abd, RANGES.CMC_ABD));
+  thumbRig.cmcFlex.rotation.z = -deg2rad(clamp(thumb.CMC_flex, RANGES.CMC_FLEX));
+  thumbRig.cmcAxial.rotation.x = deg2rad(clamp(thumb.CMC_opp, RANGES.CMC_OPP));
+  thumbRig.mcp.rotation.z = -deg2rad(clamp(thumb.MCP_flex, RANGES.THUMB_MCP_FLEX));
+  thumbRig.ip.rotation.z = deg2rad(clamp(thumb.IP, RANGES.THUMB_IP));
+
+  applyMainLabels(rig, fingers, thumb, wrist);
+}
+
 export function useHandRig({ three, orbitRef, controlsReady = false, dims, fingers, thumb, wrist, debugKey }) {
   const handRig = useRef(null);
+  const hasInitialFrameRef = useRef(false);
+  const poseRef = useRef({ fingers, thumb, wrist });
+
+  useEffect(() => {
+    poseRef.current = { fingers, thumb, wrist };
+  }, [fingers, thumb, wrist]);
 
   // Camera framing for current rig dimensions.
   const frameRig = useCallback(() => {
@@ -56,7 +85,7 @@ export function useHandRig({ three, orbitRef, controlsReady = false, dims, finge
     controls.update();
   }, [orbitRef, three]);
 
-  // Rebuild rig whenever dimensions change.
+  // Rebuild rig whenever dimensions change, preserving current camera view.
   useEffect(() => {
     if (!three?.scene) return;
 
@@ -72,38 +101,21 @@ export function useHandRig({ three, orbitRef, controlsReady = false, dims, finge
 
     handRig.current = buildHandRig(dims);
     three.scene.add(handRig.current.root);
-    frameRig();
-  }, [dims, frameRig, three]);
+
+    const currentPose = poseRef.current;
+    applyPoseToRig(handRig.current, currentPose.fingers, currentPose.thumb, currentPose.wrist);
+  }, [dims, three]);
 
   // Ensure first frame is centered once controls are ready.
   useEffect(() => {
-    if (!controlsReady) return;
+    if (!controlsReady || hasInitialFrameRef.current) return;
     frameRig();
+    hasInitialFrameRef.current = true;
   }, [controlsReady, frameRig]);
 
   // Apply pose updates and refresh labels.
   useEffect(() => {
-    const rig = handRig.current;
-    if (!rig) return;
-
-    fingers.forEach((fingerState, index) => {
-      const finger = rig.fingers[index];
-      finger.mcp.rotation.z = deg2rad(clamp(fingerState.MCP, RANGES.MCP));
-      finger.pip.rotation.z = deg2rad(clamp(fingerState.PIP, RANGES.PIP));
-      finger.dip.rotation.z = deg2rad(clamp(fingerState.DIP, RANGES.DIP));
-    });
-
-    rig.wrist.dev.rotation.x = deg2rad(clamp(wrist.dev, RANGES.WRIST_DEV));
-    rig.wrist.flex.rotation.z = deg2rad(clamp(wrist.flex, RANGES.WRIST_FLEX));
-
-    const thumbRig = rig.thumb;
-    thumbRig.cmcAbd.rotation.y = deg2rad(clamp(thumb.CMC_abd, RANGES.CMC_ABD));
-    thumbRig.cmcFlex.rotation.z = -deg2rad(clamp(thumb.CMC_flex, RANGES.CMC_FLEX));
-    thumbRig.cmcAxial.rotation.x = deg2rad(clamp(thumb.CMC_opp, RANGES.CMC_OPP));
-    thumbRig.mcp.rotation.z = -deg2rad(clamp(thumb.MCP_flex, RANGES.THUMB_MCP_FLEX));
-    thumbRig.ip.rotation.z = deg2rad(clamp(thumb.IP, RANGES.THUMB_IP));
-
-    applyMainLabels(rig, fingers, thumb, wrist);
+    applyPoseToRig(handRig.current, fingers, thumb, wrist);
   }, [fingers, thumb, wrist]);
 
   // Highlight active articulation.
