@@ -3,7 +3,9 @@ import { Box3, Vector3 } from "three";
 import { buildHandRig } from "../three/buildHandRig";
 import { setLabelText } from "../three/helpers";
 import { deg2rad, clamp } from "../utils";
-import { RANGES } from "../constants";
+import { RANGES, THUMB_KINEMATICS } from "../constants";
+import { mapClinicalCmcToRigRadians } from "../domain/thumb";
+
 
 const GLOBAL_DEBUG_KEY_TO_JOINT = {
   GLOBAL_MCP: "MCP",
@@ -11,7 +13,7 @@ const GLOBAL_DEBUG_KEY_TO_JOINT = {
   GLOBAL_DIP: "DIP",
 };
 
-const formatDegree = value => `${Math.round(value)}°`;
+const formatDegree = value => String(Math.round(value)) + String.fromCharCode(176);
 
 function applyMainLabels(rig, fingers, thumb, wrist) {
   const map = rig.dbgMap;
@@ -45,11 +47,19 @@ function applyPoseToRig(rig, fingers, thumb, wrist) {
   rig.wrist.flex.rotation.z = deg2rad(clamp(wrist.flex, RANGES.WRIST_FLEX));
 
   const thumbRig = rig.thumb;
-  thumbRig.cmcAbd.rotation.y = deg2rad(clamp(thumb.CMC_abd, RANGES.CMC_ABD));
-  thumbRig.cmcFlex.rotation.z = -deg2rad(clamp(thumb.CMC_flex, RANGES.CMC_FLEX));
-  thumbRig.cmcAxial.rotation.x = deg2rad(clamp(thumb.CMC_opp, RANGES.CMC_OPP));
-  thumbRig.mcp.rotation.z = -deg2rad(clamp(thumb.MCP_flex, RANGES.THUMB_MCP_FLEX));
-  thumbRig.ip.rotation.z = deg2rad(clamp(thumb.IP, RANGES.THUMB_IP));
+  const cmcMapped = mapClinicalCmcToRigRadians(thumb);
+
+  thumbRig.cmcAbd.rotation.z = cmcMapped.radians.cmcAbd;
+  thumbRig.cmcFlex.rotation.y = cmcMapped.radians.cmcFlex;
+  thumbRig.cmcPronation.rotation.x = cmcMapped.radians.cmcPronation;
+
+  const mcpFlex = clamp(thumb.MCP_flex, RANGES.THUMB_MCP_FLEX);
+  const ipFlex = clamp(thumb.IP, RANGES.THUMB_IP);
+  const mcpAccessory = mcpFlex * THUMB_KINEMATICS.MCP_ACCESSORY_GAIN;
+
+  thumbRig.mcp.rotation.z = -deg2rad(mcpFlex);
+  thumbRig.mcpAccessory.rotation.x = deg2rad(mcpAccessory);
+  thumbRig.ip.rotation.z = -deg2rad(ipFlex);
 
   applyMainLabels(rig, fingers, thumb, wrist);
 }

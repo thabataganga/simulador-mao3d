@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState } from "react";
+﻿import { lazy, Suspense, useEffect, useState } from "react";
 
 import { useHandPose } from "./hooks/useHandPose";
 
@@ -28,6 +28,31 @@ export default function HandSimulatorApp() {
       if (document.head.contains(link)) document.head.removeChild(link);
     };
   }, []);
+
+  // Optional query-driven thumb pose for QA screenshots.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("qaThumb") !== "1") return;
+
+    const map = {
+      CMC_abd: "cmc_abd",
+      CMC_flex: "cmc_flex",
+      CMC_opp: "cmc_opp",
+      MCP_flex: "mcp_flex",
+      IP: "ip",
+    };
+
+    Object.entries(map).forEach(([key, queryKey]) => {
+      const raw = params.get(queryKey);
+      if (raw == null) return;
+      const value = Number(raw);
+      if (!Number.isFinite(value)) return;
+      poseActions.setThumbVal(key, value);
+    });
+
+    poseActions.setActivePreset("none");
+    setOpenPanel("thumb");
+  }, [poseActions]);
 
   const togglePanel = id => setOpenPanel(prev => (prev === id ? "none" : id));
   const clearPreset = () => poseActions.setActivePreset("none");
@@ -107,7 +132,7 @@ export default function HandSimulatorApp() {
           <summary className="cursor-pointer font-medium">Tabela técnica - Limites</summary>
           <div className="mt-2 space-y-1">
             <p>MCP D2-D5: -45° a +90° · PIP: 0-100° · DIP: -20° a +80°</p>
-            <p>CMC Polegar: Abd -10..+60° · Flex 0..30° · Oposição -40..+70°</p>
+            <p>CMC Polegar: Abd -10..+60° · Flex/Ext -20..+30° · Oposição -40..+70°</p>
             <p>MCP Polegar: 0-60° · IP: -10° a +80°</p>
           </div>
         </details>
@@ -119,3 +144,4 @@ export default function HandSimulatorApp() {
     </div>
   );
 }
+

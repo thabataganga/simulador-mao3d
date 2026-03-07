@@ -127,7 +127,7 @@ export function makeDims(profile) {
     { mcp: deg2rad(25), pip: deg2rad(30), dip: deg2rad(15) },
     { mcp: deg2rad(30), pip: deg2rad(35), dip: deg2rad(15) },
   ];
-  const neutralThumb = { abd: deg2rad(45), flex: deg2rad(12), opp: deg2rad(12) };
+  const neutralThumb = { abd: deg2rad(0), flex: deg2rad(0), opp: deg2rad(0) };
   return { palm, fingers, fingerWid, thumbLen, thumbWid, baseX, baseZ, thumbBase, forearm, wrist, tipPads, neutralFingers, neutralThumb };
 }
 
@@ -159,7 +159,7 @@ export function restFromDims(d) {
     CMC_abd:  Math.round(d.neutralThumb.abd  * 180 / Math.PI),
     CMC_flex: Math.round(d.neutralThumb.flex * 180 / Math.PI),
     CMC_opp:  Math.round(d.neutralThumb.opp  * 180 / Math.PI),
-    MCP_flex: 10, IP: 5,
+    MCP_flex: 0, IP: 0,
   };
   return { f, t, w: { flex: -25, dev: -12 } };
 }

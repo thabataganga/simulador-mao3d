@@ -1,12 +1,12 @@
-// ─── Ranges articulares ───────────────────────────────────────────────────────
+﻿// â”€â”€â”€ Ranges articulares â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const RANGES = {
   MCP: [-45, 90], PIP: [0, 100], DIP: [-20, 80],
-  CMC_ABD: [-10, 60], CMC_OPP: [-40, 70], CMC_FLEX: [0, 30],
+  CMC_ABD: [-10, 60], CMC_OPP: [-40, 70], CMC_FLEX: [-20, 30],
   THUMB_MCP_FLEX: [0, 60], THUMB_IP: [-10, 80],
   WRIST_FLEX: [-70, 80], WRIST_DEV: [-20, 30],
 };
 
-// ─── Geometria da palma ───────────────────────────────────────────────────────
+// â”€â”€â”€ Geometria da palma â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const PALM_DIMS = { LENGTH: 70, THICKNESS: 14, WIDTH: 55 };
 
 export const THUMB_BASE_RATIO = { xL: 24 / 70, yT: -2 / 14, zW: 28 / 55 };
@@ -35,7 +35,7 @@ export const SEX_RATIOS = {
 
 export const PERC_OPTIONS = [5, 25, 50, 75, 95];
 
-// ─── Keyframes de fechamento ──────────────────────────────────────────────────
+// â”€â”€â”€ Keyframes de fechamento â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const PINCH_KF = {
   open:   { index: { MCP: 10, PIP: 15, DIP: 5  }, thumb: { CMC_abd: 35, CMC_flex: 10, CMC_opp: 15, MCP_flex: 15, IP: 5  } },
   mid:    { index: { MCP: 55, PIP: 80, DIP: 60 }, thumb: { CMC_abd: 28, CMC_flex: 20, CMC_opp: 60, MCP_flex: 40, IP: 55 } },
@@ -52,3 +52,31 @@ export const THUMB_RANGE_KEY = {
   CMC_abd: "CMC_ABD", CMC_flex: "CMC_FLEX", CMC_opp: "CMC_OPP",
   MCP_flex: "THUMB_MCP_FLEX", IP: "THUMB_IP",
 };
+
+
+export const THUMB_CMC_NEUTRAL = Object.freeze({
+  mountRotationOrder: "ZYX",
+  cmcNeutralMountDeg: Object.freeze({
+    z: -22,
+    y: -36,
+    x: 6,
+  }),
+  cmcNeutralBaseOffset: Object.freeze({
+    dx: 0,
+    dy: 0,
+    dz: 0,
+  }),
+});
+
+export const THUMB_CMC = Object.freeze({
+  FLEX_EFFECTIVE_RANGE: [-20, 30],
+  OPP_COUPLING: Object.freeze({
+    ABD_GAIN: 0.18,
+    FLEX_GAIN: 0.22,
+    PRONATION_GAIN: 0.38,
+  }),
+});
+
+export const THUMB_KINEMATICS = Object.freeze({
+  MCP_ACCESSORY_GAIN: 0.08,
+});
