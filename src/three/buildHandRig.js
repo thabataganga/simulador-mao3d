@@ -60,15 +60,15 @@ export function buildHandRig(d) {
     const base = new THREE.Group(); base.position.set(d.baseX, 0, d.baseZ[i]); palm.add(base);
 
     const mcp  = new THREE.Group(); base.add(mcp);
-    const mcpSphere = addHL(mkSphere(Wp / 2, matFinger.clone())); mcp.add(mcpSphere);
+    const mcpSphere = addHL(mkSphere(Wp / 2, matFinger)); mcp.add(mcpSphere);
     const prox = mkPhal(Lp, Wp, matFinger); prox.mesh.position.x = Lp / 2; mcp.add(prox.group);
 
     const pip  = new THREE.Group(); pip.position.set(Lp, 0, 0); prox.group.add(pip);
-    const pipSphere = addHL(mkSphere(Wm / 2, matFinger.clone())); pip.add(pipSphere);
+    const pipSphere = addHL(mkSphere(Wm / 2, matFinger)); pip.add(pipSphere);
     const mid  = mkPhal(Lm, Wm, matFinger); mid.mesh.position.x = Lm / 2; pip.add(mid.group);
 
     const dip  = new THREE.Group(); dip.position.set(Lm, 0, 0); mid.group.add(dip);
-    const dipSphere = addHL(mkSphere(Wd / 2, matFinger.clone())); dip.add(dipSphere);
+    const dipSphere = addHL(mkSphere(Wd / 2, matFinger)); dip.add(dipSphere);
     const dist = mkPhal(Ld, Wd, matFinger); dist.mesh.position.x = Ld / 2; dip.add(dist.group);
 
     let tip = dist.group, tipOff = Ld;
@@ -117,11 +117,11 @@ export function buildHandRig(d) {
   const cmcFlex  = new THREE.Group(); cmcAbd.add(cmcFlex);
   const cmcAxial = new THREE.Group(); cmcFlex.add(cmcAxial);
   const tmcp     = new THREE.Group(); cmcAxial.add(tmcp);
-  const tmcpSphere = addHL(mkSphere(d.thumbWid[0] / 2, matFinger.clone())); tmcp.add(tmcpSphere);
+  const tmcpSphere = addHL(mkSphere(d.thumbWid[0] / 2, matFinger)); tmcp.add(tmcpSphere);
 
   const tProx = mkPhal(d.thumbLen[0], d.thumbWid[0], matFinger); tProx.mesh.position.x = d.thumbLen[0] / 2; tmcp.add(tProx.group);
   const tip_ip = new THREE.Group(); tip_ip.position.set(d.thumbLen[0], 0, 0); tProx.group.add(tip_ip);
-  const tipIpSphere = addHL(mkSphere(d.thumbWid[1] / 2, matFinger.clone())); tip_ip.add(tipIpSphere);
+  const tipIpSphere = addHL(mkSphere(d.thumbWid[1] / 2, matFinger)); tip_ip.add(tipIpSphere);
   const tDist  = mkPhal(d.thumbLen[1], d.thumbWid[1], matFinger); tDist.mesh.position.x = d.thumbLen[1] / 2; tip_ip.add(tDist.group);
   let tipTh = tDist.group, tipThOff = d.thumbLen[1];
   if (d.tipPads.thumb > 0.5) {
