@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from "react";
-import * as THREE from "three";
+import { Box3, Vector3 } from "three";
 import { buildHandRig } from "../three/buildHandRig";
 import { setLabelText } from "../three/helpers";
 import { deg2rad, clamp } from "../utils";
@@ -42,15 +42,15 @@ export function useHandRig({ three, orbitRef, dims, fingers, thumb, wrist, debug
     if (!root || !controls || !camera) return;
 
     root.updateMatrixWorld(true);
-    const box = new THREE.Box3().setFromObject(root);
-    const size = new THREE.Vector3();
+    const box = new Box3().setFromObject(root);
+    const size = new Vector3();
     box.getSize(size);
-    const center = new THREE.Vector3();
+    const center = new Vector3();
     box.getCenter(center);
 
     const maxDim = Math.max(size.x, size.y, size.z) || 1;
     controls.target.copy(center);
-    camera.position.copy(center.clone().add(new THREE.Vector3(1, 0.9, 1).normalize().multiplyScalar(maxDim * 2.2)));
+    camera.position.copy(center.clone().add(new Vector3(1, 0.9, 1).normalize().multiplyScalar(maxDim * 2.2)));
     controls.minDistance = maxDim * 0.8;
     controls.maxDistance = maxDim * 6;
   }, [orbitRef, three]);

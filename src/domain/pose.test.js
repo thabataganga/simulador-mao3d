@@ -1,4 +1,4 @@
-﻿import {
+import {
   applyGlobalGripToPose,
   calculateGlobalD2D5,
   createNeutralPose,
@@ -112,4 +112,20 @@ describe("pose domain", () => {
       wrist: state.wrist,
     });
   });
+});
+
+test("applyGlobalGripToPose feeds createSceneInput in realistic workflow", () => {
+  const state = basePose({
+    dims: makeDims(buildProfile("feminino", 75, 30)),
+    globalMode: "functional",
+  });
+
+  const nextPose = applyGlobalGripToPose(state, 65);
+  const sceneInput = createSceneInput({ ...state, ...nextPose });
+
+  expect(sceneInput.dims).toBe(state.dims);
+  expect(sceneInput.fingers).toEqual(nextPose.fingers);
+  expect(sceneInput.thumb).toEqual(nextPose.thumb);
+  expect(sceneInput.wrist).toEqual(nextPose.wrist);
+  expect(sceneInput.fingers.some(finger => finger.MCP !== 0 || finger.PIP !== 0 || finger.DIP !== 0)).toBe(true);
 });
