@@ -1,4 +1,4 @@
-import * as THREE from "three";
+import { MathUtils } from "three";
 import {
   PALM_DIMS, THUMB_BASE_RATIO, RATIOS, PHAL_RATIOS, THUMB_RATIOS,
   TIP_SOFT_MM, SEX_RATIOS, PINCH_KF, FUNC_KF, RANGES,
@@ -106,7 +106,7 @@ export function makeDims(profile) {
   const thumbTotal = D3_TOTAL * THUMB_RATIOS.totalVsD3 * (profile.thumbScale / profile.fingerScale);
   const thumbLen   = [thumbTotal * THUMB_RATIOS.seg.pp, thumbTotal * THUMB_RATIOS.seg.pd];
   const thumbWid   = RATIOS.thumbWidths.map(r => r * palmThick);
-  const baseX      = palmLen / 2 + THREE.MathUtils.clamp(0.3 * palmThick, 1.5, 6);
+  const baseX      = palmLen / 2 + MathUtils.clamp(0.3 * palmThick, 1.5, 6);
   const baseZ      = RATIOS.baseZ.map(r => r * palmWidth);
   const thumbBase  = {
     x: -palmLen / 2 + R.thumbBaseFromProx * palmLen,

@@ -6,11 +6,12 @@ import { useHandRig } from "../hooks/useHandRig";
 export default function HandScene3D({ sceneInput, debugKey }) {
   const mountRef = useRef(null);
   const viewcubeRef = useRef(null);
-  const { three, orbitRef } = useThreeScene(mountRef, viewcubeRef);
+  const { three, orbitRef, controlsReady } = useThreeScene(mountRef, viewcubeRef);
 
   useHandRig({
     three,
     orbitRef,
+    controlsReady,
     ...sceneInput,
     debugKey,
   });
