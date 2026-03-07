@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import * as THREE from "three";
 import { buildHandRig } from "../three/buildHandRig";
 import { setLabelText } from "../three/helpers";
@@ -9,8 +9,10 @@ export function useHandRig({ three, orbitRef, dims, fingers, thumb, wrist, debug
   const handRig = useRef(null);
 
   // Câmera enquadra o rig
-  const frameRig = () => {
-    const root = handRig.current?.root, ctl = orbitRef.current, cam = three?.camera;
+  const frameRig = useCallback(() => {
+    const root = handRig.current?.root;
+    const ctl = orbitRef.current;
+    const cam = three?.camera;
     if (!root || !ctl || !cam) return;
     root.updateMatrixWorld(true);
     const box    = new THREE.Box3().setFromObject(root);
@@ -20,7 +22,7 @@ export function useHandRig({ three, orbitRef, dims, fingers, thumb, wrist, debug
     ctl.target.copy(center);
     cam.position.copy(center.clone().add(new THREE.Vector3(1, 0.9, 1).normalize().multiplyScalar(maxDim * 2.2)));
     ctl.minDistance = maxDim * 0.8; ctl.maxDistance = maxDim * 6;
-  };
+  }, [orbitRef, three]);
 
   // Reconstrói o rig quando dims mudam
   useEffect(() => {
@@ -32,7 +34,7 @@ export function useHandRig({ three, orbitRef, dims, fingers, thumb, wrist, debug
     handRig.current = buildHandRig(dims);
     three.scene.add(handRig.current.root);
     frameRig();
-  }, [dims, three]);
+  }, [dims, frameRig, three]);
 
   // Aplica pose + atualiza labels
   useEffect(() => {
@@ -65,7 +67,7 @@ export function useHandRig({ three, orbitRef, dims, fingers, thumb, wrist, debug
       setLabelText(tl.mcp,  `MCP: ${fmt(thumb.MCP_flex)}`);
       setLabelText(tl.ip,   `IP: ${fmt(thumb.IP)}`);
     }
-  }, [fingers, thumb, wrist, dims]);
+  }, [fingers, thumb, wrist]);
 
   // Highlight de articulação
   useEffect(() => {

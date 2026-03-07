@@ -25,47 +25,65 @@ export function useThreeScene(mountRef, viewcubeRef) {
 
   // Loop principal
   useEffect(() => {
-    if (!mountRef.current) return;
-    const { scene, camera, renderer } = three, mount = mountRef.current;
+    const mount = mountRef.current;
+    if (!mount) return;
+
+    const { scene, camera, renderer } = three;
     const resize = () => {
       camera.aspect = mount.clientWidth / mount.clientHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(mount.clientWidth, mount.clientHeight);
     };
-    resize(); window.addEventListener("resize", resize);
+
+    resize();
+    window.addEventListener("resize", resize);
     if (!mount.contains(renderer.domElement)) mount.appendChild(renderer.domElement);
+
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true; controls.dampingFactor = 0.06; controls.target.set(0, 60, 0);
     orbitRef.current = controls;
+
     let raf = 0;
     const animate = () => {
-      raf = requestAnimationFrame(animate); controls.update();
+      raf = requestAnimationFrame(animate);
+      controls.update();
       mini.cube.setRotationFromQuaternion(new THREE.Quaternion().copy(camera.quaternion).invert());
       renderer.render(scene, camera);
     };
+
     animate();
     return () => {
-      cancelAnimationFrame(raf); window.removeEventListener("resize", resize); controls.dispose();
+      cancelAnimationFrame(raf);
+      window.removeEventListener("resize", resize);
+      controls.dispose();
       if (renderer.domElement.parentNode === mount) mount.removeChild(renderer.domElement);
-      try { renderer.dispose(); } catch {}
+      renderer.dispose();
       scene.traverse(o => { if (o.isMesh) { o.geometry?.dispose(); o.material?.dispose(); } });
     };
-  }, [three, mini]);
+  }, [mountRef, mini, three]);
 
   // Viewcube
   useEffect(() => {
-    if (!viewcubeRef.current) return;
-    const { scene, camera, renderer } = mini; renderer.setSize(100, 100);
-    if (!viewcubeRef.current.contains(renderer.domElement)) viewcubeRef.current.appendChild(renderer.domElement);
+    const viewcube = viewcubeRef.current;
+    if (!viewcube) return;
+
+    const { scene, camera, renderer } = mini;
+    renderer.setSize(100, 100);
+    if (!viewcube.contains(renderer.domElement)) viewcube.appendChild(renderer.domElement);
+
     let raf = 0;
-    const loop = () => { raf = requestAnimationFrame(loop); renderer.render(scene, camera); };
+    const loop = () => {
+      raf = requestAnimationFrame(loop);
+      renderer.render(scene, camera);
+    };
+
     loop();
     return () => {
       cancelAnimationFrame(raf);
-      if (renderer.domElement.parentNode === viewcubeRef.current) viewcubeRef.current.removeChild(renderer.domElement);
-      try { renderer.dispose(); } catch {}
+      if (renderer.domElement.parentNode === viewcube) viewcube.removeChild(renderer.domElement);
+      renderer.dispose();
     };
-  }, [mini]);
+  }, [mini, viewcubeRef]);
 
   return { three, mini, orbitRef };
 }

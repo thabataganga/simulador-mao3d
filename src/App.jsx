@@ -20,7 +20,7 @@ export default function HandSimulatorApp() {
   const [openPanel, setOpenPanel] = useState("global_d2d5");
 
   const pose = useHandPose();
-  const { three, mini, orbitRef } = useThreeScene(mountRef, viewcubeRef);
+  const { three, orbitRef } = useThreeScene(mountRef, viewcubeRef);
 
   useHandRig({
     three, orbitRef,
@@ -36,7 +36,9 @@ export default function HandSimulatorApp() {
     const link = document.createElement("link"); link.rel = "stylesheet";
     link.href = "https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Montserrat:wght@600;700&display=swap";
     document.head.appendChild(link);
-    return () => { try { document.head.removeChild(link); } catch {} };
+    return () => {
+      if (document.head.contains(link)) document.head.removeChild(link);
+    };
   }, []);
 
   const togglePanel = id => setOpenPanel(p => p === id ? "none" : id);

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useAnthropometry } from "./useAnthropometry";
 import { RANGES, THUMB_RANGE_KEY } from "../constants";
-import { buildProfile, makeDims, defaultFinger, defaultThumb, restFromDims, computeGrip, clamp } from "../utils";
+import { defaultFinger, defaultThumb, restFromDims, computeGrip, clamp } from "../utils";
 
 export function useHandPose() {
   const [fingers,      setFingers]      = useState(Array.from({ length: 4 }, defaultFinger));
