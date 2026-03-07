@@ -1,92 +1,138 @@
-import { useCallback, useEffect, useRef } from "react";
+﻿import { useCallback, useEffect, useRef } from "react";
 import * as THREE from "three";
 import { buildHandRig } from "../three/buildHandRig";
 import { setLabelText } from "../three/helpers";
 import { deg2rad, clamp } from "../utils";
 import { RANGES } from "../constants";
 
+const GLOBAL_DEBUG_KEY_TO_JOINT = {
+  GLOBAL_MCP: "MCP",
+  GLOBAL_PIP: "PIP",
+  GLOBAL_DIP: "DIP",
+};
+
+const formatDegree = value => `${Math.round(value)}°`;
+
+function applyMainLabels(rig, fingers, thumb, wrist) {
+  const map = rig.dbgMap;
+  setLabelText(map.GLOBAL_MCP?.label, `MCP: ${formatDegree(fingers[1].MCP)}`);
+  setLabelText(map.GLOBAL_PIP?.label, `PIP: ${formatDegree(fingers[1].PIP)}`);
+  setLabelText(map.GLOBAL_DIP?.label, `DIP: ${formatDegree(fingers[1].DIP)}`);
+  setLabelText(map.WR_FLEX?.label, `Flex: ${formatDegree(wrist.flex)}`);
+  setLabelText(map.WR_DEV?.label, `Desvio: ${formatDegree(wrist.dev)}`);
+
+  const thumbLabels = rig.thumbLabels;
+  if (!thumbLabels) return;
+
+  setLabelText(thumbLabels.abd, `CMC abd: ${formatDegree(thumb.CMC_abd)}`);
+  setLabelText(thumbLabels.flex, `CMC flex: ${formatDegree(thumb.CMC_flex)}`);
+  setLabelText(thumbLabels.opp, `CMC opp: ${formatDegree(thumb.CMC_opp)}`);
+  setLabelText(thumbLabels.mcp, `MCP: ${formatDegree(thumb.MCP_flex)}`);
+  setLabelText(thumbLabels.ip, `IP: ${formatDegree(thumb.IP)}`);
+}
+
 export function useHandRig({ three, orbitRef, dims, fingers, thumb, wrist, debugKey }) {
   const handRig = useRef(null);
 
-  // Câmera enquadra o rig
+  // Camera framing for current rig dimensions.
   const frameRig = useCallback(() => {
     const root = handRig.current?.root;
-    const ctl = orbitRef.current;
-    const cam = three?.camera;
-    if (!root || !ctl || !cam) return;
+    const controls = orbitRef.current;
+    const camera = three?.camera;
+    if (!root || !controls || !camera) return;
+
     root.updateMatrixWorld(true);
-    const box    = new THREE.Box3().setFromObject(root);
-    const size   = new THREE.Vector3(); box.getSize(size);
-    const center = new THREE.Vector3(); box.getCenter(center);
+    const box = new THREE.Box3().setFromObject(root);
+    const size = new THREE.Vector3();
+    box.getSize(size);
+    const center = new THREE.Vector3();
+    box.getCenter(center);
+
     const maxDim = Math.max(size.x, size.y, size.z) || 1;
-    ctl.target.copy(center);
-    cam.position.copy(center.clone().add(new THREE.Vector3(1, 0.9, 1).normalize().multiplyScalar(maxDim * 2.2)));
-    ctl.minDistance = maxDim * 0.8; ctl.maxDistance = maxDim * 6;
+    controls.target.copy(center);
+    camera.position.copy(center.clone().add(new THREE.Vector3(1, 0.9, 1).normalize().multiplyScalar(maxDim * 2.2)));
+    controls.minDistance = maxDim * 0.8;
+    controls.maxDistance = maxDim * 6;
   }, [orbitRef, three]);
 
-  // Reconstrói o rig quando dims mudam
+  // Rebuild rig whenever dimensions change.
   useEffect(() => {
     if (!three?.scene) return;
+
     if (handRig.current) {
       three.scene.remove(handRig.current.root);
-      handRig.current.root.traverse(o => { if (o.isMesh) { o.geometry?.dispose(); o.material?.dispose(); } });
+      handRig.current.root.traverse(object => {
+        if (object.isMesh) {
+          object.geometry?.dispose();
+          object.material?.dispose();
+        }
+      });
     }
+
     handRig.current = buildHandRig(dims);
     three.scene.add(handRig.current.root);
     frameRig();
   }, [dims, frameRig, three]);
 
-  // Aplica pose + atualiza labels
+  // Apply pose updates and refresh labels.
   useEffect(() => {
-    const rig = handRig.current; if (!rig) return;
-    fingers.forEach((s, i) => {
-      const f = rig.fingers[i];
-      f.mcp.rotation.z = deg2rad(clamp(s.MCP, RANGES.MCP));
-      f.pip.rotation.z = deg2rad(clamp(s.PIP, RANGES.PIP));
-      f.dip.rotation.z = deg2rad(clamp(s.DIP, RANGES.DIP));
+    const rig = handRig.current;
+    if (!rig) return;
+
+    fingers.forEach((fingerState, index) => {
+      const finger = rig.fingers[index];
+      finger.mcp.rotation.z = deg2rad(clamp(fingerState.MCP, RANGES.MCP));
+      finger.pip.rotation.z = deg2rad(clamp(fingerState.PIP, RANGES.PIP));
+      finger.dip.rotation.z = deg2rad(clamp(fingerState.DIP, RANGES.DIP));
     });
-    rig.wrist.dev.rotation.x  = deg2rad(clamp(wrist.dev,  RANGES.WRIST_DEV));
+
+    rig.wrist.dev.rotation.x = deg2rad(clamp(wrist.dev, RANGES.WRIST_DEV));
     rig.wrist.flex.rotation.z = deg2rad(clamp(wrist.flex, RANGES.WRIST_FLEX));
-    const t = rig.thumb;
-    t.cmcAbd.rotation.y   =  deg2rad(clamp(thumb.CMC_abd,  RANGES.CMC_ABD));
-    t.cmcFlex.rotation.z  = -deg2rad(clamp(thumb.CMC_flex, RANGES.CMC_FLEX));
-    t.cmcAxial.rotation.x =  deg2rad(clamp(thumb.CMC_opp,  RANGES.CMC_OPP));
-    t.mcp.rotation.z      = -deg2rad(clamp(thumb.MCP_flex, RANGES.THUMB_MCP_FLEX));
-    t.ip.rotation.z       =  deg2rad(clamp(thumb.IP,       RANGES.THUMB_IP));
-    const fmt = v => `${Math.round(v)}°`, map = rig.dbgMap;
-    setLabelText(map.GLOBAL_MCP?.label, `MCP: ${fmt(fingers[1].MCP)}`);
-    setLabelText(map.GLOBAL_PIP?.label, `PIP: ${fmt(fingers[1].PIP)}`);
-    setLabelText(map.GLOBAL_DIP?.label, `DIP: ${fmt(fingers[1].DIP)}`);
-    setLabelText(map.WR_FLEX?.label,    `Flex: ${fmt(wrist.flex)}`);
-    setLabelText(map.WR_DEV?.label,     `Desvio: ${fmt(wrist.dev)}`);
-    const tl = rig.thumbLabels;
-    if (tl) {
-      setLabelText(tl.abd,  `CMC abd: ${fmt(thumb.CMC_abd)}`);
-      setLabelText(tl.flex, `CMC flex: ${fmt(thumb.CMC_flex)}`);
-      setLabelText(tl.opp,  `CMC opp: ${fmt(thumb.CMC_opp)}`);
-      setLabelText(tl.mcp,  `MCP: ${fmt(thumb.MCP_flex)}`);
-      setLabelText(tl.ip,   `IP: ${fmt(thumb.IP)}`);
-    }
+
+    const thumbRig = rig.thumb;
+    thumbRig.cmcAbd.rotation.y = deg2rad(clamp(thumb.CMC_abd, RANGES.CMC_ABD));
+    thumbRig.cmcFlex.rotation.z = -deg2rad(clamp(thumb.CMC_flex, RANGES.CMC_FLEX));
+    thumbRig.cmcAxial.rotation.x = deg2rad(clamp(thumb.CMC_opp, RANGES.CMC_OPP));
+    thumbRig.mcp.rotation.z = -deg2rad(clamp(thumb.MCP_flex, RANGES.THUMB_MCP_FLEX));
+    thumbRig.ip.rotation.z = deg2rad(clamp(thumb.IP, RANGES.THUMB_IP));
+
+    applyMainLabels(rig, fingers, thumb, wrist);
   }, [fingers, thumb, wrist]);
 
-  // Highlight de articulação
+  // Highlight active articulation.
   useEffect(() => {
-    const rig = handRig.current; if (!rig) return;
+    const rig = handRig.current;
+    if (!rig) return;
+
     const map = rig.dbgMap;
-    Object.values(map).forEach(pkg => pkg.setVisible(false));
-    const globalJoint = { GLOBAL_MCP: "MCP", GLOBAL_PIP: "PIP", GLOBAL_DIP: "DIP" }[debugKey];
+    Object.values(map).forEach(item => item.setVisible(false));
+
+    const globalJoint = GLOBAL_DEBUG_KEY_TO_JOINT[debugKey];
     if (globalJoint) {
-      ["D2", "D3", "D4", "D5"].forEach(d => map[`${d}_${globalJoint}`]?.setVisible(true));
+      ["D2", "D3", "D4", "D5"].forEach(digit => map[`${digit}_${globalJoint}`]?.setVisible(true));
       if (map[debugKey]?.label) map[debugKey].label.visible = true;
     } else if (debugKey !== "off" && map[debugKey]) {
       map[debugKey].setVisible(true);
     }
-    const hl   = rig.highlight;
-    hl.all.forEach(m => { if (m.material && m.userData.baseColor) { m.material.color.copy(m.userData.baseColor); m.material.emissive?.set(0x000000); } });
-    const tgts = globalJoint
-      ? ["D2", "D3", "D4", "D5"].flatMap(d => hl.map[`${d}_${globalJoint}`] || [])
-      : (hl.map[debugKey] || []);
-    tgts.forEach(m => { if (m.material) { m.material.color.set(0xffcc66); m.material.emissive?.set(0x553300); } });
+
+    const highlight = rig.highlight;
+    highlight.all.forEach(mesh => {
+      if (mesh.material && mesh.userData.baseColor) {
+        mesh.material.color.copy(mesh.userData.baseColor);
+        mesh.material.emissive?.set(0x000000);
+      }
+    });
+
+    const targets = globalJoint
+      ? ["D2", "D3", "D4", "D5"].flatMap(digit => highlight.map[`${digit}_${globalJoint}`] || [])
+      : highlight.map[debugKey] || [];
+
+    targets.forEach(mesh => {
+      if (mesh.material) {
+        mesh.material.color.set(0xffcc66);
+        mesh.material.emissive?.set(0x553300);
+      }
+    });
   }, [debugKey]);
 
   return handRig;

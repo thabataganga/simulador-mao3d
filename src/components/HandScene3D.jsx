@@ -1,9 +1,9 @@
-import { useRef } from "react";
+﻿import { useRef } from "react";
 
 import { useThreeScene } from "../hooks/useThreeScene";
 import { useHandRig } from "../hooks/useHandRig";
 
-export default function HandScene3D({ dims, fingers, thumb, wrist, debugKey }) {
+export default function HandScene3D({ sceneInput, debugKey }) {
   const mountRef = useRef(null);
   const viewcubeRef = useRef(null);
   const { three, orbitRef } = useThreeScene(mountRef, viewcubeRef);
@@ -11,10 +11,7 @@ export default function HandScene3D({ dims, fingers, thumb, wrist, debugKey }) {
   useHandRig({
     three,
     orbitRef,
-    dims,
-    fingers,
-    thumb,
-    wrist,
+    ...sceneInput,
     debugKey,
   });
 
