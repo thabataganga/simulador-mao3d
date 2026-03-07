@@ -1,0 +1,8 @@
+/* Carrega o Tailwind v4 */
+@import "tailwindcss";
+
+/* Base mínima só pra garantir altura e tirar margens */
+@layer base {
+  html, body, #root { height: 100%; }
+  body { margin: 0; }
+}
