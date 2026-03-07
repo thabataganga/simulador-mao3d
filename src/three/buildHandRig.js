@@ -2,11 +2,12 @@ import * as THREE from "three";
 import { deg2rad } from "../utils";
 import { makeDebugPkg } from "./helpers";
 
+const matArm    = new THREE.MeshStandardMaterial({ color: 0xcad4e0, roughness: 0.8,  metalness: 0.05 });
+const matPalm   = new THREE.MeshStandardMaterial({ color: 0xdde6ee, roughness: 0.85, metalness: 0.03 });
+const matFinger = new THREE.MeshStandardMaterial({ color: 0xe9eef3, roughness: 0.9,  metalness: 0.02 });
+
 export function buildHandRig(d) {
   const root      = new THREE.Group();
-  const matArm    = new THREE.MeshStandardMaterial({ color: 0xcad4e0, roughness: 0.8,  metalness: 0.05 });
-  const matPalm   = new THREE.MeshStandardMaterial({ color: 0xdde6ee, roughness: 0.85, metalness: 0.03 });
-  const matFinger = new THREE.MeshStandardMaterial({ color: 0xe9eef3, roughness: 0.9,  metalness: 0.02 });
   const mkCyl = (r1, r2, h, mat) => new THREE.Mesh(new THREE.CylinderGeometry(r1, r2, h, 24), mat);
   const mkBox = (lx, wy, wz, mat) => new THREE.Mesh(new THREE.BoxGeometry(lx, wy, wz), mat);
   const hlList = [];
