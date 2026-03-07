@@ -68,6 +68,14 @@ describe("CMC-first mapping", () => {
     expect(THUMB_CMC_NEUTRAL.cmcNeutralBaseOffset).toEqual({ dx: 0, dy: 0, dz: 0 });
   });
 
+  test("keeps direct clinical CMC_abd sign while CMC_opp is zero", () => {
+    const add = mapClinicalCmcToRigAngles({ CMC_abd: -10, CMC_flex: 0, CMC_opp: 0 });
+    const abd = mapClinicalCmcToRigAngles({ CMC_abd: 60, CMC_flex: 0, CMC_opp: 0 });
+
+    expect(add.cmcAbd).toBe(-10);
+    expect(abd.cmcAbd).toBe(60);
+  });
+
   test("all zeros produce a non-max-open state", () => {
     const zero = poseCmc({ CMC_abd: 0, CMC_flex: 0, CMC_opp: 0 });
     const abdMax = poseCmc({ CMC_abd: 60, CMC_flex: 0, CMC_opp: 0 });
@@ -99,5 +107,3 @@ describe("CMC-first mapping", () => {
     expect(Math.abs(opp.cmcPronation)).toBeLessThan(70);
   });
 });
-
-

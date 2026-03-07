@@ -1,4 +1,4 @@
-﻿import { RANGES, THUMB_CMC } from "../constants";
+import { RANGES, THUMB_CMC } from "../constants";
 import { clamp, deg2rad } from "../utils";
 
 export function clampClinicalCmc(thumb) {
@@ -13,8 +13,8 @@ export function mapClinicalCmcToRigAngles(thumb) {
   const t = clampClinicalCmc(thumb);
   const flexClinical = clamp(t.CMC_flex, THUMB_CMC.FLEX_EFFECTIVE_RANGE);
 
-  // Composite opposition: modifies CMC abd/flex plus derived pronation.
-  const cmcAbd = t.CMC_abd + t.CMC_opp * THUMB_CMC.OPP_COUPLING.ABD_GAIN;
+  // Keep clinical convention from UI: +abduction, -adduction.
+  const cmcAbd = THUMB_CMC.CLINICAL_ABD_SIGN * t.CMC_abd + t.CMC_opp * THUMB_CMC.OPP_COUPLING.ABD_GAIN;
   const cmcFlex = flexClinical + t.CMC_opp * THUMB_CMC.OPP_COUPLING.FLEX_GAIN;
   const cmcPronation = t.CMC_opp * THUMB_CMC.OPP_COUPLING.PRONATION_GAIN;
 
