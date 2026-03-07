@@ -3,7 +3,7 @@ export const RANGES = {
   MCP: [-45, 90], PIP: [0, 100], DIP: [-20, 80],
   CMC_ABD: [-10, 60], CMC_OPP: [-40, 70], CMC_FLEX: [0, 30],
   THUMB_MCP_FLEX: [0, 60], THUMB_IP: [-10, 80],
-  WRIST_FLEX: [-70, 80], WRIST_DEV: [-30, 20],
+  WRIST_FLEX: [-70, 80], WRIST_DEV: [-20, 30],
 };
 
 // ─── Geometria da palma ───────────────────────────────────────────────────────
