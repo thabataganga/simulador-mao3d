@@ -13,7 +13,7 @@ export function WristPanel({ wrist, onWrist, onHighlight, onClearPreset }) {
         max={max}
         value={wrist[item.key]}
         onChange={value => {
-          onWrist(prev => ({ ...prev, [item.key]: value }));
+          onWrist({ ...wrist, [item.key]: value });
           onClearPreset();
         }}
         leftHint={item.leftHint}

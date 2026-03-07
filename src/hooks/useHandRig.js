@@ -3,8 +3,8 @@ import { Box3, Vector3 } from "three";
 import { buildHandRig } from "../three/buildHandRig";
 import { setLabelText } from "../three/helpers";
 import { deg2rad, clamp } from "../utils";
-import { RANGES, THUMB_KINEMATICS } from "../constants";
-import { mapClinicalCmcToRigRadians } from "../domain/thumb";
+import { RANGES } from "../constants";
+import { mapClinicalThumbToRigRadians } from "../domain/thumb";
 
 
 const GLOBAL_DEBUG_KEY_TO_JOINT = {
@@ -47,19 +47,14 @@ function applyPoseToRig(rig, fingers, thumb, wrist) {
   rig.wrist.flex.rotation.z = deg2rad(clamp(wrist.flex, RANGES.WRIST_FLEX));
 
   const thumbRig = rig.thumb;
-  const cmcMapped = mapClinicalCmcToRigRadians(thumb);
+  const thumbMapped = mapClinicalThumbToRigRadians(thumb);
 
-  thumbRig.cmcAbd.rotation.z = cmcMapped.radians.cmcAbd;
-  thumbRig.cmcFlex.rotation.y = cmcMapped.radians.cmcFlex;
-  thumbRig.cmcPronation.rotation.x = cmcMapped.radians.cmcPronation;
-
-  const mcpFlex = clamp(thumb.MCP_flex, RANGES.THUMB_MCP_FLEX);
-  const ipFlex = clamp(thumb.IP, RANGES.THUMB_IP);
-  const mcpAccessory = mcpFlex * THUMB_KINEMATICS.MCP_ACCESSORY_GAIN;
-
-  thumbRig.mcp.rotation.z = -deg2rad(mcpFlex);
-  thumbRig.mcpAccessory.rotation.x = deg2rad(mcpAccessory);
-  thumbRig.ip.rotation.z = -deg2rad(ipFlex);
+  thumbRig.cmcAbd.rotation.z = thumbMapped.radians.cmcAbd;
+  thumbRig.cmcFlex.rotation.y = thumbMapped.radians.cmcFlex;
+  thumbRig.cmcPronation.rotation.x = thumbMapped.radians.cmcPronation;
+  thumbRig.mcp.rotation.z = -thumbMapped.radians.mcpFlex;
+  thumbRig.mcpAccessory.rotation.x = thumbMapped.radians.mcpAccessory;
+  thumbRig.ip.rotation.z = -thumbMapped.radians.ipFlex;
 
   applyMainLabels(rig, fingers, thumb, wrist);
 }
@@ -67,6 +62,7 @@ function applyPoseToRig(rig, fingers, thumb, wrist) {
 export function useHandRig({ three, orbitRef, controlsReady = false, dims, fingers, thumb, wrist, debugKey }) {
   const handRig = useRef(null);
   const hasInitialFrameRef = useRef(false);
+  const lastPalmLengthRef = useRef(null);
   const poseRef = useRef({ fingers, thumb, wrist });
 
   useEffect(() => {
@@ -114,7 +110,17 @@ export function useHandRig({ three, orbitRef, controlsReady = false, dims, finge
 
     const currentPose = poseRef.current;
     applyPoseToRig(handRig.current, currentPose.fingers, currentPose.thumb, currentPose.wrist);
-  }, [dims, three]);
+
+    const prevPalmLength = lastPalmLengthRef.current;
+    const nextPalmLength = dims?.palm?.LENGTH || 0;
+    const shouldRefit =
+      prevPalmLength == null ||
+      prevPalmLength <= 0 ||
+      Math.abs(nextPalmLength - prevPalmLength) / prevPalmLength > 0.08;
+
+    lastPalmLengthRef.current = nextPalmLength;
+    if (controlsReady && shouldRefit) frameRig();
+  }, [controlsReady, dims, frameRig, three]);
 
   // Ensure first frame is centered once controls are ready.
   useEffect(() => {

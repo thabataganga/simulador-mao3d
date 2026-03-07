@@ -1,4 +1,4 @@
-﻿import { lazy, Suspense, useEffect, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useState } from "react";
 
 import { useHandPose } from "./hooks/useHandPose";
 
@@ -17,6 +17,7 @@ export default function HandSimulatorApp() {
   const [openPanel, setOpenPanel] = useState("global_d2d5");
 
   const { poseState, poseActions, sceneInput } = useHandPose();
+  const { setThumbVal, setActivePreset } = poseActions;
 
   // Fonts loaded dynamically so UI keeps visual identity without blocking first paint.
   useEffect(() => {
@@ -47,15 +48,29 @@ export default function HandSimulatorApp() {
       if (raw == null) return;
       const value = Number(raw);
       if (!Number.isFinite(value)) return;
-      poseActions.setThumbVal(key, value);
+      setThumbVal(key, value);
     });
 
-    poseActions.setActivePreset("none");
+    setActivePreset("none");
     setOpenPanel("thumb");
-  }, [poseActions]);
+  }, [setActivePreset, setThumbVal]);
 
   const togglePanel = id => setOpenPanel(prev => (prev === id ? "none" : id));
-  const clearPreset = () => poseActions.setActivePreset("none");
+  const clearPreset = useCallback(() => poseActions.setActivePreset("none"), [poseActions]);
+  const handleGrip = useCallback(
+    value => {
+      poseActions.setGrip(value);
+      poseActions.applyGlobalGrip(value);
+    },
+    [poseActions],
+  );
+  const handleGlobalMode = useCallback(
+    mode => {
+      poseActions.setGlobalMode(mode);
+      poseActions.applyGlobalGrip(poseState.grip, mode);
+    },
+    [poseActions, poseState.grip],
+  );
 
   return (
     <div
@@ -70,9 +85,9 @@ export default function HandSimulatorApp() {
     >
       <aside className="w-[420px] max-w-[45%] h-full border-r border-gray-200 p-5 overflow-y-auto">
         <h1 className="text-xl font-semibold mb-1" style={{ fontFamily: '"Montserrat","DM Sans",ui-sans-serif' }}>
-          Simulador de Mão 3D
+          Simulador de Mao 3D
         </h1>
-        <p className="text-xs text-gray-500 mb-4">Positivo = flexão/abdução · Negativo = extensão/adução</p>
+        <p className="text-xs text-gray-500 mb-4">Positivo = flexao/abducao | Negativo = extensao/aducao</p>
 
         <AnthropometryForm
           sex={poseState.sex}
@@ -121,19 +136,17 @@ export default function HandSimulatorApp() {
           <GripPanel
             grip={poseState.grip}
             globalMode={poseState.globalMode}
-            onGrip={value => {
-              poseActions.setGrip(value);
-              poseActions.applyGlobalGrip(value);
-            }}
+            onGlobalMode={handleGlobalMode}
+            onGrip={handleGrip}
           />
         </AccordionItem>
 
         <details className="mt-4 text-xs text-gray-500">
-          <summary className="cursor-pointer font-medium">Tabela técnica - Limites</summary>
+          <summary className="cursor-pointer font-medium">Tabela tecnica - Limites</summary>
           <div className="mt-2 space-y-1">
-            <p>MCP D2-D5: -45° a +90° · PIP: 0-100° · DIP: -20° a +80°</p>
-            <p>CMC Polegar: Abd -10..+60° · Flex/Ext -20..+30° · Oposição -40..+70°</p>
-            <p>MCP Polegar: 0-60° · IP: -10° a +80°</p>
+            <p>MCP D2-D5: -45 deg a +90 deg | PIP: 0-100 deg | DIP: -20 deg a +80 deg</p>
+            <p>CMC Polegar: Abd -10..+60 deg | Flex/Ext -20..+30 deg | Oposicao -40..+70 deg</p>
+            <p>MCP Polegar: 0-60 deg | IP: -10 deg a +80 deg</p>
           </div>
         </details>
       </aside>
@@ -144,4 +157,3 @@ export default function HandSimulatorApp() {
     </div>
   );
 }
-
