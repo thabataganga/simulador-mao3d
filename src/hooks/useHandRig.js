@@ -31,7 +31,7 @@ function applyMainLabels(rig, fingers, thumb, wrist) {
   setLabelText(thumbLabels.ip, `IP: ${formatDegree(thumb.IP)}`);
 }
 
-export function useHandRig({ three, orbitRef, dims, fingers, thumb, wrist, debugKey }) {
+export function useHandRig({ three, orbitRef, controlsReady = false, dims, fingers, thumb, wrist, debugKey }) {
   const handRig = useRef(null);
 
   // Camera framing for current rig dimensions.
@@ -53,6 +53,7 @@ export function useHandRig({ three, orbitRef, dims, fingers, thumb, wrist, debug
     camera.position.copy(center.clone().add(new Vector3(1, 0.9, 1).normalize().multiplyScalar(maxDim * 2.2)));
     controls.minDistance = maxDim * 0.8;
     controls.maxDistance = maxDim * 6;
+    controls.update();
   }, [orbitRef, three]);
 
   // Rebuild rig whenever dimensions change.
@@ -73,6 +74,12 @@ export function useHandRig({ three, orbitRef, dims, fingers, thumb, wrist, debug
     three.scene.add(handRig.current.root);
     frameRig();
   }, [dims, frameRig, three]);
+
+  // Ensure first frame is centered once controls are ready.
+  useEffect(() => {
+    if (!controlsReady) return;
+    frameRig();
+  }, [controlsReady, frameRig]);
 
   // Apply pose updates and refresh labels.
   useEffect(() => {

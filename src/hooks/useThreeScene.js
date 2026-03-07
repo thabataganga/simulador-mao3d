@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   BoxGeometry,
   Color,
@@ -15,6 +15,7 @@ import {
 
 export function useThreeScene(mountRef, viewcubeRef) {
   const orbitRef = useRef(null);
+  const [controlsReady, setControlsReady] = useState(false);
 
   const three = useMemo(() => {
     const scene = new Scene();
@@ -84,6 +85,7 @@ export function useThreeScene(mountRef, viewcubeRef) {
       controls.dampingFactor = 0.06;
       controls.target.set(0, 60, 0);
       orbitRef.current = controls;
+      setControlsReady(true);
 
       animate();
     })();
@@ -94,6 +96,7 @@ export function useThreeScene(mountRef, viewcubeRef) {
       window.removeEventListener("resize", resize);
       controls?.dispose();
       orbitRef.current = null;
+      setControlsReady(false);
 
       if (renderer.domElement.parentNode === mount) mount.removeChild(renderer.domElement);
       renderer.dispose();
@@ -129,5 +132,5 @@ export function useThreeScene(mountRef, viewcubeRef) {
     };
   }, [mini, viewcubeRef]);
 
-  return { three, mini, orbitRef };
+  return { three, mini, orbitRef, controlsReady };
 }
