@@ -1,35 +1,22 @@
-import { useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 
-import { useHandPose }   from "./hooks/useHandPose";
-import { useThreeScene } from "./hooks/useThreeScene";
-import { useHandRig }    from "./hooks/useHandRig";
+import { useHandPose } from "./hooks/useHandPose";
 
-import { AccordionItem }    from "./components/AccordionItem";
+import { AccordionItem } from "./components/AccordionItem";
 import { AnthropometryForm } from "./components/AnthropometryForm";
-import { PresetButtons }    from "./components/PresetButtons";
-import { GlobalD2D5Panel }  from "./components/GlobalD2D5Panel";
-import { ThumbPanel }       from "./components/ThumbPanel";
-import { WristPanel }       from "./components/WristPanel";
-import { GripPanel }        from "./components/GripPanel";
+import { PresetButtons } from "./components/PresetButtons";
+import { GlobalD2D5Panel } from "./components/GlobalD2D5Panel";
+import { ThumbPanel } from "./components/ThumbPanel";
+import { WristPanel } from "./components/WristPanel";
+import { GripPanel } from "./components/GripPanel";
+
+const HandScene3D = lazy(() => import("./components/HandScene3D"));
 
 export default function HandSimulatorApp() {
-  const mountRef    = useRef(null);
-  const viewcubeRef = useRef(null);
-
-  const [debugKey,  setDebugKey]  = useState("off");
+  const [debugKey, setDebugKey] = useState("off");
   const [openPanel, setOpenPanel] = useState("global_d2d5");
 
   const pose = useHandPose();
-  const { three, orbitRef } = useThreeScene(mountRef, viewcubeRef);
-
-  useHandRig({
-    three, orbitRef,
-    dims:     pose.dims,
-    fingers:  pose.fingers,
-    thumb:    pose.thumb,
-    wrist:    pose.wrist,
-    debugKey,
-  });
 
   // Fonte
   useEffect(() => {
@@ -48,9 +35,9 @@ export default function HandSimulatorApp() {
     <div
       className="w-full h-screen text-gray-900 flex overflow-hidden"
       style={{
-        "--lmb-navy":  "#0e1e35", "--lmb-coral": "#f04d4f",
-        "--lmb-teal":  "#3bb7a2", "--lmb-ivory": "#f9f8f4",
-        "--lmb-blue":  "#10315a",
+        "--lmb-navy": "#0e1e35", "--lmb-coral": "#f04d4f",
+        "--lmb-teal": "#3bb7a2", "--lmb-ivory": "#f9f8f4",
+        "--lmb-blue": "#10315a",
         backgroundColor: "var(--lmb-ivory)",
         fontFamily: '"DM Sans",ui-sans-serif,system-ui',
       }}
@@ -119,10 +106,15 @@ export default function HandSimulatorApp() {
         </details>
       </aside>
 
-      <main className="flex-1 relative">
-        <div ref={mountRef} className="absolute inset-0" />
-        <div ref={viewcubeRef} className="absolute top-4 right-4 rounded-md shadow-sm bg-white/60 p-1" />
-      </main>
+      <Suspense fallback={<main className="flex-1 grid place-items-center text-sm text-gray-500">Carregando cena 3D...</main>}>
+        <HandScene3D
+          dims={pose.dims}
+          fingers={pose.fingers}
+          thumb={pose.thumb}
+          wrist={pose.wrist}
+          debugKey={debugKey}
+        />
+      </Suspense>
     </div>
   );
 }
