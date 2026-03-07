@@ -5,18 +5,53 @@ import {
 } from "../constants";
 
 // ─── Matemática básica ────────────────────────────────────────────────────────
+/**
+ * Converte graus para radianos.
+ * @param {number} d - Ângulo em graus.
+ * @returns {number} Ângulo em radianos.
+ */
 export const deg2rad = (d) => (d * Math.PI) / 180;
+/**
+ * Limita um valor dentro de um intervalo mínimo e máximo.
+ * @param {number} v - O valor a ser limitado.
+ * @param {number[]} [min, max] - Um array contendo o valor mínimo e máximo.
+ * @returns {number} O valor limitado.
+ */
 export const clamp   = (v, [min, max]) => Math.min(Math.max(v, min), max);
+/**
+ * Interpola linearmente entre dois valores.
+ * @param {number} a - Valor inicial.
+ * @param {number} b - Valor final.
+ * @param {number} t - Fator de interpolação (entre 0 e 1).
+ * @returns {number} O valor interpolado.
+ */
 export const lerp    = (a, b, t) => a + (b - a) * t;
+/**
+ * Interpola linearmente entre duas poses (objetos com propriedades numéricas).
+ * @param {object} a - Pose inicial.
+ * @param {object} b - Pose final.
+ * @param {number} t - Fator de interpolação (entre 0 e 1).
+ * @returns {object} A pose interpolada.
+ */
 export const interpPose = (a, b, t) =>
   Object.fromEntries(Object.keys(a).map(k => [k, Math.round(lerp(a[k], b[k], t))]));
 
 // ─── Escala por percentil e idade ────────────────────────────────────────────
+/**
+ * Interpola a escala de tamanho da mão com base no percentil.
+ * @param {number} p0 - Percentil (entre 5 e 95).
+ * @returns {number} Fator de escala.
+ */
 export const interpPercentileScale = (p0) => {
   const p = Math.min(Math.max(p0, 5), 95);
   return p <= 50 ? 0.92 + ((p - 5) / 45) * 0.08 : 1 + ((p - 50) / 45) * 0.08;
 };
 
+/**
+ * Calcula o fator de escala da mão com base na idade.
+ * @param {number} age0 - Idade (entre 5 e 90).
+ * @returns {number} Fator de escala.
+ */
 export const ageScale = (age0) => {
   const a = Math.min(Math.max(age0, 5), 90);
   const pts = [[5, 0.6], [10, 0.78], [14, 0.9], [18, 1], [65, 1], [80, 0.98], [90, 0.96]];
@@ -28,6 +63,13 @@ export const ageScale = (age0) => {
 };
 
 // ─── Perfil antropométrico ────────────────────────────────────────────────────
+/**
+ * Constrói um perfil antropométrico com base no sexo, percentil e idade.
+ * @param {string} sex - Sexo ("masculino" ou "feminino").
+ * @param {number} percentile - Percentil (entre 5 e 95).
+ * @param {number} age - Idade (entre 5 e 90).
+ * @returns {object} O perfil antropométrico.
+ */
 export function buildProfile(sex, percentile, age) {
   const male = sex === "masculino";
   const sx = male
@@ -44,6 +86,11 @@ export function buildProfile(sex, percentile, age) {
 }
 
 // ─── Dimensões da mão ─────────────────────────────────────────────────────────
+/**
+ * Calcula as dimensões da mão com base em um perfil antropométrico.
+ * @param {object} profile - O perfil antropométrico.
+ * @returns {object} Objeto contendo as dimensões detalhadas da mão.
+ */
 export function makeDims(profile) {
   const R = SEX_RATIOS[profile.sex];
   const palmLen   = PALM_DIMS.LENGTH * profile.palmScale;
@@ -85,9 +132,22 @@ export function makeDims(profile) {
 }
 
 // ─── Estado padrão das articulações ──────────────────────────────────────────
+/**
+ * Retorna o estado padrão de um dedo (articulações MCP, PIP, DIP).
+ * @returns {object} Estado padrão do dedo.
+ */
 export const defaultFinger = () => ({ MCP: 0, PIP: 0, DIP: 0 });
+/**
+ * Retorna o estado padrão do polegar (articulações CMC, MCP, IP).
+ * @returns {object} Estado padrão do polegar.
+ */
 export const defaultThumb  = () => ({ CMC_abd: 0, CMC_opp: 0, CMC_flex: 0, MCP_flex: 0, IP: 0 });
 
+/**
+ * Calcula a pose de repouso da mão com base nas dimensões.
+ * @param {object} d - Objeto de dimensões da mão.
+ * @returns {object} Objeto contendo as poses de repouso dos dedos, polegar e punho.
+ */
 export function restFromDims(d) {
   if (!d?.neutralFingers) return { f: Array.from({ length: 4 }, defaultFinger), t: defaultThumb(), w: { flex: 0, dev: 0 } };
   const f = d.neutralFingers.map(nf => ({
@@ -105,6 +165,12 @@ export function restFromDims(d) {
 }
 
 // ─── Interpolação de grip ─────────────────────────────────────────────────────
+/**
+ * Calcula a pose da mão com base em um valor de "grip" e modo.
+ * @param {number} g - Valor do grip (0-100).
+ * @param {string} mode - Modo de grip ("pinch" ou "functional").
+ * @returns {object} Objeto contendo as poses calculadas para dedos, polegar e punho.
+ */
 export function computeGrip(g, mode) {
   const s = Math.min(Math.max(g, 0), 100) / 100;
   const t = s <= 0.5 ? s / 0.5 : (s - 0.5) / 0.5;
