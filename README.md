@@ -1,218 +1,220 @@
-# Simulador de Mão 3D
+# Simulador Mão 3D
 
-Aplicação web para simulação da posição articular da mão humana em 3D, com foco em prescrição simplificada de movimentos para dedos D2 a D5, polegar e punho.
-
-O projeto foi desenvolvido em **React + Vite + Three.js** e organiza a lógica em três camadas principais:
-
-- **interface clínica** para entrada dos parâmetros
-- **estado biomecânico** da mão
-- **rig 3D** para visualização e depuração dos movimentos
+Simulador web para visualização e ajuste da pose de uma mão humana em 3D, com foco em prescrição clínica simplificada de órteses e análise de posicionamento articular. O projeto combina interface em React, renderização 3D com Three.js e um modelo procedural escalável de mão baseado em parâmetros antropométricos.
 
 ## Objetivo
 
-Este simulador permite configurar ângulos articulares e visualizar em tempo real a pose da mão em um modelo 3D procedural. A proposta é servir como base para um sistema de prescrição clínica, especialmente para contextos de órteses e reabilitação.
+Este projeto foi desenvolvido para permitir que profissionais ajustem parâmetros articulares de forma visual e interativa, observando em tempo real o efeito da prescrição sobre um modelo 3D da mão.
 
-## Funcionalidades atuais
+O simulador foi organizado para separar:
 
-- Ajuste antropométrico da mão por sexo, percentil e idade
-- Controle global dos dedos D2 a D5 por MCP, PIP e DIP
-- Controle do polegar por CMC, MCP e IP
-- Controle do punho por flexão/extensão e desvio
-- Presets de pose
-- Grip global com modos de fechamento
-- Highlight visual da articulação selecionada
-- Exibição de plano de movimento e label angular
-- Viewcube auxiliar para orientação da cena
+* interface de entrada dos parâmetros
+* estado biomecânico da mão
+* construção e atualização do rig 3D
 
-## Stack
+## Principais funcionalidades
 
-- **React 19**
-- **Vite 7**
-- **Three.js 0.179**
-- **Tailwind CSS 4**
+* Visualização 3D interativa da mão com controle de câmera
+* Ajuste dos dedos D2 a D5 por parâmetros articulares
+* Ajuste do polegar e do punho
+* Controle de fechamento global da mão
+* Presets de postura
+* Escalonamento do modelo com base em sexo, idade e percentil
+* Destaque visual da articulação ativa
+* Exibição de plano de movimento e label angular para depuração visual
 
-As dependências e scripts do projeto estão definidos no `package.json`, incluindo `vite` para desenvolvimento e build. citeturn0view0
+## Tecnologias utilizadas
+
+* React
+* Vite
+* Three.js
+* JavaScript
+* CSS
 
 ## Estrutura do projeto
 
 ```text
 src/
-├─ components/
-│  ├─ AccordionItem
-│  ├─ AnthropometryForm
-│  ├─ GlobalD2D5Panel
-│  ├─ GripPanel
-│  ├─ PresetButtons
-│  ├─ ThumbPanel
-│  ├─ WristPanel
-│  └─ LabeledSlider
-├─ hooks/
-│  ├─ useHandPose
-│  ├─ useHandRig
-│  └─ useThreeScene
-├─ three/
-│  ├─ buildHandRig
-│  └─ helpers
-├─ utils/
-├─ constants/
-└─ App.jsx
+├─ components/      # Componentes de interface
+├─ constants/       # Limites articulares, keyframes e presets auxiliares
+├─ hooks/           # Estado clínico, cena 3D e aplicação do rig
+├─ three/           # Construção da mão, helpers visuais e rig
+├─ utils/           # Antropometria, interpolação e funções auxiliares
+├─ App.jsx          # Orquestra a aplicação
+└─ main.jsx         # Ponto de entrada
 ```
 
-O `App.jsx` funciona como orquestrador da aplicação, integrando os hooks de pose, cena 3D e rig, além de montar os painéis da interface. citeturn0view1
+## Arquitetura geral
 
-## Como o sistema funciona
-
-### 1. Estado clínico da mão
-
-O hook `useHandPose()` concentra o estado principal da aplicação. Ele mantém:
-
-- ângulos dos dedos D2 a D5
-- ângulos do polegar
-- ângulos do punho
-- valor de grip global
-- parâmetros antropométricos
-- preset ativo
-
-Também calcula o perfil antropométrico e as dimensões derivadas da mão, além de fornecer ações como:
-
-- atualização global de MCP, PIP e DIP
-- atualização dos parâmetros do polegar
-- aplicação de grip global
-- presets funcional, neutro e zero
-
-Tudo isso fica centralizado no hook de pose. citeturn0view2
-
-### 2. Cena 3D
-
-A cena é criada separadamente e depois recebe o rig da mão. Essa separação ajuda a manter a renderização desacoplada da lógica clínica.
-
-### 3. Rig da mão
-
-O hook `useHandRig()` reconstrói o rig quando as dimensões mudam e aplica as rotações articulares toda vez que a pose é atualizada. Para isso, ele converte graus para radianos, aplica limites articulares e atualiza labels e highlights. citeturn0view3
-
-## Fluxo de dados
+O fluxo principal do sistema é:
 
 ```text
-Interface → useHandPose → useHandRig → Three.js
+UI de sliders e formulários
+        ↓
+estado da pose da mão
+        ↓
+aplicação dos ângulos no rig 3D
+        ↓
+renderização e inspeção visual
 ```
 
-Ou seja:
+### 1. Estado clínico
 
-1. o usuário ajusta sliders e inputs
-2. o estado biomecânico é atualizado
-3. o rig recebe os novos ângulos
-4. a cena 3D renderiza a nova pose
+O hook `useHandPose` centraliza a pose da mão, incluindo:
 
-## Instalação
+* dedos D2 a D5
+* polegar
+* punho
+* grip global
+* parâmetros antropométricos
+* presets ativos
+
+Também calcula dimensões da mão e algumas médias úteis para sincronização de controles.
+
+### 2. Antropometria
+
+As funções utilitárias constroem um perfil antropométrico com base em sexo, idade e percentil. Esse perfil é convertido em dimensões geométricas para palma, dedos, polegar e antebraço.
+
+O modelo é procedural. Em vez de trocar a malha por outra mão, o sistema recalcula proporções e reconstrói a geometria com novas medidas.
+
+### 3. Cena 3D
+
+O hook `useThreeScene` monta:
+
+* cena principal
+* câmera em perspectiva
+* renderer WebGL
+* iluminação
+* grid auxiliar
+* OrbitControls
+* viewcube de orientação
+
+### 4. Rig da mão
+
+A mão é construída como uma hierarquia de grupos 3D, com cadeias articulares independentes para cada dedo. Isso permite aplicar rotações locais e propagar o movimento corretamente ao longo das falanges.
+
+### 5. Aplicação da pose
+
+O hook `useHandRig` pega os valores do estado e converte esses ângulos em rotações do modelo 3D. Ele também controla:
+
+* highlight da articulação ativa
+* labels com ângulos
+* planos de movimento
+* debug visual
+
+## Como executar localmente
 
 ### Pré-requisitos
 
-- Node.js 18 ou superior
-- npm
+* Node.js 18 ou superior
+* npm
 
-### Clonar o repositório
-
-```bash
-git clone https://github.com/thabataganga/simulador-mao3d.git
-cd simulador-mao3d
-```
-
-### Instalar dependências
+### Instalação
 
 ```bash
 npm install
 ```
 
-### Rodar em desenvolvimento
+### Ambiente de desenvolvimento
 
 ```bash
 npm run dev
 ```
 
-### Gerar build de produção
+Depois, abra no navegador o endereço exibido no terminal, normalmente algo como:
+
+```text
+http://localhost:5173
+```
+
+### Build de produção
 
 ```bash
 npm run build
 ```
 
-### Visualizar build localmente
+### Preview da build
 
 ```bash
 npm run preview
 ```
 
-Esses scripts estão definidos no `package.json`. citeturn0view0
+## Como usar
 
-## Presets disponíveis
+1. Ajuste sexo, idade e percentil para alterar a escala da mão.
+2. Use os painéis para modificar dedos, polegar, punho e grip.
+3. Observe a atualização do modelo 3D em tempo real.
+4. Selecione uma articulação para ver o destaque visual, o plano de movimento e o valor angular.
+5. Teste presets para restaurar posturas iniciais ou funcionais.
 
-O estado da mão inclui três presets principais:
+## Arquivos centrais
 
-- **Functional**: aplica uma pose funcional com grip intermediário
-- **Neutro**: retorna para a postura de repouso calculada a partir das dimensões da mão
-- **Zero**: zera os ângulos articulares
+### `src/App.jsx`
 
-Essa lógica é implementada em `useHandPose()`. citeturn0view2
+Coordena a interface, o estado clínico, a cena 3D e a aplicação do rig.
 
-## Controles articulares atuais
+### `src/hooks/useHandPose.js`
 
-### D2 a D5
+Guarda a pose da mão, os presets e os parâmetros antropométricos.
 
-- MCP
-- PIP
-- DIP
+### `src/hooks/useThreeScene.js`
 
-### Polegar
+Cria a cena, câmera, renderer, iluminação e controles orbitais.
 
-- CMC abdução
-- CMC flexão
-- CMC oposição
-- MCP flexão
-- IP
+### `src/hooks/useHandRig.js`
 
-### Punho
+Constrói o modelo da mão e aplica as rotações com base no estado atual.
 
-- flexão/extensão
-- desvio
+### `src/three/buildHandRig.js`
 
-No `App.jsx`, a interface apresenta os painéis correspondentes para antropometria, dedos, polegar, punho e grip. citeturn0view1turn0view3
+Define a hierarquia de grupos e meshes da mão procedural.
 
-## Pontos fortes do projeto
+### `src/utils/index.js`
 
-- Arquitetura clara entre UI, estado e rig 3D
-- Modelo procedural com variação antropométrica
-- Boa visualização didática das articulações
-- Estrutura modular, facilitando evolução do simulador
-- Base promissora para futura integração com prescrição clínica
+Reúne funções de escala antropométrica, interpolação e apoio matemático.
+
+## Lógica biomecânica atual
+
+O simulador já representa de forma consistente:
+
+* flexão dos dedos D2 a D5
+* cadeia MCP, PIP e DIP
+* punho com graus de liberdade simplificados
+* polegar com múltiplos eixos no CMC
+
+Apesar disso, a modelagem clínica do polegar ainda pode ser refinada. Hoje o rig computacional funciona melhor do que a camada de entrada clínica, porque alguns parâmetros ainda não estão na forma mais intuitiva para medição com goniômetro por fisioterapeutas.
 
 ## Limitações atuais
 
-- O modelo do polegar ainda usa uma parametrização técnica que pode não ser a mais intuitiva para uso clínico
-- O grip global simplifica parte da sinergia real entre os dedos
-- O punho ainda pode ser expandido para representar mais graus de liberdade
-- A geometria é procedural e simplificada, não baseada em malha anatômica validada
+* O polegar ainda pode ser difícil de parametrizar clinicamente na interface
+* O punho está simplificado em relação à biomecânica real
+* O modelo usa geometria procedural e não uma malha anatômica validada
+* O fechamento global usa interpolação por keyframes, não um modelo cinemático completo
+* O sistema ainda não está conectado a ficha clínica real ou banco de dados
 
 ## Próximos passos sugeridos
 
-- Reestruturar a lógica clínica do polegar para inputs mais intuitivos ao fisioterapeuta
-- Refinar a biomecânica do punho
-- Adicionar presets clínicos por padrão de deformidade ou função
-- Incluir exportação e importação de prescrição
-- Integrar banco de dados do paciente e ficha clínica
-- Evoluir para compatibilidade com workflow de órtese personalizada
+* Reestruturar a UI do polegar para entradas mais clínicas e intuitivas
+* Refinar a lógica do punho
+* Integrar prescrição clínica real ao simulador
+* Adicionar exportação dos parâmetros prescritos
+* Incorporar validação biomecânica mais robusta
+* Evoluir para um fluxo conectado ao design da órtese
 
-## Arquitetura resumida
+## Público de interesse
 
-- `App.jsx`: integra UI, estado e cena 3D. citeturn0view1
-- `useHandPose.js`: guarda o estado biomecânico e antropométrico. citeturn0view2
-- `useHandRig.js`: aplica ângulos ao rig e atualiza highlights e labels. citeturn0view3
-- `buildHandRig.js`: constrói a hierarquia da mão em Three.js para dedos, polegar e punho. citeturn0view4
+* fisioterapeutas
+* terapeutas ocupacionais
+* médicos fisiatras
+* engenheiros biomédicos
+* designers e desenvolvedores de tecnologia assistiva
+* pesquisadores em reabilitação e modelagem 3D
 
 ## Licença
 
-Atualmente o repositório utiliza a licença **ISC**, conforme definido no `package.json`. citeturn0view0
+Defina aqui a licença do projeto.
 
-## Autora
+```text
+MIT
+```
 
-**Thabata Ganga**
-
-Projeto voltado ao desenvolvimento de ferramentas digitais para simulação, prescrição e futura personalização de dispositivos assistivos e de reabilitação.
