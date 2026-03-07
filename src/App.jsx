@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { useHandPose }   from "./hooks/useHandPose";
 import { useThreeScene } from "./hooks/useThreeScene";
