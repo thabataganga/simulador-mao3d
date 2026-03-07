@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useAnthropometry } from "./useAnthropometry";
 import { RANGES, THUMB_RANGE_KEY } from "../constants";
 import { buildProfile, makeDims, defaultFinger, defaultThumb, restFromDims, computeGrip, clamp } from "../utils";
 
@@ -8,13 +9,8 @@ export function useHandPose() {
   const [wrist,        setWrist]        = useState({ flex: 0, dev: 0 });
   const [grip,         setGrip]         = useState(0);
   const [globalMode,   setGlobalMode]   = useState("none");
-  const [sex,          setSex]          = useState("masculino");
-  const [percentile,   setPercentile]   = useState(50);
-  const [age,          setAge]          = useState(25);
   const [activePreset, setActivePreset] = useState("none");
-
-  const profile = useMemo(() => buildProfile(sex, percentile, age), [sex, percentile, age]);
-  const dims    = useMemo(() => makeDims(profile), [profile]);
+  const { sex, setSex, percentile, setPercentile, age, setAge, profile, dims } = useAnthropometry();
 
   // Inicializa em posição de repouso
   const inited = useRef(false);
@@ -72,13 +68,13 @@ export function useHandPose() {
     wrist, setWrist,
     grip, setGrip,
     globalMode, setGlobalMode,
-    sex, setSex,
-    percentile, setPercentile,
-    age, setAge,
     activePreset, setActivePreset,
     // Derivados
     profile, dims, globalD2D5,
     // Ações
+    sex, setSex,
+    percentile, setPercentile,
+    age, setAge,
     updateGlobalD2D5, setThumbVal, applyGlobalGrip,
     presetFunctional, presetNeutral, presetZero,
   };

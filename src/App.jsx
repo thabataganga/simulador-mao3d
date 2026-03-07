@@ -60,9 +60,9 @@ export default function HandSimulatorApp() {
         <p className="text-xs text-gray-500 mb-4">Positivo = flexão/abdução · Negativo = extensão/adução</p>
 
         <AnthropometryForm
-          sex={pose.sex}         onSex={pose.setSex}
+          sex={pose.sex} onSex={pose.setSex}
           percentile={pose.percentile} onPercentile={pose.setPercentile}
-          age={pose.age}         onAge={pose.setAge}
+          age={pose.age} onAge={pose.setAge}
         />
 
         <PresetButtons
