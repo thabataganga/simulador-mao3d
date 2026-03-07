@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from "react";
+﻿import { useCallback, useEffect, useRef } from "react";
 import { Box3, Vector3 } from "three";
 import { buildHandRig } from "../three/buildHandRig";
 import { setLabelText } from "../three/helpers";
@@ -33,6 +33,7 @@ function applyMainLabels(rig, fingers, thumb, wrist) {
 
 export function useHandRig({ three, orbitRef, controlsReady = false, dims, fingers, thumb, wrist, debugKey }) {
   const handRig = useRef(null);
+  const hasInitialFrameRef = useRef(false);
 
   // Camera framing for current rig dimensions.
   const frameRig = useCallback(() => {
@@ -56,7 +57,7 @@ export function useHandRig({ three, orbitRef, controlsReady = false, dims, finge
     controls.update();
   }, [orbitRef, three]);
 
-  // Rebuild rig whenever dimensions change.
+  // Rebuild rig whenever dimensions change, preserving current camera view.
   useEffect(() => {
     if (!three?.scene) return;
 
@@ -72,13 +73,13 @@ export function useHandRig({ three, orbitRef, controlsReady = false, dims, finge
 
     handRig.current = buildHandRig(dims);
     three.scene.add(handRig.current.root);
-    frameRig();
-  }, [dims, frameRig, three]);
+  }, [dims, three]);
 
   // Ensure first frame is centered once controls are ready.
   useEffect(() => {
-    if (!controlsReady) return;
+    if (!controlsReady || hasInitialFrameRef.current) return;
     frameRig();
+    hasInitialFrameRef.current = true;
   }, [controlsReady, frameRig]);
 
   // Apply pose updates and refresh labels.
