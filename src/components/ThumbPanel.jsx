@@ -1,4 +1,5 @@
-import { KAPANDJI_RANGE, RANGES, THUMB_SLIDER_CONFIG } from "../constants";
+import { RANGES } from "../constants/reference/biomechanics";
+import { THUMB_SLIDER_CONFIG } from "../constants/reference/uiConfig";
 import { LabeledSlider } from "./LabeledSlider";
 
 function DirectionMagnitudeSlider({
@@ -12,6 +13,8 @@ function DirectionMagnitudeSlider({
   onApply,
   onHighlight,
   negativeFirst = false,
+  unit = "deg",
+  extraFooter,
 }) {
   const selectedDirection = clinical.inputDirection;
   const inputMagnitude = clinical.inputMagnitudeDeg;
@@ -27,30 +30,41 @@ function DirectionMagnitudeSlider({
     ? [negativeDirection, positiveDirection]
     : [positiveDirection, negativeDirection];
 
+  const numberInputId = `${axis}-magnitude-input`;
+  const rangeInputId = `${axis}-magnitude-range`;
+
   return (
     <div className="mb-3 border border-gray-200 rounded-md p-2">
       <div className="text-sm font-medium mb-2">{label}</div>
 
-      <div className="mb-2 flex items-center gap-4 text-sm">
-        {directionOptions.map(direction => (
-          <label key={direction} className="inline-flex items-center gap-1">
-            <input
-              type="radio"
-              name={`${axis}-direction`}
-              value={direction}
-              checked={selectedDirection === direction}
-              onChange={e => {
-                apply(e.target.value, inputMagnitude);
-                onHighlight?.();
-              }}
-            />
-            <span>{direction}</span>
-          </label>
-        ))}
-      </div>
+      <fieldset className="mb-2 flex items-center gap-4 text-sm">
+        <legend className="sr-only">Direcao {label}</legend>
+        {directionOptions.map(direction => {
+          const directionId = `${axis}-direction-${direction}`;
+          return (
+            <div key={direction} className="inline-flex items-center gap-1">
+              <input
+                id={directionId}
+                type="radio"
+                name={`${axis}-direction`}
+                value={direction}
+                checked={selectedDirection === direction}
+                onChange={e => {
+                  apply(e.target.value, inputMagnitude);
+                  onHighlight?.();
+                }}
+              />
+              <label htmlFor={directionId}>{direction}</label>
+            </div>
+          );
+        })}
+      </fieldset>
 
       <div className="flex items-center gap-2 mb-2">
+        <label htmlFor={numberInputId} className="sr-only">{label} valor numerico</label>
         <input
+          id={numberInputId}
+          name={numberInputId}
           type="number"
           min={0}
           max={maxByDirection}
@@ -60,10 +74,13 @@ function DirectionMagnitudeSlider({
           onFocus={() => onHighlight?.()}
           className="w-20 px-2 py-1 border border-gray-300 rounded-md text-right"
         />
-        <span className="text-sm">deg</span>
+        <span className="text-sm">{unit}</span>
       </div>
 
+      <label htmlFor={rangeInputId} className="sr-only">{label} slider</label>
       <input
+        id={rangeInputId}
+        name={rangeInputId}
         type="range"
         min={0}
         max={maxByDirection}
@@ -77,67 +94,149 @@ function DirectionMagnitudeSlider({
       />
 
       <div className="mt-1 text-xs text-gray-600">
-        Medida goniometrica: <strong>{clinical.direction} {clinical.magnitudeDeg}deg</strong>
+        Medida do rig: <strong>{clinical.rigDirection || clinical.direction || clinical.inputDirection} {clinical.rigMagnitudeDeg ?? clinical.magnitudeDeg ?? clinical.inputMagnitudeDeg}deg</strong>
       </div>
-      {clinical.saturated && (
-        <div className="mt-1 text-[11px] text-amber-700">Ajuste limitado pelo range/articulacao.</div>
+      {extraFooter ? <div className="mt-1 text-xs text-gray-600">{extraFooter}</div> : null}
+    </div>
+  );
+}
+
+function OppInfoCard({ clinical, onHighlight }) {
+  const clinicalEstimate = clinical?.clinicalEstimate || {};
+  const rigMeasurement = clinical?.rigMeasurement || {};
+  const explorationMeasurement = clinical?.explorationMeasurement || null;
+
+  const clinicalDirection = clinicalEstimate.clinicalDirection || clinical.direction || clinical.inputDirection;
+  const clinicalMagnitude = clinicalEstimate.clinicalMagnitude ?? clinical.magnitudeDeg ?? clinical.inputMagnitudeDeg;
+  const rigDirection = rigMeasurement.rigDirection || clinical.rigDirection || clinical.direction || clinical.inputDirection;
+  const rigMagnitude = rigMeasurement.rigMagnitudeDeg ?? clinical.rigMagnitudeDeg ?? clinical.magnitudeDeg ?? clinical.inputMagnitudeDeg;
+  const simulatedDirection = explorationMeasurement?.rigDirection;
+  const simulatedMagnitude = explorationMeasurement?.rigMagnitudeDeg;
+  const kapandjiScale = clinicalEstimate.scaleLabel || clinical.scaleLabel;
+  const kapandjiLabel = clinicalEstimate.estimatedLabel || clinical.estimatedLabel;
+
+  return (
+    <div
+      className="mb-3 border border-gray-200 rounded-md p-2"
+      role="button"
+      tabIndex={0}
+      onClick={onHighlight}
+      onKeyDown={event => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onHighlight?.();
+        }
+      }}
+    >
+      <div className="text-sm font-medium mb-2">CMC Oposicao</div>
+      <div className="mt-1 text-xs text-gray-600">
+        Estimativa clinica: <strong>{clinicalDirection} {clinicalMagnitude}deg</strong>
+      </div>
+      <div className="mt-1 text-xs text-gray-600">
+        Medida do rig real: <strong>{rigDirection} {rigMagnitude}deg</strong>
+      </div>
+      {explorationMeasurement ? (
+        <div className="mt-1 text-xs text-gray-600">
+          Medida do rig simulado: <strong>{simulatedDirection} {simulatedMagnitude}deg</strong>
+        </div>
+      ) : null}
+      <div className="mt-1 text-xs text-gray-600">
+        Kapandji estimado: <strong>{kapandjiScale}</strong> <span className="text-[11px] text-gray-500">{kapandjiLabel}</span>
+      </div>
+      <div className="mt-1 text-xs text-gray-600">
+        Capacidade funcional: <strong>{clinical.functionalSummary}</strong>
+      </div>
+    </div>
+  );
+}
+
+function OppositionExplorationPanel({
+  isExplorationMode,
+  kapandjiTarget,
+  onEnter,
+  onUpdate,
+  onRestore,
+  onExit,
+  onHighlight,
+}) {
+  const inputId = "opp-exploration-kapandji-target";
+
+  return (
+    <div className="mb-3 border border-dashed border-blue-300 rounded-md p-2 bg-blue-50/50">
+      <div className="text-sm font-medium mb-2">Exploracao de oposicao</div>
+      <p className="text-xs text-gray-600 mb-2">
+        Simula oposicao possivel sem sobrescrever os dados clinicos digitados.
+      </p>
+
+      {!isExplorationMode ? (
+        <button
+          type="button"
+          className="mt-1 px-3 py-1 text-xs rounded-md border border-blue-400 text-blue-700"
+          onClick={() => {
+            onEnter();
+            onHighlight?.();
+          }}
+        >
+          Explorar oposicao
+        </button>
+      ) : (
+        <>
+          <div className="mb-2">
+            <label htmlFor={inputId} className="text-xs text-gray-700">Kapandji alvo ({kapandjiTarget})</label>
+            <input
+              id={inputId}
+              name={inputId}
+              type="range"
+              min={0}
+              max={10}
+              step={1}
+              value={kapandjiTarget}
+              onChange={e => {
+                onUpdate(Number(e.target.value));
+                onHighlight?.();
+              }}
+              className="w-full"
+            />
+            <p className="text-[11px] text-blue-700 mt-1">Simulacao: Kapandji {kapandjiTarget}</p>
+          </div>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              className="px-3 py-1 text-xs rounded-md border border-gray-300 text-gray-700"
+              onClick={onRestore}
+            >
+              Voltar aos dados inputados
+            </button>
+            <button
+              type="button"
+              className="px-3 py-1 text-xs rounded-md border border-blue-400 text-blue-700"
+              onClick={onExit}
+            >
+              Sair exploracao
+            </button>
+          </div>
+        </>
       )}
     </div>
   );
 }
 
-function KapandjiControl({ clinical, onApply, onHighlight }) {
-  const [min, max] = KAPANDJI_RANGE;
-
-  const apply = value => {
-    onApply(Math.min(Math.max(Math.round(Number(value) || 0), min), max));
-  };
-
-  return (
-    <div className="mb-3 border border-gray-200 rounded-md p-2">
-      <div className="text-sm font-medium mb-2">CMC Oposicao (Kapandji)</div>
-
-      <div className="flex items-center gap-2 mb-2">
-        <input
-          type="number"
-          min={min}
-          max={max}
-          step={1}
-          value={clinical.level}
-          onChange={e => apply(e.target.value)}
-          onFocus={() => onHighlight?.()}
-          className="w-20 px-2 py-1 border border-gray-300 rounded-md text-right"
-        />
-        <span className="text-sm">nivel</span>
-      </div>
-
-      <input
-        type="range"
-        min={min}
-        max={max}
-        step={1}
-        value={clinical.level}
-        onChange={e => {
-          apply(e.target.value);
-          onHighlight?.();
-        }}
-        className="w-full"
-      />
-
-      <div className="mt-1 flex justify-between text-[11px] text-gray-500">
-        <span>Kapandji 0</span>
-        <span>Kapandji 10</span>
-      </div>
-
-      <div className="mt-2 text-xs text-gray-600">
-        Referencia clinica de oposicao: <strong>{clinical.scaleLabel}</strong>
-      </div>
-      <div className="mt-1 text-[11px] text-gray-500">{clinical.label}</div>
-    </div>
-  );
-}
-
-export function ThumbPanel({ thumb, thumbGoniometry, thumbClinical, onThumbVal, onThumbCmcInput, onThumbKapandji, onHighlight, onClearPreset }) {
+export function ThumbPanel({
+  thumb,
+  thumbGoniometry,
+  thumbClinical,
+  isExplorationMode,
+  explorationKapandjiTarget,
+  onThumbVal,
+  onThumbCmcInput,
+  onEnterOppositionExploration,
+  onUpdateOppositionExploration,
+  onRestoreUserInputData,
+  onExitOppositionExploration,
+  onHighlight,
+  onClearHighlight,
+  onClearPreset,
+}) {
   const panelOrder = ["CMC_flex", "CMC_abd", "CMC_opp", "MCP_flex", "IP"];
   const orderedItems = panelOrder
     .map(key => THUMB_SLIDER_CONFIG.find(item => item.key === key))
@@ -189,15 +288,38 @@ export function ThumbPanel({ thumb, thumbGoniometry, thumbClinical, onThumbVal, 
 
     if (item.key === "CMC_opp") {
       return (
-        <KapandjiControl
+        <div
           key={item.key}
-          clinical={thumbClinical.opp}
-          onApply={level => {
-            onThumbKapandji(level);
-            onClearPreset();
+          onMouseLeave={() => {
+            if (!isExplorationMode) onClearHighlight?.();
           }}
-          onHighlight={() => onHighlight(item.debugKey)}
-        />
+          onBlur={event => {
+            if (!event.currentTarget.contains(event.relatedTarget) && !isExplorationMode) onClearHighlight?.();
+          }}
+        >
+          <OppInfoCard
+            clinical={thumbClinical.opp}
+            onHighlight={() => onHighlight(item.debugKey)}
+          />
+          <OppositionExplorationPanel
+            isExplorationMode={isExplorationMode}
+            kapandjiTarget={explorationKapandjiTarget}
+            onEnter={() => {
+              onEnterOppositionExploration();
+              onClearPreset();
+            }}
+            onUpdate={value => {
+              onUpdateOppositionExploration(value);
+              onClearPreset();
+            }}
+            onRestore={onRestoreUserInputData}
+            onExit={() => {
+              onExitOppositionExploration();
+              onClearHighlight?.();
+            }}
+            onHighlight={() => onHighlight(item.debugKey)}
+          />
+        </div>
       );
     }
 
@@ -219,3 +341,5 @@ export function ThumbPanel({ thumb, thumbGoniometry, thumbClinical, onThumbVal, 
     );
   });
 }
+
+

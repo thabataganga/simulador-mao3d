@@ -41,3 +41,4 @@ export function GripPanel({ grip, globalMode, onGlobalMode, onGrip, onClearHighl
     </div>
   );
 }
+

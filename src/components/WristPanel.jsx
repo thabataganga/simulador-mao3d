@@ -1,4 +1,5 @@
-import { RANGES, WRIST_SLIDER_CONFIG } from "../constants";
+﻿import { RANGES } from "../constants/reference/biomechanics";
+import { WRIST_SLIDER_CONFIG } from "../constants/reference/uiConfig";
 import { LabeledSlider } from "./LabeledSlider";
 
 export function WristPanel({ wrist, onWrist, onHighlight, onClearPreset }) {
@@ -23,3 +24,8 @@ export function WristPanel({ wrist, onWrist, onHighlight, onClearPreset }) {
     );
   });
 }
+
+
+
+
+

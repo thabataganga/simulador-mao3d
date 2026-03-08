@@ -1,4 +1,3 @@
-import { Quaternion, Vector3 } from "three";
 import {
   buildCmcInputStateForAxis,
   buildThumbCmcClinicalModel,
@@ -8,27 +7,12 @@ import {
   syncCmcInputStateFromThumb,
 } from "./thumbGoniometry";
 
-function mockNode(position) {
+function makeRig({ abdDeg = 0, flexDeg = 0 } = {}) {
   return {
-    getWorldPosition: target => target.copy(position),
-  };
-}
-
-function makeRig({ thumbMcp, d2Pip }) {
-  return {
-    palm: {
-      getWorldQuaternion: target => target.copy(new Quaternion()),
-    },
     thumb: {
-      cmcAbd: mockNode(new Vector3(0, 0, 0)),
-      mcp: mockNode(thumbMcp),
+      cmcAbd: { rotation: { z: (abdDeg * Math.PI) / 180 } },
+      cmcFlex: { rotation: { y: (flexDeg * Math.PI) / 180 } },
     },
-    fingers: [
-      {
-        mcp: mockNode(new Vector3(0, 0, 0)),
-        pip: mockNode(d2Pip),
-      },
-    ],
   };
 }
 
@@ -44,8 +28,9 @@ describe("thumb goniometry", () => {
     });
 
     expect(model.abd.inputDirection).toBe("aducao");
-    expect(model.abd.direction).toBe("abducao");
-    expect(model.abd.magnitudeDeg).toBe(12);
+    expect(model.abd.magnitudeDeg).toBe(0);
+    expect(model.abd.clinicalTargetDeg).toBe(0);
+    expect(model.abd.rigMeasuredDeg).toBe(0);
     expect(model.flex.inputMagnitudeDeg).toBe(13);
     expect(model.flex.direction).toBe("extensao");
   });
@@ -63,28 +48,41 @@ describe("thumb goniometry", () => {
     expect(next.CMC_abd.magnitudeDeg).toBe(0);
   });
 
-  test("measures zero when mobile and fixed arms are aligned", () => {
-    const rig = makeRig({
-      thumbMcp: new Vector3(1, 0, 0),
-      d2Pip: new Vector3(1, 0, 0),
+  test("returns isolated and composed measurements", () => {
+    const measured = measureThumbCmcGoniometryFromRig(makeRig({ abdDeg: 10, flexDeg: -8 }), {
+      thumb: { CMC_opp: 34 },
+      baseline: { CMC_abd: 0, CMC_flex: 0 },
     });
 
-    const measured = measureThumbCmcGoniometryFromRig(rig);
-    expect(measured).toEqual({ CMC_abd: 0, CMC_flex: 0 });
+    expect(measured.composed.CMC_abd).toBe(10);
+    expect(measured.composed.CMC_flex).toBe(-8);
+    expect(typeof measured.isolated.CMC_abd).toBe("number");
+    expect(typeof measured.isolated.CMC_flex).toBe("number");
   });
 
-  test("measures positive abduction and flexion for opening vectors", () => {
-    const abdRig = makeRig({
-      thumbMcp: new Vector3(1, 1, 0),
-      d2Pip: new Vector3(1, 0, 0),
-    });
-    const flexRig = makeRig({
-      thumbMcp: new Vector3(1, 0, 1),
-      d2Pip: new Vector3(1, 0, 0),
+  test("exposes clinical target and rig measured fields", () => {
+    const model = buildThumbCmcClinicalModel({
+      thumb: { CMC_abd: 12, CMC_flex: -9 },
+      measured: { isolated: { CMC_abd: 15, CMC_flex: -7 } },
+      inputState: {
+        CMC_abd: { direction: "abducao", magnitudeDeg: 12, targetMeasuredDeg: 12, saturated: false },
+        CMC_flex: { direction: "extensao", magnitudeDeg: 9, targetMeasuredDeg: -9, saturated: false },
+      },
     });
 
-    expect(measureThumbCmcGoniometryFromRig(abdRig).CMC_abd).toBeGreaterThan(0);
-    expect(measureThumbCmcGoniometryFromRig(flexRig).CMC_flex).toBeGreaterThan(0);
+    expect(model.abd.clinicalTargetDeg).toBe(12);
+    expect(model.abd.rigMeasuredDeg).toBe(15);
+    expect(model.flex.clinicalTargetDeg).toBe(-9);
+    expect(model.flex.rigMeasuredDeg).toBe(-7);
+  });
+
+  test("applies baseline calibration", () => {
+    const measured = measureThumbCmcGoniometryFromRig(makeRig({ abdDeg: 6, flexDeg: -4 }), {
+      baseline: { CMC_abd: 6, CMC_flex: -4 },
+    });
+
+    expect(measured.CMC_abd).toBe(0);
+    expect(measured.CMC_flex).toBe(0);
   });
 
   test("solves command close to requested measured target", () => {
@@ -94,8 +92,8 @@ describe("thumb goniometry", () => {
       CMC_opp: 12,
     });
 
-    expect(solved.commandDeg).toBeGreaterThanOrEqual(-20);
-    expect(solved.commandDeg).toBeLessThanOrEqual(30);
+    expect(solved.commandDeg).toBeGreaterThanOrEqual(-106);
+    expect(solved.commandDeg).toBeLessThanOrEqual(39);
     expect(Math.abs(solved.predictedMeasuredDeg - 13)).toBeLessThanOrEqual(1);
   });
 
@@ -118,4 +116,33 @@ describe("thumb goniometry", () => {
     expect(nextInputAxisState.targetMeasuredDeg).toBe(-7);
     expect(typeof solved.commandDeg).toBe("number");
   });
+
+  test("reaches CMC flex extension 90 with opposition coupling without saturation", () => {
+    const prevState = createDefaultCmcInputState();
+    const thumbContext = { CMC_abd: 0, CMC_flex: 0, CMC_opp: 34 };
+
+    const { nextInputAxisState, solved } = buildCmcInputStateForAxis({
+      axis: "CMC_flex",
+      direction: "extensao",
+      magnitudeDeg: 90,
+      thumbContext,
+      prevState,
+    });
+
+    expect(nextInputAxisState.targetMeasuredDeg).toBe(-90);
+    expect(nextInputAxisState.saturated).toBe(false);
+    expect(Math.abs(solved.predictedMeasuredDeg + 90)).toBeLessThanOrEqual(1);
+  });
+
+  test("keeps CMC abduction target 90 reachable under opposition coupling", () => {
+    const solved = solveCmcCommandForMeasuredTarget("CMC_abd", 90, {
+      CMC_abd: 0,
+      CMC_flex: 0,
+      CMC_opp: 34,
+    });
+
+    expect(Math.abs(solved.predictedMeasuredDeg - 90)).toBeLessThanOrEqual(1);
+    expect(solved.saturated).toBe(false);
+  });
 });
+

@@ -7,7 +7,7 @@ import {
   setGlobalFingerAngle,
   setThumbAngle,
 } from "./pose";
-import { buildProfile, makeDims } from "../utils";
+import { buildProfile, makeDims } from "../utils/anthropometry/profile";
 
 function basePose(overrides = {}) {
   return {
@@ -164,3 +164,5 @@ test("applyGlobalGripToPose feeds createSceneInput in realistic workflow", () =>
   expect(sceneInput.wrist).toEqual(nextPose.wrist);
   expect(sceneInput.fingers.some(finger => finger.MCP !== 0 || finger.PIP !== 0 || finger.DIP !== 0)).toBe(true);
 });
+
+

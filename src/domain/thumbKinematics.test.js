@@ -107,3 +107,4 @@ describe("CMC-first mapping", () => {
     expect(Math.abs(opp.cmcPronation)).toBeLessThan(70);
   });
 });
+

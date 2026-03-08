@@ -1,4 +1,4 @@
-﻿import fs from "fs";
+import fs from "fs";
 import path from "path";
 import { cwd } from "node:process";
 
@@ -9,7 +9,7 @@ const FILES = [
   "src/hooks/useHandRig.js",
 ];
 
-const MOJIBAKE = /Ã.|Â.|�|â€”|â€“|â€œ|â€|Â°/;
+const MOJIBAKE = new RegExp(["�.", "�.", "\\uFFFD", "—", "–", "“", "�", "°"].join("|"));
 
 describe("UTF-8 text integrity", () => {
   test("UI-facing files do not contain common mojibake sequences", () => {

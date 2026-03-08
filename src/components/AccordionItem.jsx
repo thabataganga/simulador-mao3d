@@ -19,3 +19,4 @@ export function AccordionItem({ id, title, isOpen, onToggle, children }) {
     </div>
   );
 }
+

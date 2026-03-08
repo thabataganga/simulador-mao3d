@@ -1,25 +1,21 @@
 import { lazy, Suspense, useCallback, useEffect, useState } from "react";
+import { CMC_TEMP_RANGE } from "./constants/reference/biomechanics";
 
 import { useHandPose } from "./hooks/useHandPose";
 
-import { AccordionItem } from "./components/AccordionItem";
-import { AnthropometryForm } from "./components/AnthropometryForm";
-import { PresetButtons } from "./components/PresetButtons";
-import { GlobalD2D5Panel } from "./components/GlobalD2D5Panel";
-import { ThumbPanel } from "./components/ThumbPanel";
-import { WristPanel } from "./components/WristPanel";
-import { GripPanel } from "./components/GripPanel";
+import { AccordionItem, AnthropometryForm, PresetButtons, GlobalD2D5Panel, GripPanel } from "./features/pose-controls";
+import { ThumbPanel } from "./features/thumb";
+import { WristPanel } from "./features/wrist";
 
-const HandScene3D = lazy(() => import("./components/HandScene3D"));
+const HandScene3D = lazy(() => import("./features/scene3d"));
 
 export default function HandSimulatorApp() {
   const [debugKey, setDebugKey] = useState("off");
   const [openPanel, setOpenPanel] = useState("global_d2d5");
 
   const { poseState, poseActions, sceneInput } = useHandPose();
-  const { setThumbVal, setThumbKapandji, setActivePreset, setThumbGoniometry } = poseActions;
+  const { setThumbVal, setActivePreset, setThumbGoniometry, setOppositionEstimate } = poseActions;
 
-  // Fonts loaded dynamically so UI keeps visual identity without blocking first paint.
   useEffect(() => {
     const link = document.createElement("link");
     link.rel = "stylesheet";
@@ -30,7 +26,6 @@ export default function HandSimulatorApp() {
     };
   }, []);
 
-  // Optional query-driven thumb pose for QA screenshots.
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("qaThumb") !== "1") return;
@@ -38,7 +33,7 @@ export default function HandSimulatorApp() {
     const kapandjiRaw = params.get("kapandji");
     if (kapandjiRaw != null) {
       const kapandjiValue = Number(kapandjiRaw);
-      if (Number.isFinite(kapandjiValue)) setThumbKapandji(kapandjiValue);
+      if (Number.isFinite(kapandjiValue)) setThumbVal("CMC_opp", kapandjiValue);
     }
 
     const map = {
@@ -60,7 +55,7 @@ export default function HandSimulatorApp() {
 
     setActivePreset("none");
     setOpenPanel("thumb");
-  }, [setActivePreset, setThumbKapandji, setThumbVal]);
+  }, [setActivePreset, setThumbVal]);
 
   const togglePanel = id => {
     setOpenPanel(prev => {
@@ -69,7 +64,9 @@ export default function HandSimulatorApp() {
       return next;
     });
   };
+
   const clearPreset = useCallback(() => poseActions.setActivePreset("none"), [poseActions]);
+
   const handleGrip = useCallback(
     value => {
       setDebugKey("off");
@@ -78,6 +75,7 @@ export default function HandSimulatorApp() {
     },
     [poseActions],
   );
+
   const handleGlobalMode = useCallback(
     mode => {
       setDebugKey("off");
@@ -91,8 +89,10 @@ export default function HandSimulatorApp() {
     <div
       className="w-full h-screen text-gray-900 flex overflow-hidden"
       style={{
-        "--lmb-navy": "#0e1e35", "--lmb-coral": "#f04d4f",
-        "--lmb-teal": "#3bb7a2", "--lmb-ivory": "#f9f8f4",
+        "--lmb-navy": "#0e1e35",
+        "--lmb-coral": "#f04d4f",
+        "--lmb-teal": "#3bb7a2",
+        "--lmb-ivory": "#f9f8f4",
         "--lmb-blue": "#10315a",
         backgroundColor: "var(--lmb-ivory)",
         fontFamily: '"DM Sans",ui-sans-serif,system-ui',
@@ -134,10 +134,16 @@ export default function HandSimulatorApp() {
             thumb={poseState.thumb}
             thumbGoniometry={poseState.thumbGoniometry}
             thumbClinical={poseState.thumbClinical}
+            isExplorationMode={poseState.isExplorationMode}
+            explorationKapandjiTarget={poseState.explorationKapandjiTarget}
             onThumbVal={poseActions.setThumbVal}
             onThumbCmcInput={poseActions.setThumbCmcInput}
-            onThumbKapandji={poseActions.setThumbKapandji}
+            onEnterOppositionExploration={poseActions.enterOppositionExploration}
+            onUpdateOppositionExploration={poseActions.updateOppositionExploration}
+            onRestoreUserInputData={poseActions.restoreUserInputData}
+            onExitOppositionExploration={poseActions.exitOppositionExploration}
             onHighlight={setDebugKey}
+            onClearHighlight={() => setDebugKey("off")}
             onClearPreset={clearPreset}
           />
         </AccordionItem>
@@ -165,14 +171,24 @@ export default function HandSimulatorApp() {
           <summary className="cursor-pointer font-medium">Tabela tecnica - Limites</summary>
           <div className="mt-2 space-y-1">
             <p>MCP D2-D5: -45 deg a +90 deg | PIP: 0-100 deg | DIP: -20 deg a +80 deg</p>
-            <p>CMC Polegar: Abd -10..+60 deg | Flex/Ext -20..+30 deg | Oposicao clinica por Kapandji 0..10</p>
+            <p>
+              CMC Polegar: Abd {CMC_TEMP_RANGE[0]}..+{CMC_TEMP_RANGE[1]} deg | Flex/Ext {CMC_TEMP_RANGE[0]}..+
+              {CMC_TEMP_RANGE[1]} deg | Oposicao: {CMC_TEMP_RANGE[0]}..+{CMC_TEMP_RANGE[1]} deg | Kapandji estimado 0..10
+            </p>
             <p>MCP Polegar: 0-60 deg | IP: -10 deg a +80 deg</p>
           </div>
         </details>
       </aside>
 
       <Suspense fallback={<main className="flex-1 grid place-items-center text-sm text-gray-500">Carregando cena 3D...</main>}>
-        <HandScene3D sceneInput={sceneInput} thumbClinical={poseState.thumbClinical} debugKey={debugKey} onThumbGoniometry={setThumbGoniometry} />
+        <HandScene3D
+          sceneInput={sceneInput}
+          thumbClinical={poseState.thumbClinical}
+          thumbGoniometry={poseState.thumbGoniometry}
+          debugKey={debugKey}
+          onThumbGoniometry={setThumbGoniometry}
+          onOppositionEstimate={setOppositionEstimate}
+        />
       </Suspense>
     </div>
   );

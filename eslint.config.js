@@ -1,11 +1,11 @@
-import js from '@eslint/js'
+﻿import js from '@eslint/js'
 import globals from 'globals'
 import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  globalIgnores(['dist', 'coverage']),
   {
     files: ['**/*.{js,jsx}'],
     extends: [
@@ -24,6 +24,52 @@ export default defineConfig([
     },
     rules: {
       'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
+      'no-restricted-imports': ['error', {
+        paths: [
+          { name: './constants', message: 'Importe de constants/reference/* em vez do barrel.' },
+          { name: '../constants', message: 'Importe de constants/reference/* em vez do barrel.' },
+          { name: '../../constants', message: 'Importe de constants/reference/* em vez do barrel.' },
+          { name: './constants/index', message: 'Importe de constants/reference/* em vez do barrel.' },
+          { name: '../constants/index', message: 'Importe de constants/reference/* em vez do barrel.' },
+          { name: '../../constants/index', message: 'Importe de constants/reference/* em vez do barrel.' },
+          { name: './utils', message: 'Importe de utils/* em vez do barrel.' },
+          { name: '../utils', message: 'Importe de utils/* em vez do barrel.' },
+          { name: '../../utils', message: 'Importe de utils/* em vez do barrel.' },
+          { name: './utils/index', message: 'Importe de utils/* em vez do barrel.' },
+          { name: '../utils/index', message: 'Importe de utils/* em vez do barrel.' },
+          { name: '../../utils/index', message: 'Importe de utils/* em vez do barrel.' },
+        ],
+      }],
+    },
+  },
+  {
+    files: ['src/App.jsx'],
+    rules: {
+      'no-restricted-imports': ['error', {
+        patterns: [
+          {
+            group: ['./components/*'],
+            message: 'App deve importar UI via features/*, nao direto de components/*.',
+          },
+        ],
+      }],
+    },
+  },
+  {
+    files: ['src/domain/**/*.js'],
+    rules: {
+      'no-restricted-imports': ['error', {
+        patterns: [
+          {
+            group: ['../features/*', '../../features/*', './features/*'],
+            message: 'Domain nao pode depender de features/*.',
+          },
+          {
+            group: ['../hooks/*', '../../hooks/*', './hooks/*'],
+            message: 'Domain nao pode depender de hooks/*.',
+          },
+        ],
+      }],
     },
   },
   {

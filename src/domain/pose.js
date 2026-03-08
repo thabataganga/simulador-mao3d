@@ -1,5 +1,7 @@
-﻿import { RANGES, THUMB_RANGE_KEY } from "../constants";
-import { clamp, computeGrip, defaultFinger, defaultThumb, restFromDims } from "../utils";
+﻿import { RANGES, THUMB_RANGE_KEY } from "../constants/reference/biomechanics";
+import { clamp } from "../utils/math/core";
+import { computeGrip } from "../utils/grip/computeGrip";
+import { defaultFinger, defaultThumb, restFromDims } from "../utils/pose/defaults";
 
 /** @typedef {{ MCP: number, PIP: number, DIP: number }} FingerPose */
 /** @typedef {{ CMC_abd: number, CMC_opp: number, CMC_flex: number, MCP_flex: number, IP: number }} ThumbPose */
@@ -90,3 +92,8 @@ export function createSceneInput(input) {
     wrist: input.wrist,
   };
 }
+
+
+
+
+

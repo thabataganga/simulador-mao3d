@@ -79,8 +79,8 @@ describe("GripPanel", () => {
 });
 
 describe("ThumbPanel", () => {
-  test("renders Kapandji control for CMC opposition instead of degree slider", () => {
-    const onThumbKapandji = jest.fn();
+  test("shows read-only opposition card and exploration button when exploration is off", () => {
+    const onEnterOppositionExploration = jest.fn();
     const onClearPreset = jest.fn();
     const onHighlight = jest.fn();
 
@@ -91,23 +91,84 @@ describe("ThumbPanel", () => {
         flex: { inputDirection: "extensao", inputMagnitudeDeg: 0, direction: "extensao", magnitudeDeg: 0, saturated: false },
       },
       thumbClinical: {
-        opp: { level: 6, scaleLabel: "Kapandji 6", label: "Oposicao palmar media" },
+        opp: {
+          inputDirection: "oposicao",
+          inputMagnitudeDeg: 34,
+          rigDirection: "oposicao",
+          rigMagnitudeDeg: 34,
+          scaleLabel: "Kapandji 6",
+          estimatedLabel: "Oposicao palmar media",
+        },
       },
+      isExplorationMode: false,
+      explorationKapandjiTarget: 0,
       onThumbVal: jest.fn(),
       onThumbCmcInput: jest.fn(),
-      onThumbKapandji,
+      onEnterOppositionExploration,
+      onUpdateOppositionExploration: jest.fn(),
+      onRestoreUserInputData: jest.fn(),
+      onExitOppositionExploration: jest.fn(),
       onHighlight,
       onClearPreset,
     });
 
-    const kapandjiControl = elements[2];
-    expect(kapandjiControl.props.clinical.level).toBe(6);
-    expect(JSON.stringify(kapandjiControl)).not.toContain("Mapeamento operacional interno do simulador para dirigir o rig 3D.");
-    kapandjiControl.props.onApply(8);
-    kapandjiControl.props.onHighlight();
+    const oppGroup = elements[2];
+    const oppInfoCard = oppGroup.props.children[0];
+    const explorationPanel = oppGroup.props.children[1];
 
-    expect(onThumbKapandji).toHaveBeenCalledWith(8);
+    expect(oppInfoCard.props.clinical.scaleLabel).toBe("Kapandji 6");
+    explorationPanel.props.onEnter();
+
+    expect(onEnterOppositionExploration).toHaveBeenCalledTimes(1);
     expect(onClearPreset).toHaveBeenCalledTimes(1);
-    expect(onHighlight).toHaveBeenCalledWith("TH_CMC_OPP");
+  });
+
+  test("updates exploration target without direct CMC opposition editing", () => {
+    const onUpdateOppositionExploration = jest.fn();
+    const onRestoreUserInputData = jest.fn();
+    const onExitOppositionExploration = jest.fn();
+    const onClearPreset = jest.fn();
+
+    const elements = ThumbPanel({
+      thumb: { CMC_abd: 0, CMC_opp: 34, CMC_flex: 0, MCP_flex: 0, IP: 0 },
+      thumbGoniometry: {
+        abd: { inputDirection: "abducao", inputMagnitudeDeg: 0 },
+        flex: { inputDirection: "extensao", inputMagnitudeDeg: 0 },
+      },
+      thumbClinical: {
+        opp: {
+          inputDirection: "oposicao",
+          inputMagnitudeDeg: 34,
+          rigDirection: "oposicao",
+          rigMagnitudeDeg: 34,
+          scaleLabel: "Kapandji 6",
+          estimatedLabel: "Oposicao",
+        },
+      },
+      isExplorationMode: true,
+      explorationKapandjiTarget: 6,
+      onThumbVal: jest.fn(),
+      onThumbCmcInput: jest.fn(),
+      onEnterOppositionExploration: jest.fn(),
+      onUpdateOppositionExploration,
+      onRestoreUserInputData,
+      onExitOppositionExploration,
+      onHighlight: jest.fn(),
+      onClearPreset,
+    });
+
+    const oppGroup = elements[2];
+    const explorationPanel = oppGroup.props.children[1];
+    explorationPanel.props.onUpdate(15);
+    explorationPanel.props.onRestore();
+    explorationPanel.props.onExit();
+
+    expect(onUpdateOppositionExploration).toHaveBeenCalledWith(15);
+    expect(onRestoreUserInputData).toHaveBeenCalledTimes(1);
+    expect(onExitOppositionExploration).toHaveBeenCalledTimes(1);
+    expect(onClearPreset).toHaveBeenCalledTimes(1);
   });
 });
+
+
+

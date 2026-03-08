@@ -1,4 +1,4 @@
-﻿import { Quaternion, Vector3 } from "three";
+import { Quaternion, Vector3 } from "three";
 
 export function toPalmFrameVector(palm, vectorWorld) {
   const qPalm = palm.getWorldQuaternion(new Quaternion());
@@ -18,3 +18,4 @@ export function getPalmFrameAxes(palm) {
     wTransverse: new Vector3(0, 0, 1).applyQuaternion(qPalm),
   };
 }
+

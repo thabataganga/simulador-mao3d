@@ -1,4 +1,4 @@
-import { deg2rad, clamp } from './index';
+import { deg2rad, clamp } from './math/core';
 
 describe('Math functions', () => {
   test('deg2rad converts degrees to radians correctly', () => {
@@ -15,3 +15,5 @@ describe('Math functions', () => {
     expect(clamp(50, [50, 50])).toBe(50);
   });
 });
+
+
