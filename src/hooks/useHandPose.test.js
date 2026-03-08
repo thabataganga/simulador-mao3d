@@ -80,7 +80,6 @@ describe("useHandPose reducer", () => {
     expect(next.thumbMeasured.CMC_flex).toBeCloseTo(-8.25, 6);
   });
 
-
   test("SET_OPPOSITION_ESTIMATE supports structured rig payload and legacy number", () => {
     const state = {
       ...__testables.createInitialState(),
@@ -105,6 +104,24 @@ describe("useHandPose reducer", () => {
     expect(withLegacyNumber.kapandjiEstimatedFromRig).toBe(5);
     expect(withLegacyNumber.thumbOppRig).toEqual({ level: 5, rigDirection: null, rigMagnitudeDeg: null });
   });
+
+  test("SET_OPPOSITION_ESTIMATE is ignored while exploration is active", () => {
+    const state = {
+      ...__testables.createInitialState(),
+      anthropometry: { sex: "masculino", percentile: 50, age: 25 },
+      isExplorationMode: true,
+      kapandjiEstimatedFromRig: 4,
+      thumbOppRig: { level: 4, rigDirection: "oposicao", rigMagnitudeDeg: 16 },
+    };
+
+    const next = __testables.poseReducer(state, {
+      type: "SET_OPPOSITION_ESTIMATE",
+      value: { level: 8, rigDirection: "oposicao", rigMagnitudeDeg: 55 },
+    });
+
+    expect(next).toBe(state);
+  });
+
   test("SET_THUMB_GONIOMETRY returns same state when values are unchanged", () => {
     const state = {
       ...__testables.createInitialState(),
@@ -126,12 +143,14 @@ describe("useHandPose reducer", () => {
       ...__testables.createInitialState(),
       anthropometry: { sex: "masculino", percentile: 50, age: 25 },
       thumb: { CMC_abd: 10, CMC_flex: -8, CMC_opp: 12, MCP_flex: 4, IP: 2 },
+      thumbOppRig: { level: 4, rigDirection: "oposicao", rigMagnitudeDeg: 16 },
       userEditedThumb: { CMC_abd: true, CMC_opp: true },
     };
 
     const entered = __testables.poseReducer(base, { type: "ENTER_OPPOSITION_EXPLORATION" });
     expect(entered.isExplorationMode).toBe(true);
     expect(entered.explorationSnapshotThumb).toEqual({ CMC_abd: 10, CMC_opp: 12 });
+    expect(entered.explorationRigBaseline).toEqual({ level: 4, rigDirection: "oposicao", rigMagnitudeDeg: 16 });
 
     const updated = __testables.poseReducer(entered, {
       type: "UPDATE_OPPOSITION_EXPLORATION",
@@ -146,11 +165,13 @@ describe("useHandPose reducer", () => {
     expect(restored.thumb.CMC_abd).toBe(10);
     expect(restored.thumb.CMC_opp).toBe(12);
     expect(restored.isExplorationMode).toBe(false);
+    expect(restored.explorationRigBaseline).toBeNull();
 
     const exited = __testables.poseReducer(updated, { type: "EXIT_OPPOSITION_EXPLORATION" });
     expect(exited.isExplorationMode).toBe(false);
     expect(exited.exploreOverlayState.CMC_opp).toBe(0);
     expect(exited.explorationKapandjiTarget).toBe(base.kapandjiEstimatedFromRig);
+    expect(exited.explorationRigBaseline).toBeNull();
   });
 
   test("presets reset exploration and user-edit buffers", () => {
@@ -161,6 +182,7 @@ describe("useHandPose reducer", () => {
       isExplorationMode: true,
       exploreOverlayState: { CMC_abd: 2, CMC_flex: 1, CMC_opp: 5, MCP_flex: 0, IP: 0 },
       explorationKapandjiTarget: 9,
+      explorationRigBaseline: { level: 4, rigDirection: "oposicao", rigMagnitudeDeg: 16 },
       userEditedThumb: { CMC_abd: true },
       explorationSnapshotThumb: { CMC_abd: 20 },
     };
@@ -173,12 +195,14 @@ describe("useHandPose reducer", () => {
     expect(neutral.isExplorationMode).toBe(false);
     expect(neutral.userEditedThumb).toEqual({});
     expect(neutral.explorationSnapshotThumb).toEqual({});
+    expect(neutral.explorationRigBaseline).toBeNull();
 
     const zero = __testables.poseReducer(base, { type: "APPLY_PRESET_ZERO" });
     expect(zero.activePreset).toBe("zero");
     expect(zero.isExplorationMode).toBe(false);
     expect(zero.userEditedThumb).toEqual({});
     expect(zero.explorationSnapshotThumb).toEqual({});
+    expect(zero.explorationRigBaseline).toBeNull();
   });
 
   test("SET_ANTHROPOMETRY updates partial fields only", () => {
@@ -194,6 +218,3 @@ describe("useHandPose reducer", () => {
     expect(next.anthropometry).toEqual({ sex: "masculino", percentile: 95, age: 25 });
   });
 });
-
-
-

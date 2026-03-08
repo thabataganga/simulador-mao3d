@@ -1,4 +1,4 @@
-﻿import {
+import {
   CMC_OPP_CLINICAL_COUPLING,
   KAPANDJI_LEVEL_LABELS,
   KAPANDJI_RANGE,
@@ -17,6 +17,15 @@ function normalizeSignedZero(value) {
 
 function toOppositionDirection(value) {
   return value >= 0 ? "oposicao" : "retroposicao";
+}
+
+function getFunctionalSummary(level) {
+  const safeLevel = clampKapandjiLevel(level);
+  if (safeLevel <= 2) return "oposicao muito limitada";
+  if (safeLevel <= 4) return "oposicao parcial para contato lateral/radial";
+  if (safeLevel <= 6) return "pinca funcional inicial";
+  if (safeLevel <= 8) return "pinca funcional para objetos pequenos";
+  return "oposicao funcional quase/plenamente completa";
 }
 
 export function clampKapandjiLevel(level) {
@@ -89,6 +98,21 @@ export function buildThumbOppositionClinicalModel({ thumb, kapandjiLevel, contex
   const clinicalLabel = KAPANDJI_LEVEL_LABELS[clinicalLevel] || KAPANDJI_LEVEL_LABELS[0];
   const { commandDeg: operationalCommandDeg } = resolveKapandjiOperationalPose(clinicalLevel, context);
 
+  const explorationLevelRaw = Number(context?.explorationMeasurement?.level);
+  const hasExplorationMeasurement = Number.isFinite(explorationLevelRaw);
+  const explorationLevel = hasExplorationMeasurement ? clampKapandjiLevel(explorationLevelRaw) : null;
+  const explorationCommand = hasExplorationMeasurement
+    ? resolveKapandjiOperationalPose(explorationLevel, context).commandDeg
+    : null;
+  const explorationDirection = hasExplorationMeasurement
+    ? context?.explorationMeasurement?.rigDirection || toOppositionDirection(explorationCommand)
+    : null;
+  const explorationMagnitude = hasExplorationMeasurement
+    ? Number.isFinite(Number(context?.explorationMeasurement?.rigMagnitudeDeg))
+      ? Math.abs(Number(context.explorationMeasurement.rigMagnitudeDeg))
+      : Math.abs(explorationCommand)
+    : null;
+
   return {
     level: clinicalLevel,
     estimatedLevel: clinicalLevel,
@@ -107,6 +131,7 @@ export function buildThumbOppositionClinicalModel({ thumb, kapandjiLevel, contex
     description: `Kapandji ${clinicalLevel}: ${clinicalLabel}`,
     targetId: `kapandji-${clinicalLevel}`,
     scaleLabel: `Kapandji ${clinicalLevel}`,
+    functionalSummary: getFunctionalSummary(clinicalLevel),
     rigMeasurement: {
       level: rigEstimatedLevel,
       rigDirection,
@@ -114,6 +139,15 @@ export function buildThumbOppositionClinicalModel({ thumb, kapandjiLevel, contex
       rigMeasuredDeg,
       scaleLabel: `Kapandji ${rigEstimatedLevel}`,
     },
+    explorationMeasurement: hasExplorationMeasurement
+      ? {
+          level: explorationLevel,
+          rigDirection: explorationDirection,
+          rigMagnitudeDeg: explorationMagnitude,
+          rigMeasuredDeg: explorationDirection === "retroposicao" ? -explorationMagnitude : explorationMagnitude,
+          scaleLabel: `Kapandji ${explorationLevel}`,
+        }
+      : null,
     clinicalEstimate: {
       level: clinicalLevel,
       clinicalOppositionDeg: clinicalEstimate.clinicalOppositionDeg,

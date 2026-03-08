@@ -1,4 +1,4 @@
-﻿import {
+import {
   buildClinicalOppositionEstimate,
   buildThumbOppositionClinicalModel,
   clampKapandjiLevel,
@@ -50,5 +50,32 @@ describe("thumb Kapandji clinical model", () => {
     expect(model.rigMeasurement.scaleLabel).toBe("Kapandji 8");
     expect(model.rigDirection).toBe("retroposicao");
     expect(model.rigMagnitudeDeg).toBe(56);
+    expect(model.functionalSummary).toBe("pinca funcional para objetos pequenos");
+  });
+
+  test("includes exploration measurement when provided", () => {
+    const model = buildThumbOppositionClinicalModel({
+      thumb: { CMC_opp: 12, CMC_flex: -12, CMC_abd: 45 },
+      kapandjiLevel: 4,
+      context: {
+        rigMeasurement: {
+          level: 4,
+          rigDirection: "oposicao",
+          rigMagnitudeDeg: 16,
+        },
+        explorationMeasurement: {
+          level: 6,
+        },
+      },
+    });
+
+    expect(model.rigMeasurement.rigMagnitudeDeg).toBe(16);
+    expect(model.explorationMeasurement).toEqual({
+      level: 6,
+      rigDirection: "oposicao",
+      rigMagnitudeDeg: 34,
+      rigMeasuredDeg: 34,
+      scaleLabel: "Kapandji 6",
+    });
   });
 });

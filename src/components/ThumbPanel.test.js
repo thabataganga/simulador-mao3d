@@ -15,6 +15,7 @@ function baseProps(overrides = {}) {
         rigMagnitudeDeg: 10,
         scaleLabel: "Kapandji 4",
         estimatedLabel: "Contato radial distal",
+        functionalSummary: "oposicao parcial para contato lateral/radial",
       },
     },
     isExplorationMode: true,
@@ -80,6 +81,28 @@ describe("ThumbPanel structure and callbacks", () => {
     expect(onClearPreset).toHaveBeenCalledTimes(1);
 
     oppGroup.props.onMouseLeave();
+    expect(onClearHighlight).not.toHaveBeenCalled();
+  });
+
+  test("clears highlight on mouse leave when exploration is inactive", () => {
+    const onClearHighlight = jest.fn();
+    const elements = ThumbPanel(baseProps({ isExplorationMode: false, onClearHighlight }));
+
+    const oppGroup = elements[2];
+    oppGroup.props.onMouseLeave();
+
+    expect(onClearHighlight).toHaveBeenCalledTimes(1);
+  });
+
+  test("exit exploration clears highlight", () => {
+    const onExitOppositionExploration = jest.fn();
+    const onClearHighlight = jest.fn();
+    const elements = ThumbPanel(baseProps({ onExitOppositionExploration, onClearHighlight }));
+
+    const explorationPanel = elements[2].props.children[1];
+    explorationPanel.props.onExit();
+
+    expect(onExitOppositionExploration).toHaveBeenCalledTimes(1);
     expect(onClearHighlight).toHaveBeenCalledTimes(1);
   });
 
@@ -95,5 +118,3 @@ describe("ThumbPanel structure and callbacks", () => {
     expect(onClearPreset).toHaveBeenCalledTimes(1);
   });
 });
-
-

@@ -1,4 +1,4 @@
-﻿import { Box3, Quaternion, Vector3 } from "three";
+import { Box3, Quaternion, Vector3 } from "three";
 import { setLabelText } from "../three/helpers";
 import { deg2rad, clamp } from "../utils/math/core";
 import { RANGES } from "../constants/reference/biomechanics";
@@ -395,10 +395,14 @@ export function applyMainLabels(rig, fingers, thumb, thumbClinical, thumbGoniome
   const clinicalAbd = Number(thumbGoniometry?.abd?.clinicalTargetDeg ?? thumb.CMC_abd) || 0;
   const clinicalFlex = Number(thumbGoniometry?.flex?.clinicalTargetDeg ?? thumb.CMC_flex) || 0;
   const clinicalOpp = Number(thumbClinical?.opp?.clinicalTargetDeg ?? thumb.CMC_opp) || 0;
+  const kapandjiScale = thumbClinical?.opp?.clinicalEstimate?.scaleLabel || thumbClinical?.opp?.scaleLabel || null;
 
   setLabelText(thumbLabels.abd, `CMC: ${formatDirectional("abducao", "aducao", clinicalAbd)}`);
   setLabelText(thumbLabels.flex, `CMC: ${formatDirectional("flexao", "extensao", clinicalFlex)}`);
-  setLabelText(thumbLabels.opp, `CMC: ${formatDirectional("oposicao", "retroposicao", clinicalOpp)}`);
+  setLabelText(
+    thumbLabels.opp,
+    kapandjiScale ? `CMC: ${kapandjiScale}` : `CMC: ${formatDirectional("oposicao", "retroposicao", clinicalOpp)}`,
+  );
   setLabelText(thumbLabels.mcp, `MCP: ${formatDegree(thumb.MCP_flex)}`);
   setLabelText(thumbLabels.ip, `IP: ${formatDegree(thumb.IP)}`);
 }
@@ -546,6 +550,8 @@ export function applyDebugSelection(rig, debugKey, dims, thumbClinical, thumb, t
     }
   });
 }
+
+
 
 
 

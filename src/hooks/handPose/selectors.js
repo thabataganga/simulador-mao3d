@@ -1,6 +1,6 @@
 import { buildProfile, makeDims } from "../../utils/anthropometry/profile";
 import { buildThumbCmcClinicalModel } from "../../domain/thumbCmcClinical";
-import { buildThumbOppositionClinicalModel } from "../../domain/thumbKapandji";
+import { buildThumbOppositionClinicalModel, resolveKapandjiOperationalPose } from "../../domain/thumbKapandji";
 import { calculateGlobalD2D5, createSceneInput } from "../../domain/pose";
 import { composeThumbWithOverlay } from "./reducer";
 
@@ -34,18 +34,26 @@ export function selectThumbGoniometry(thumb, thumbMeasured, cmcInput) {
 
 export function selectThumbClinical(renderedThumb, kapandjiEstimatedFromRig, thumbOppRig, exploration = {}) {
   const rigMeasurement = exploration.isExplorationMode
-    ? {
-        level: exploration.explorationKapandjiTarget,
-        rigDirection: renderedThumb.CMC_opp >= 0 ? "oposicao" : "retroposicao",
-        rigMagnitudeDeg: Math.abs(renderedThumb.CMC_opp),
-      }
+    ? exploration.explorationRigBaseline || thumbOppRig
     : thumbOppRig;
+
+  const explorationMeasurement = exploration.isExplorationMode
+    ? (() => {
+        const level = Number(exploration.explorationKapandjiTarget);
+        const { commandDeg } = resolveKapandjiOperationalPose(level);
+        return {
+          level,
+          rigDirection: commandDeg >= 0 ? "oposicao" : "retroposicao",
+          rigMagnitudeDeg: Math.abs(commandDeg),
+        };
+      })()
+    : null;
 
   return {
     opp: buildThumbOppositionClinicalModel({
       thumb: renderedThumb,
       kapandjiLevel: kapandjiEstimatedFromRig,
-      context: { rigMeasurement },
+      context: { rigMeasurement, explorationMeasurement },
     }),
   };
 }

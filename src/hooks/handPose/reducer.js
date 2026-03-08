@@ -76,6 +76,7 @@ function resetExplorationState(state) {
     isExplorationMode: false,
     exploreOverlayState: { ...ZERO_OVERLAY },
     explorationKapandjiTarget: clampKapandjiLevel(state?.kapandjiEstimatedFromRig),
+    explorationRigBaseline: null,
     userEditedThumb: {},
     explorationSnapshotThumb: {},
   };
@@ -152,6 +153,7 @@ export function createHandPoseInitialState() {
     isExplorationMode: false,
     exploreOverlayState: { ...ZERO_OVERLAY },
     explorationKapandjiTarget: initialKapandji,
+    explorationRigBaseline: null,
     userEditedThumb: {},
     explorationSnapshotThumb: {},
     wrist: functionalPose.wrist,
@@ -195,6 +197,8 @@ export function poseReducer(state, action) {
       };
     }
     case "SET_OPPOSITION_ESTIMATE": {
+      if (state.isExplorationMode) return state;
+
       const nextMetric = normalizeOppositionMetric(action.value, state.kapandjiEstimatedFromRig);
       const levelUnchanged = nextMetric.level === state.kapandjiEstimatedFromRig;
       const directionUnchanged = nextMetric.rigDirection === state.thumbOppRig?.rigDirection;
@@ -271,6 +275,13 @@ export function poseReducer(state, action) {
         isExplorationMode: true,
         explorationSnapshotThumb: snapshot,
         explorationKapandjiTarget: clampKapandjiLevel(state.kapandjiEstimatedFromRig),
+        explorationRigBaseline: state.thumbOppRig
+          ? {
+              level: state.thumbOppRig.level,
+              rigDirection: state.thumbOppRig.rigDirection,
+              rigMagnitudeDeg: state.thumbOppRig.rigMagnitudeDeg,
+            }
+          : null,
       };
     }
     case "UPDATE_OPPOSITION_EXPLORATION": {
@@ -300,6 +311,7 @@ export function poseReducer(state, action) {
         isExplorationMode: false,
         exploreOverlayState: { ...ZERO_OVERLAY },
         explorationKapandjiTarget: clampKapandjiLevel(state.kapandjiEstimatedFromRig),
+        explorationRigBaseline: null,
       };
     }
     case "EXIT_OPPOSITION_EXPLORATION":
@@ -308,6 +320,7 @@ export function poseReducer(state, action) {
         isExplorationMode: false,
         exploreOverlayState: { ...ZERO_OVERLAY },
         explorationKapandjiTarget: clampKapandjiLevel(state.kapandjiEstimatedFromRig),
+        explorationRigBaseline: null,
       };
     case "APPLY_GRIP": {
       const nextPose = applyGlobalGripToPose(

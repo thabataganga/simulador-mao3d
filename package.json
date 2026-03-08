@@ -1,53 +1,54 @@
 {
-    "name":  "simulador-mao3d",
-    "version":  "1.0.0",
-    "description":  "",
-    "type":  "module",
-    "main":  "index.js",
-    "scripts":  {
-                    "dev":  "vite",
-                    "build":  "vite build",
-                    "build:analyze":  "vite build --mode analyze",
-                    "analyze:bundle":  "npm run build:analyze \u0026\u0026 node scripts/print-bundle-stats.mjs",
-                    "lint":  "eslint .",
-                    "test":  "jest",
-                    "preview":  "vite preview",
-                    "lint:report":  "mkdir reports 2\u003enul \u0026 npm run lint \u003e reports\\lint-report.txt 2\u003e\u00261",
-                    "test:report":  "mkdir reports 2\u003enul \u0026 npm test -- --runInBand \u003e reports\\test-report.txt 2\u003e\u00261",
-                    "test:coverage":  "jest --runInBand --coverage"
-                },
-    "dependencies":  {
-                         "@tailwindcss/vite":  "^4.1.11",
-                         "react":  "^19.1.1",
-                         "react-dom":  "^19.1.1",
-                         "three":  "^0.179.1"
-                     },
-    "devDependencies":  {
-                            "@babel/preset-env":  "^7.29.0",
-                            "@babel/preset-react":  "^7.28.5",
-                            "@eslint/js":  "^9.32.0",
-                            "@types/react":  "^19.1.9",
-                            "@types/react-dom":  "^19.1.7",
-                            "@vitejs/plugin-react":  "^4.7.0",
-                            "autoprefixer":  "^10.4.21",
-                            "babel-jest":  "^30.2.0",
-                            "eslint":  "^9.32.0",
-                            "eslint-plugin-react-hooks":  "^5.2.0",
-                            "eslint-plugin-react-refresh":  "^0.4.20",
-                            "globals":  "^16.3.0",
-                            "jest":  "^30.2.0",
-                            "postcss":  "^8.5.6",
-                            "tailwindcss":  "^4.1.11",
-                            "vite":  "^7.1.0"
-                        },
-    "repository":  {
-                       "type":  "git",
-                       "url":  "git+https://github.com/thabataganga/simulador-mao3d.git"
-                   },
-    "author":  "",
-    "license":  "Apache-2.0",
-    "bugs":  {
-                 "url":  "https://github.com/thabataganga/simulador-mao3d/issues"
-             },
-    "homepage":  "https://github.com/thabataganga/simulador-mao3d#readme"
+  "name": "simulador-mao3d",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "build:analyze": "vite build --mode analyze",
+    "analyze:bundle": "npm run build:analyze && node scripts/print-bundle-stats.mjs",
+    "lint": "npm run check:artifacts && eslint .",
+    "test": "npm run check:artifacts && jest",
+    "preview": "vite preview",
+    "lint:report": "mkdir reports 2>nul & npm run lint > reports\\lint-report.txt 2>&1",
+    "test:report": "mkdir reports 2>nul & npm test -- --runInBand > reports\\test-report.txt 2>&1",
+    "test:coverage": "jest --runInBand --coverage",
+    "check:artifacts": "node scripts/check-newline-artifacts.mjs"
+  },
+  "dependencies": {
+    "@tailwindcss/vite": "^4.1.11",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "three": "^0.179.1"
+  },
+  "devDependencies": {
+    "@babel/preset-env": "^7.29.0",
+    "@babel/preset-react": "^7.28.5",
+    "@eslint/js": "^9.32.0",
+    "@types/react": "^19.1.9",
+    "@types/react-dom": "^19.1.7",
+    "@vitejs/plugin-react": "^4.7.0",
+    "autoprefixer": "^10.4.21",
+    "babel-jest": "^30.2.0",
+    "eslint": "^9.32.0",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.4.20",
+    "globals": "^16.3.0",
+    "jest": "^30.2.0",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.11",
+    "vite": "^7.1.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thabataganga/simulador-mao3d.git"
+  },
+  "author": "",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/thabataganga/simulador-mao3d/issues"
+  },
+  "homepage": "https://github.com/thabataganga/simulador-mao3d#readme"
 }

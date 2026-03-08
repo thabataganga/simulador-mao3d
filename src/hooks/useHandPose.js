@@ -40,8 +40,16 @@ export function useHandPose() {
       selectThumbClinical(renderedThumb, state.kapandjiEstimatedFromRig, state.thumbOppRig, {
         isExplorationMode: state.isExplorationMode,
         explorationKapandjiTarget: state.explorationKapandjiTarget,
+        explorationRigBaseline: state.explorationRigBaseline,
       }),
-    [renderedThumb, state.kapandjiEstimatedFromRig, state.thumbOppRig, state.isExplorationMode, state.explorationKapandjiTarget],
+    [
+      renderedThumb,
+      state.kapandjiEstimatedFromRig,
+      state.thumbOppRig,
+      state.isExplorationMode,
+      state.explorationKapandjiTarget,
+      state.explorationRigBaseline,
+    ],
   );
 
   const track = useMemo(() => createMetricTracker(), []);
