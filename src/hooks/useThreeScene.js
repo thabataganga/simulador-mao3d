@@ -101,9 +101,12 @@ export function useThreeScene(mountRef, viewcubeRef) {
       if (renderer.domElement.parentNode === mount) mount.removeChild(renderer.domElement);
       renderer.dispose();
       scene.traverse(object => {
-        if (object.isMesh) {
-          object.geometry?.dispose();
-          object.material?.dispose();
+        if (!object?.geometry || !object?.material) return;
+        object.geometry?.dispose?.();
+        if (Array.isArray(object.material)) {
+          object.material.forEach(material => material?.dispose?.());
+        } else {
+          object.material?.dispose?.();
         }
       });
     };

@@ -1,7 +1,7 @@
 // Ranges articulares 
 export const RANGES = {
   MCP: [-45, 90], PIP: [0, 100], DIP: [-20, 80],
-  CMC_ABD: [-10, 60], CMC_OPP: [-40, 70], CMC_FLEX: [-20, 30],
+  CMC_ABD: [-30, 90], CMC_OPP: [-40, 70], CMC_FLEX: [-90, 30],
   THUMB_MCP_FLEX: [0, 60], THUMB_IP: [-10, 80],
   WRIST_FLEX: [-70, 80], WRIST_DEV: [-20, 30],
 };
@@ -84,7 +84,7 @@ export const THUMB_CMC_NEUTRAL = Object.freeze({
 export const THUMB_CMC = Object.freeze({
   // Clinical convention: +abduction (opening), -adduction (closing).
   CLINICAL_ABD_SIGN: 1,
-  FLEX_EFFECTIVE_RANGE: [-20, 30],
+  FLEX_EFFECTIVE_RANGE: [-90, 30],
   OPP_COUPLING: Object.freeze({
     ABD_GAIN: 0.18,
     FLEX_GAIN: 0.22,

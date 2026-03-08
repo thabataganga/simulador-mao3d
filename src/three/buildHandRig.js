@@ -230,15 +230,15 @@ function buildThumbSubsystem(f, palm, dbgMap, highlightMap, allMovers) {
   highlightMap.TH_CMC_FLEX = [tMeta.mesh, tProx.mesh];
   highlightMap.TH_CMC_OPP = [tMeta.mesh, tProx.mesh];
 
-  const mkThumbDebug = (node, key, axis, L, W, name) => {
-    const pkg = makeDebugPkg(node, key, axis, L, W * 2.2, W * 1.6, `${name}: 0 deg`);
+  const mkThumbDebug = (node, key, axis, L, W, name, opts) => {
+    const pkg = makeDebugPkg(node, key, axis, L, W * 2.2, W * 1.6, `${name}: 0 deg`, opts);
     dbgMap[pkg.key] = pkg;
     return pkg.label;
   };
 
   const thumbLabels = {
-    abd: mkThumbDebug(cmcAbd, "TH_CMC_ABD", "XY", metacarpalLen, d.thumbWid[0], "CMC abd"),
-    flex: mkThumbDebug(cmcFlex, "TH_CMC_FLEX", "ZX", metacarpalLen, d.thumbWid[0], "CMC flex"),
+    abd: mkThumbDebug(cmcAbd, "TH_CMC_ABD", "XY", metacarpalLen, d.thumbWid[0], "CMC abd", { withGoniometer: true }),
+    flex: mkThumbDebug(cmcFlex, "TH_CMC_FLEX", "ZX", metacarpalLen, d.thumbWid[0], "CMC flex", { withGoniometer: true }),
     opp: mkThumbDebug(cmcPronation, "TH_CMC_OPP", "YZ", metacarpalLen, d.thumbWid[0], "CMC opp"),
     mcp: mkThumbDebug(tmcp, "TH_MCP", "XY", proximalLen, d.thumbWid[0], "MCP"),
     ip: mkThumbDebug(tipIp, "TH_IP", "XY", distalLen, d.thumbWid[1], "IP"),
