@@ -1,6 +1,6 @@
 import { Vector3 } from "three";
 import { RANGES } from "../constants";
-import { mapClinicalCmcToRigAngles } from "./thumbCmcMapping";
+import { getCmcCommandRange, mapClinicalCmcToRigAngles } from "./thumbCmcMapping";
 import { toPalmFrameVector } from "./thumbFrameUtils";
 
 const RAD_TO_DEG = 180 / Math.PI;
@@ -107,7 +107,7 @@ export function solveCmcCommandForMeasuredTarget(axis, targetMeasuredDeg, thumbC
     return { commandDeg: targetMeasuredDeg, predictedMeasuredDeg: targetMeasuredDeg, errorDeg: 0, saturated: false };
   }
 
-  const [min, max] = config.range;
+  const [min, max] = getCmcCommandRange(axis);
   let best = null;
 
   for (let command = min; command <= max; command += 1) {

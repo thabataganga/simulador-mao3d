@@ -1,12 +1,13 @@
-﻿import { RANGES, THUMB_KINEMATICS } from "../constants";
+import { RANGES, THUMB_KINEMATICS } from "../constants";
 import { clamp, deg2rad } from "../utils";
-import { mapClinicalCmcToRigAngles } from "./thumbCmcMapping";
+import { clampClinicalCmc, mapClinicalCmcToRigAngles } from "./thumbCmcMapping";
 
 function clampClinicalThumb(thumb) {
+  const cmc = clampClinicalCmc(thumb);
   return {
-    CMC_abd: clamp(thumb.CMC_abd, RANGES.CMC_ABD),
-    CMC_flex: clamp(thumb.CMC_flex, RANGES.CMC_FLEX),
-    CMC_opp: clamp(thumb.CMC_opp, RANGES.CMC_OPP),
+    CMC_abd: cmc.CMC_abd,
+    CMC_flex: cmc.CMC_flex,
+    CMC_opp: cmc.CMC_opp,
     MCP_flex: clamp(thumb.MCP_flex, RANGES.THUMB_MCP_FLEX),
     IP: clamp(thumb.IP, RANGES.THUMB_IP),
   };

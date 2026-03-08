@@ -29,6 +29,7 @@ const CMC_AXIS_DIRECTIONS = {
   CMC_abd: { positive: "abducao", negative: "aducao" },
   CMC_flex: { positive: "flexao", negative: "extensao" },
 };
+const GONIOMETRY_STATE_EPSILON = 1e-4;
 
 function getDirectionForTarget(axis, target, fallbackDirection) {
   const cfg = CMC_AXIS_DIRECTIONS[axis];
@@ -109,14 +110,22 @@ function poseReducer(state, action) {
         cmcInput: syncCmcInputStateFromThumb(state.cmcInput, action.value),
         kapandjiLevel: getKapandjiLevelFromCommand(action.value.CMC_opp),
       };
-    case "SET_THUMB_GONIOMETRY":
+    case "SET_THUMB_GONIOMETRY": {
+      const nextAbd = Number.isFinite(action.value?.CMC_abd) ? Number(action.value.CMC_abd) : state.thumbMeasured.CMC_abd;
+      const nextFlex = Number.isFinite(action.value?.CMC_flex) ? Number(action.value.CMC_flex) : state.thumbMeasured.CMC_flex;
+      const abdUnchanged = Math.abs(nextAbd - state.thumbMeasured.CMC_abd) <= GONIOMETRY_STATE_EPSILON;
+      const flexUnchanged = Math.abs(nextFlex - state.thumbMeasured.CMC_flex) <= GONIOMETRY_STATE_EPSILON;
+      if (abdUnchanged && flexUnchanged) return state;
+
       return {
         ...state,
         thumbMeasured: {
           ...state.thumbMeasured,
-          ...action.value,
+          CMC_abd: nextAbd,
+          CMC_flex: nextFlex,
         },
       };
+    }
     case "SET_WRIST":
       return { ...state, wrist: action.value };
     case "SET_GRIP":
@@ -363,6 +372,26 @@ export function useHandPose() {
     track("preset_selected", { preset: "zero" });
   }, [track]);
 
+  const thumbGoniometry = useMemo(
+    () =>
+      buildThumbCmcClinicalModel({
+        thumb: state.thumb,
+        measured: state.thumbMeasured,
+        inputState: state.cmcInput,
+      }),
+    [state.thumb, state.thumbMeasured, state.cmcInput],
+  );
+
+  const thumbClinical = useMemo(
+    () => ({
+      opp: buildThumbOppositionClinicalModel({
+        thumb: state.thumb,
+        kapandjiLevel: state.kapandjiLevel,
+      }),
+    }),
+    [state.thumb, state.kapandjiLevel],
+  );
+
   const poseState = {
     fingers: state.fingers,
     thumb: state.thumb,
@@ -370,17 +399,8 @@ export function useHandPose() {
     grip: state.grip,
     globalMode: state.globalMode,
     activePreset: state.activePreset,
-    thumbGoniometry: buildThumbCmcClinicalModel({
-      thumb: state.thumb,
-      measured: state.thumbMeasured,
-      inputState: state.cmcInput,
-    }),
-    thumbClinical: {
-      opp: buildThumbOppositionClinicalModel({
-        thumb: state.thumb,
-        kapandjiLevel: state.kapandjiLevel,
-      }),
-    },
+    thumbGoniometry,
+    thumbClinical,
     profile,
     dims,
     globalD2D5,

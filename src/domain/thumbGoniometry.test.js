@@ -94,8 +94,8 @@ describe("thumb goniometry", () => {
       CMC_opp: 12,
     });
 
-    expect(solved.commandDeg).toBeGreaterThanOrEqual(-20);
-    expect(solved.commandDeg).toBeLessThanOrEqual(30);
+    expect(solved.commandDeg).toBeGreaterThanOrEqual(-106);
+    expect(solved.commandDeg).toBeLessThanOrEqual(39);
     expect(Math.abs(solved.predictedMeasuredDeg - 13)).toBeLessThanOrEqual(1);
   });
 
@@ -117,5 +117,33 @@ describe("thumb goniometry", () => {
     expect(nextInputAxisState.magnitudeDeg).toBe(7);
     expect(nextInputAxisState.targetMeasuredDeg).toBe(-7);
     expect(typeof solved.commandDeg).toBe("number");
+  });
+
+  test("reaches CMC flex extension 90 with opposition coupling without saturation", () => {
+    const prevState = createDefaultCmcInputState();
+    const thumbContext = { CMC_abd: 0, CMC_flex: 0, CMC_opp: 34 };
+
+    const { nextInputAxisState, solved } = buildCmcInputStateForAxis({
+      axis: "CMC_flex",
+      direction: "extensao",
+      magnitudeDeg: 90,
+      thumbContext,
+      prevState,
+    });
+
+    expect(nextInputAxisState.targetMeasuredDeg).toBe(-90);
+    expect(nextInputAxisState.saturated).toBe(false);
+    expect(Math.abs(solved.predictedMeasuredDeg + 90)).toBeLessThanOrEqual(1);
+  });
+
+  test("keeps CMC abduction target 90 reachable under opposition coupling", () => {
+    const solved = solveCmcCommandForMeasuredTarget("CMC_abd", 90, {
+      CMC_abd: 0,
+      CMC_flex: 0,
+      CMC_opp: 34,
+    });
+
+    expect(Math.abs(solved.predictedMeasuredDeg - 90)).toBeLessThanOrEqual(1);
+    expect(solved.saturated).toBe(false);
   });
 });

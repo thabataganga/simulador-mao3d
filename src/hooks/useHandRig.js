@@ -21,6 +21,7 @@ function formatDirectional(labelPositive, labelNegative, value) {
 
 const ANGULAR_CMC_DEBUG_KEYS = new Set(["TH_CMC_FLEX", "TH_CMC_ABD"]);
 const OPPOSITION_DEBUG_KEY = "TH_CMC_OPP";
+const GONIOMETRY_EMIT_EPSILON = 1e-4;
 
 function projectOnPlane(vector, planeNormal) {
   const normal = planeNormal.clone().normalize();
@@ -361,6 +362,18 @@ function applyMainLabels(rig, fingers, thumb, thumbClinical, wrist, cmcMeasured)
   setLabelText(thumbLabels.ip, `IP: ${formatDegree(thumb.IP)}`);
 }
 
+function didGoniometryChange(previous, next, epsilon = GONIOMETRY_EMIT_EPSILON) {
+  if (!next) return false;
+  if (!previous) return true;
+
+  const prevAbd = Number(previous.CMC_abd) || 0;
+  const prevFlex = Number(previous.CMC_flex) || 0;
+  const nextAbd = Number(next.CMC_abd) || 0;
+  const nextFlex = Number(next.CMC_flex) || 0;
+
+  return Math.abs(nextAbd - prevAbd) > epsilon || Math.abs(nextFlex - prevFlex) > epsilon;
+}
+
 function applyPoseToRig(rig, fingers, thumb, thumbClinical, wrist, debugKey, dims, viewport) {
   if (!rig) return;
 
@@ -396,11 +409,24 @@ export function useHandRig({ three, orbitRef, controlsReady = false, dims, finge
   const handRig = useRef(null);
   const hasInitialFrameRef = useRef(false);
   const lastPalmLengthRef = useRef(null);
+  const lastEmittedGoniometryRef = useRef(null);
   const poseRef = useRef({ fingers, thumb, thumbClinical, wrist });
 
   useEffect(() => {
     poseRef.current = { fingers, thumb, thumbClinical, wrist };
   }, [fingers, thumb, thumbClinical, wrist]);
+
+  const emitThumbGoniometry = useCallback(
+    measured => {
+      if (!onThumbGoniometry || !didGoniometryChange(lastEmittedGoniometryRef.current, measured)) return;
+      lastEmittedGoniometryRef.current = {
+        CMC_abd: Number(measured.CMC_abd) || 0,
+        CMC_flex: Number(measured.CMC_flex) || 0,
+      };
+      onThumbGoniometry(lastEmittedGoniometryRef.current);
+    },
+    [onThumbGoniometry],
+  );
 
   const frameRig = useCallback(() => {
     const root = handRig.current?.root;
@@ -453,7 +479,7 @@ export function useHandRig({ three, orbitRef, controlsReady = false, dims, finge
       dims,
       getViewportSize(three),
     );
-    if (measured && onThumbGoniometry) onThumbGoniometry(measured);
+    emitThumbGoniometry(measured);
 
     const prevPalmLength = lastPalmLengthRef.current;
     const nextPalmLength = dims?.palm?.LENGTH || 0;
@@ -464,7 +490,7 @@ export function useHandRig({ three, orbitRef, controlsReady = false, dims, finge
 
     lastPalmLengthRef.current = nextPalmLength;
     if (controlsReady && shouldRefit) frameRig();
-  }, [controlsReady, debugKey, dims, frameRig, onThumbGoniometry, three]);
+  }, [controlsReady, debugKey, dims, emitThumbGoniometry, frameRig, three]);
 
   useEffect(() => {
     if (!controlsReady || hasInitialFrameRef.current) return;
@@ -474,8 +500,8 @@ export function useHandRig({ three, orbitRef, controlsReady = false, dims, finge
 
   useEffect(() => {
     const measured = applyPoseToRig(handRig.current, fingers, thumb, thumbClinical, wrist, debugKey, dims, getViewportSize(three));
-    if (measured && onThumbGoniometry) onThumbGoniometry(measured);
-  }, [debugKey, dims, fingers, onThumbGoniometry, three, thumb, thumbClinical, wrist]);
+    emitThumbGoniometry(measured);
+  }, [debugKey, dims, emitThumbGoniometry, fingers, three, thumb, thumbClinical, wrist]);
 
   useEffect(() => {
     const rig = handRig.current;

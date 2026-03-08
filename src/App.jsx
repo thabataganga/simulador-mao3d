@@ -165,7 +165,7 @@ export default function HandSimulatorApp() {
           <summary className="cursor-pointer font-medium">Tabela tecnica - Limites</summary>
           <div className="mt-2 space-y-1">
             <p>MCP D2-D5: -45 deg a +90 deg | PIP: 0-100 deg | DIP: -20 deg a +80 deg</p>
-            <p>CMC Polegar: Abd -10..+60 deg | Flex/Ext -20..+30 deg | Oposicao clinica por Kapandji 0..10</p>
+            <p>CMC Polegar: Abd -30..+90 deg | Flex/Ext -90..+30 deg | Oposicao (comando): -40..+70 deg | Kapandji 0..10</p>
             <p>MCP Polegar: 0-60 deg | IP: -10 deg a +80 deg</p>
           </div>
         </details>

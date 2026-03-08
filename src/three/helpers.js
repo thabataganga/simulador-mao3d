@@ -34,18 +34,39 @@ export function makeLabel(text, scale = 3.5) {
   const u = 0.02 * scale;
   spr.scale.set(width * u, height * u, 1);
   spr.renderOrder = 999;
-  spr.userData = { canvas, ctx, tex, pad, fontPx, scaleFactor: scale };
+  spr.userData = { canvas, ctx, tex, pad, fontPx, scaleFactor: scale, text };
   return spr;
 }
 
 export function setLabelText(spr, text) {
   if (!spr) return;
-  const { canvas, tex, pad, fontPx, scaleFactor = 3.5 } = spr.userData;
-  const { ctx, width, height } = drawLabelCanvas(canvas, text, fontPx, pad);
+
+  const nextText = String(text ?? "");
+  const { canvas, pad, fontPx, scaleFactor = 3.5 } = spr.userData;
+  if (spr.userData.text === nextText) return;
+
+  const prevWidth = canvas.width;
+  const prevHeight = canvas.height;
+  const { ctx, width, height } = drawLabelCanvas(canvas, nextText, fontPx, pad);
+  const resized = width !== prevWidth || height !== prevHeight;
+
+  if (resized) {
+    const prevTexture = spr.userData.tex || spr.material?.map;
+    const nextTexture = new THREE.CanvasTexture(canvas);
+    nextTexture.minFilter = THREE.LinearFilter;
+    spr.material.map = nextTexture;
+    spr.material.needsUpdate = true;
+    spr.userData.tex = nextTexture;
+    if (prevTexture && prevTexture !== nextTexture) prevTexture.dispose?.();
+  } else {
+    const activeTexture = spr.userData.tex || spr.material?.map;
+    if (activeTexture) activeTexture.needsUpdate = true;
+  }
+
   const u = 0.02 * scaleFactor;
   spr.scale.set(width * u, height * u, 1);
   spr.userData.ctx = ctx;
-  tex.needsUpdate = true;
+  spr.userData.text = nextText;
 }
 
 function signedAngleOnPlane(from, to, planeNormal) {

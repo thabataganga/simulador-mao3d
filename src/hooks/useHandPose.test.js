@@ -87,4 +87,36 @@ describe("useHandPose reducer", () => {
     expect(next.thumb.MCP_flex).toBe(state.thumb.MCP_flex);
     expect(next.thumb.IP).toBe(state.thumb.IP);
   });
+
+  test("SET_THUMB_GONIOMETRY returns same state when values are unchanged", () => {
+    const state = {
+      ...__testables.createInitialState(),
+      anthropometry: { sex: "masculino", percentile: 50, age: 25 },
+      thumbMeasured: { CMC_abd: 12.5, CMC_flex: -8.25 },
+    };
+
+    const next = __testables.poseReducer(state, {
+      type: "SET_THUMB_GONIOMETRY",
+      value: { CMC_abd: 12.5, CMC_flex: -8.25 },
+    });
+
+    expect(next).toBe(state);
+  });
+
+  test("SET_THUMB_GONIOMETRY updates measured values when they change", () => {
+    const state = {
+      ...__testables.createInitialState(),
+      anthropometry: { sex: "masculino", percentile: 50, age: 25 },
+      thumbMeasured: { CMC_abd: 10, CMC_flex: -5 },
+    };
+
+    const next = __testables.poseReducer(state, {
+      type: "SET_THUMB_GONIOMETRY",
+      value: { CMC_abd: 14.2, CMC_flex: -1.6 },
+    });
+
+    expect(next).not.toBe(state);
+    expect(next.thumbMeasured.CMC_abd).toBeCloseTo(14.2, 6);
+    expect(next.thumbMeasured.CMC_flex).toBeCloseTo(-1.6, 6);
+  });
 });
