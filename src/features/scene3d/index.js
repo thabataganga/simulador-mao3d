@@ -1,2 +1,2 @@
-// Feature contract: exports the 3D scene entrypoint consumed via lazy load.
-export { default } from "./Scene3DFeature";
+// Feature contract: 3D scene entry consumed by lazy import in App.
+export { default } from "./Scene3DViewport";

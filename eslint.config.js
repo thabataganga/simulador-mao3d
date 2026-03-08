@@ -50,6 +50,20 @@ export default defineConfig([
     },
   },
   {
+    files: ['src/**/*.{js,jsx}'],
+    ignores: ['src/components/**/*.{js,jsx}', 'src/features/**/*.{js,jsx}'],
+    rules: {
+      'no-restricted-imports': ['error', {
+        patterns: [
+          {
+            group: ['./components/*', '../components/*', '../../components/*', '../../../components/*'],
+            message: 'Apenas features/* e components/* podem importar components/* diretamente.',
+          },
+        ],
+      }],
+    },
+  },
+  {
     files: ['src/domain/**/*.js'],
     rules: {
       'no-restricted-imports': ['error', {

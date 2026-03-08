@@ -3,15 +3,14 @@ import { CMC_TEMP_RANGE } from "./constants/biomechanics";
 
 import { useHandPose } from "./hooks/useHandPose";
 
-import { AccordionItem, AnthropometryForm, PresetButtons, GlobalD2D5Panel, GripPanel } from "./features/pose-controls";
-import { ThumbPanel } from "./features/thumb";
-import { WristPanel } from "./features/wrist";
+import { PoseSetupControls } from "./features/pose-controls";
+import { OrderedAccordions } from "./features/control-panel";
 
 const HandScene3D = lazy(() => import("./features/scene3d"));
 
 export default function HandSimulatorApp() {
   const [debugKey, setDebugKey] = useState("off");
-  const [openPanel, setOpenPanel] = useState("global_d2d5");
+  const [openPanel, setOpenPanel] = useState("none");
 
   const { poseState, poseActions, sceneInput } = useHandPose();
   const { setThumbVal, setActivePreset, setThumbGoniometry, setOppositionEstimate } = poseActions;
@@ -104,68 +103,50 @@ export default function HandSimulatorApp() {
         </h1>
         <p className="text-xs text-gray-500 mb-4">Positivo = flexao/abducao | Negativo = extensao/aducao</p>
 
-        <AnthropometryForm
+        <PoseSetupControls
           sex={poseState.sex}
-          onSex={poseActions.setSex}
           percentile={poseState.percentile}
-          onPercentile={poseActions.setPercentile}
           age={poseState.age}
-          onAge={poseActions.setAge}
-        />
-
-        <PresetButtons
           activePreset={poseState.activePreset}
-          onFunctional={poseActions.presetFunctional}
-          onNeutral={poseActions.presetNeutral}
-          onZero={poseActions.presetZero}
+          onSex={poseActions.setSex}
+          onPercentile={poseActions.setPercentile}
+          onAge={poseActions.setAge}
+          onPresetFunctional={poseActions.presetFunctional}
+          onPresetNeutral={poseActions.presetNeutral}
+          onPresetZero={poseActions.presetZero}
         />
 
-        <AccordionItem id="global_d2d5" title="Controle global D2-D5" isOpen={openPanel === "global_d2d5"} onToggle={togglePanel}>
-          <GlobalD2D5Panel
-            globalD2D5={poseState.globalD2D5}
-            onUpdate={poseActions.updateGlobalD2D5}
-            onHighlight={setDebugKey}
-            onClearPreset={clearPreset}
-          />
-        </AccordionItem>
-
-        <AccordionItem id="thumb" title="D1 - Polegar (CMC, MCP, IP)" isOpen={openPanel === "thumb"} onToggle={togglePanel}>
-          <ThumbPanel
-            thumb={poseState.thumb}
-            thumbGoniometry={poseState.thumbGoniometry}
-            thumbClinical={poseState.thumbClinical}
-            isExplorationMode={poseState.isExplorationMode}
-            explorationKapandjiTarget={poseState.explorationKapandjiTarget}
-            onThumbVal={poseActions.setThumbVal}
-            onThumbCmcInput={poseActions.setThumbCmcInput}
-            onEnterOppositionExploration={poseActions.enterOppositionExploration}
-            onUpdateOppositionExploration={poseActions.updateOppositionExploration}
-            onRestoreUserInputData={poseActions.restoreUserInputData}
-            onExitOppositionExploration={poseActions.exitOppositionExploration}
-            onHighlight={setDebugKey}
-            onClearHighlight={() => setDebugKey("off")}
-            onClearPreset={clearPreset}
-          />
-        </AccordionItem>
-
-        <AccordionItem id="wrist" title="Punho (Flex/Ext, Desvio)" isOpen={openPanel === "wrist"} onToggle={togglePanel}>
-          <WristPanel
-            wrist={poseState.wrist}
-            onWrist={poseActions.setWrist}
-            onHighlight={setDebugKey}
-            onClearPreset={clearPreset}
-          />
-        </AccordionItem>
-
-        <AccordionItem id="global" title="Fechamento global" isOpen={openPanel === "global"} onToggle={togglePanel}>
-          <GripPanel
-            grip={poseState.grip}
-            globalMode={poseState.globalMode}
-            onGlobalMode={handleGlobalMode}
-            onGrip={handleGrip}
-            onClearHighlight={() => setDebugKey("off")}
-          />
-        </AccordionItem>
+        <OrderedAccordions
+          openPanel={openPanel}
+          onTogglePanel={togglePanel}
+          thumb={poseState.thumb}
+          thumbGoniometry={poseState.thumbGoniometry}
+          thumbClinical={poseState.thumbClinical}
+          isExplorationMode={poseState.isExplorationMode}
+          explorationKapandjiTarget={poseState.explorationKapandjiTarget}
+          onThumbVal={poseActions.setThumbVal}
+          onThumbCmcInput={poseActions.setThumbCmcInput}
+          onEnterOppositionExploration={poseActions.enterOppositionExploration}
+          onUpdateOppositionExploration={poseActions.updateOppositionExploration}
+          onRestoreUserInputData={poseActions.restoreUserInputData}
+          onExitOppositionExploration={poseActions.exitOppositionExploration}
+          onThumbHighlight={setDebugKey}
+          onThumbClearHighlight={() => setDebugKey("off")}
+          onThumbClearPreset={clearPreset}
+          globalD2D5={poseState.globalD2D5}
+          onUpdateGlobalD2D5={poseActions.updateGlobalD2D5}
+          onGlobalHighlight={setDebugKey}
+          onGlobalClearPreset={clearPreset}
+          wrist={poseState.wrist}
+          onWrist={poseActions.setWrist}
+          onWristHighlight={setDebugKey}
+          onWristClearPreset={clearPreset}
+          grip={poseState.grip}
+          globalMode={poseState.globalMode}
+          onGlobalMode={handleGlobalMode}
+          onGrip={handleGrip}
+          onGlobalClearHighlight={() => setDebugKey("off")}
+        />
 
         <details className="mt-4 text-xs text-gray-500">
           <summary className="cursor-pointer font-medium">Tabela tecnica - Limites</summary>
@@ -193,4 +174,3 @@ export default function HandSimulatorApp() {
     </div>
   );
 }
-

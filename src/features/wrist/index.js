@@ -1,2 +1,2 @@
-// Feature contract: exports wrist controls used by the application shell.
-export { WristPanel } from "./WristFeaturePanel";
+// Feature contract: wrist controls entry consumed by App.
+export { WristFeatureSection } from "./WristFeatureSection";
