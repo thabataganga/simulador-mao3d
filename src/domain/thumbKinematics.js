@@ -1,4 +1,4 @@
-﻿import { RANGES, THUMB_KINEMATICS } from "../constants/reference/biomechanics";
+import { RANGES, THUMB_KINEMATICS } from "../constants/biomechanics";
 import { clamp, deg2rad } from "../utils/math/core";
 import { clampClinicalCmc, mapClinicalCmcToRigAngles } from "./thumbCmcMapping";
 
@@ -43,6 +43,7 @@ export function mapClinicalThumbToRigRadians(thumb) {
     },
   };
 }
+
 
 
 

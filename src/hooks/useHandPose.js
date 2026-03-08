@@ -1,11 +1,10 @@
 import { useMemo, useReducer } from "react";
-import { createMetricTracker, createPoseActions } from "./handPose/actions";
 import {
+  createMetricTracker,
+  createPoseActions,
   createHandPoseInitialState,
   createUseHandPoseInitialState,
   poseReducer,
-} from "./handPose/reducer";
-import {
   selectDims,
   selectGlobalD2D5,
   selectPoseState,
@@ -14,7 +13,7 @@ import {
   selectSceneInput,
   selectThumbClinical,
   selectThumbGoniometry,
-} from "./handPose/selectors";
+} from "./handPose";
 
 export const __testables = {
   createInitialState: createHandPoseInitialState,

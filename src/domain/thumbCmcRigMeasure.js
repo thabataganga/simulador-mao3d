@@ -1,5 +1,5 @@
-﻿import { Vector3 } from "three";
-import { THUMB_CMC } from "../constants/reference/biomechanics";
+import { Vector3 } from "three";
+import { THUMB_CMC } from "../constants/biomechanics";
 import { toPalmFrameVector } from "./thumbFrameUtils";
 
 const RAD_TO_DEG = 180 / Math.PI;
@@ -106,3 +106,4 @@ export function measureThumbCmcGoniometryFromRig(rig, options = {}) {
     composed,
   };
 }
+

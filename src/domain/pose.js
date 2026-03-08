@@ -1,4 +1,4 @@
-﻿import { RANGES, THUMB_RANGE_KEY } from "../constants/reference/biomechanics";
+import { RANGES, THUMB_RANGE_KEY } from "../constants/biomechanics";
 import { clamp } from "../utils/math/core";
 import { computeGrip } from "../utils/grip/computeGrip";
 import { defaultFinger, defaultThumb, restFromDims } from "../utils/pose/defaults";
@@ -92,6 +92,7 @@ export function createSceneInput(input) {
     wrist: input.wrist,
   };
 }
+
 
 
 

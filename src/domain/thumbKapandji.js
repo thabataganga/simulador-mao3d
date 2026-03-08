@@ -3,8 +3,8 @@ import {
   KAPANDJI_LEVEL_LABELS,
   KAPANDJI_RANGE,
   KAPANDJI_TO_CMC_OPP_COMMAND,
-} from "../constants/reference/kapandji";
-import { RANGES } from "../constants/reference/biomechanics";
+} from "../constants/kapandji";
+import { RANGES } from "../constants/biomechanics";
 import { clamp } from "../utils/math/core";
 
 function defaultOperationalResolver(level) {
@@ -158,3 +158,4 @@ export function buildThumbOppositionClinicalModel({ thumb, kapandjiLevel, contex
     },
   };
 }
+
