@@ -43,9 +43,9 @@ export const PINCH_KF = {
 };
 
 export const FUNC_KF = {
-  open:   { finger: { MCP: 10, PIP: 10, DIP: 0  }, thumb: { CMC_abd: 35, CMC_flex: 8,  CMC_opp: 10, MCP_flex: 8,  IP: 0  }, wrist: { flex: -10, dev: -2  } },
-  mid:    { finger: { MCP: 45, PIP: 35, DIP: 15 }, thumb: { CMC_abd: 45, CMC_flex: 12, CMC_opp: 12, MCP_flex: 10, IP: 5  }, wrist: { flex: -25, dev: -12 } },
-  closed: { finger: { MCP: 80, PIP: 90, DIP: 60 }, thumb: { CMC_abd: 35, CMC_flex: 20, CMC_opp: 20, MCP_flex: 30, IP: 45 }, wrist: { flex: -35, dev: -15 } },
+  open:   { finger: { MCP: 10, PIP: 10, DIP: 0  }, thumb: { CMC_abd: 35, CMC_flex: -8,  CMC_opp: 10, MCP_flex: 8,  IP: 0  }, wrist: { flex: -10, dev: -2  } },
+  mid:    { finger: { MCP: 45, PIP: 35, DIP: 15 }, thumb: { CMC_abd: 45, CMC_flex: -12, CMC_opp: 12, MCP_flex: 10, IP: 5  }, wrist: { flex: -25, dev: -12 } },
+  closed: { finger: { MCP: 80, PIP: 90, DIP: 60 }, thumb: { CMC_abd: 35, CMC_flex: -20, CMC_opp: 20, MCP_flex: 30, IP: 45 }, wrist: { flex: -35, dev: -15 } },
 };
 
 export const THUMB_RANGE_KEY = {

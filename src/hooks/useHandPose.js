@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useReducer } from "react";
-import { buildProfile, makeDims, restFromDims } from "../utils";
+import { buildProfile, makeDims } from "../utils";
 import {
   buildCmcInputStateForAxis,
   buildThumbCmcClinicalModel,
@@ -22,17 +22,70 @@ const INITIAL_ANTHROPOMETRY = {
   age: 25,
 };
 
-function createInitialState(dims) {
-  const { f, t, w } = restFromDims(dims);
+const CMC_AXIS_DIRECTIONS = {
+  CMC_abd: { positive: "abducao", negative: "aducao" },
+  CMC_flex: { positive: "flexao", negative: "extensao" },
+};
+
+function getDirectionForTarget(axis, target, fallbackDirection) {
+  const cfg = CMC_AXIS_DIRECTIONS[axis];
+  if (!cfg) return fallbackDirection;
+  if (target > 0) return cfg.positive;
+  if (target < 0) return cfg.negative;
+  return fallbackDirection || cfg.positive;
+}
+
+function applyCmcClinicalTargets(thumb, prevInput) {
+  let nextThumb = { ...thumb };
+  const nextInput = { ...prevInput };
+
+  ["CMC_flex", "CMC_abd"].forEach(axis => {
+    const target = Number(thumb?.[axis]) || 0;
+    const prevAxis = prevInput?.[axis];
+    const direction = getDirectionForTarget(axis, target, prevAxis?.direction);
+    const magnitudeDeg = Math.abs(target);
+
+    const { nextInputAxisState, solved } = buildCmcInputStateForAxis({
+      axis,
+      direction,
+      magnitudeDeg,
+      thumbContext: nextThumb,
+      prevState: nextInput,
+    });
+
+    nextThumb = {
+      ...nextThumb,
+      [axis]: solved.commandDeg,
+    };
+    nextInput[axis] = nextInputAxisState;
+  });
+
+  return { nextThumb, nextInput };
+}
+
+function createInitialState() {
+  const base = createZeroPose();
+  const functionalPose = applyGlobalGripToPose(
+    {
+      fingers: base.fingers,
+      thumb: base.thumb,
+      wrist: base.wrist,
+      globalMode: "functional",
+    },
+    50,
+    "functional",
+  );
+  const cmcSeed = createDefaultCmcInputState();
+  const { nextThumb, nextInput } = applyCmcClinicalTargets(functionalPose.thumb, cmcSeed);
   return {
-    fingers: f,
-    thumb: t,
+    fingers: functionalPose.fingers,
+    thumb: nextThumb,
     thumbMeasured: { CMC_abd: 0, CMC_flex: 0 },
-    cmcInput: createDefaultCmcInputState(),
-    wrist: w,
-    grip: 0,
+    cmcInput: nextInput,
+    wrist: functionalPose.wrist,
+    grip: 50,
     globalMode: "functional",
-    activePreset: "none",
+    activePreset: "functional",
   };
 }
 
@@ -127,11 +180,12 @@ function poseReducer(state, action) {
         50,
         "functional",
       );
+      const { nextThumb, nextInput } = applyCmcClinicalTargets(nextPose.thumb, state.cmcInput);
       return {
         ...state,
         fingers: nextPose.fingers,
-        thumb: nextPose.thumb,
-        cmcInput: syncCmcInputStateFromThumb(state.cmcInput, nextPose.thumb),
+        thumb: nextThumb,
+        cmcInput: nextInput,
         wrist: nextPose.wrist,
         globalMode: "functional",
         grip: 50,
@@ -140,11 +194,21 @@ function poseReducer(state, action) {
     }
     case "APPLY_PRESET_NEUTRAL": {
       const neutralPose = createNeutralPose(action.dims);
+      const neutralWithFunctionalCmc = {
+        ...neutralPose,
+        thumb: {
+          ...neutralPose.thumb,
+          CMC_abd: 45,
+          CMC_flex: -12,
+          CMC_opp: 12,
+        },
+      };
+      const { nextThumb, nextInput } = applyCmcClinicalTargets(neutralWithFunctionalCmc.thumb, state.cmcInput);
       return {
         ...state,
         fingers: neutralPose.fingers,
-        thumb: neutralPose.thumb,
-        cmcInput: syncCmcInputStateFromThumb(state.cmcInput, neutralPose.thumb),
+        thumb: nextThumb,
+        cmcInput: nextInput,
         wrist: neutralPose.wrist,
         grip: neutralPose.grip,
         activePreset: neutralPose.activePreset,
@@ -180,15 +244,7 @@ function poseReducer(state, action) {
 
 export function useHandPose() {
   const [state, dispatch] = useReducer(poseReducer, {
-    ...createInitialState(
-      makeDims(
-        buildProfile(
-          INITIAL_ANTHROPOMETRY.sex,
-          INITIAL_ANTHROPOMETRY.percentile,
-          INITIAL_ANTHROPOMETRY.age,
-        ),
-      ),
-    ),
+    ...createInitialState(),
     anthropometry: INITIAL_ANTHROPOMETRY,
   });
 

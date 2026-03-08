@@ -62,6 +62,12 @@ describe("pose domain", () => {
     expect(next.wrist).not.toEqual({ flex: 0, dev: 0 });
   });
 
+  test("applyGlobalGripToPose functional mid keeps CMC flex/ext in extensao", () => {
+    const next = applyGlobalGripToPose(basePose(), 50, "functional");
+    expect(next.thumb.CMC_flex).toBe(-12);
+    expect(next.thumb.CMC_abd).toBe(45);
+  });
+
   test("applyGlobalGripToPose in pinch mode updates only index finger pose", () => {
     const next = applyGlobalGripToPose(basePose(), 50, "pinch");
 

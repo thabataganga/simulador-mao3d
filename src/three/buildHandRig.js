@@ -84,7 +84,7 @@ function buildFingersSubsystem(f, palm, dbgMap, highlightMap, allMovers) {
 
     const mcp = new THREE.Group();
     base.add(mcp);
-    mcp.add(addHL(mkSphere(Wp / 2, matFinger)));
+    mcp.add(addHL(mkSphere(Wp / 2, matFinger.clone())));
 
     const prox = mkPhal(Lp, Wp, matFinger);
     prox.mesh.position.x = Lp / 2;
@@ -93,7 +93,7 @@ function buildFingersSubsystem(f, palm, dbgMap, highlightMap, allMovers) {
     const pip = new THREE.Group();
     pip.position.set(Lp, 0, 0);
     prox.group.add(pip);
-    pip.add(addHL(mkSphere(Wm / 2, matFinger)));
+    pip.add(addHL(mkSphere(Wm / 2, matFinger.clone())));
 
     const mid = mkPhal(Lm, Wm, matFinger);
     mid.mesh.position.x = Lm / 2;
@@ -102,7 +102,7 @@ function buildFingersSubsystem(f, palm, dbgMap, highlightMap, allMovers) {
     const dip = new THREE.Group();
     dip.position.set(Lm, 0, 0);
     mid.group.add(dip);
-    dip.add(addHL(mkSphere(Wd / 2, matFinger)));
+    dip.add(addHL(mkSphere(Wd / 2, matFinger.clone())));
 
     const dist = mkPhal(Ld, Wd, matFinger);
     dist.mesh.position.x = Ld / 2;
@@ -188,6 +188,9 @@ function buildThumbSubsystem(f, palm, dbgMap, highlightMap, allMovers) {
   const proximalLen = d.thumbLen[0] * 0.45;
   const distalLen = d.thumbLen[1];
 
+  const cmcJointSphere = addHL(mkSphere(d.thumbWid[0] * 0.42, matFinger.clone()));
+  cmcPronation.add(cmcJointSphere);
+
   const tMeta = mkPhal(metacarpalLen, d.thumbWid[0] * 1.02, matFinger);
   tMeta.mesh.position.x = metacarpalLen / 2;
   cmcPronation.add(tMeta.group);
@@ -195,7 +198,7 @@ function buildThumbSubsystem(f, palm, dbgMap, highlightMap, allMovers) {
   const tmcp = new THREE.Group();
   tmcp.position.set(metacarpalLen, 0, 0);
   cmcPronation.add(tmcp);
-  tmcp.add(addHL(mkSphere(d.thumbWid[0] / 2, matFinger)));
+  tmcp.add(addHL(mkSphere(d.thumbWid[0] / 2, matFinger.clone())));
 
   const tmcpAccessory = new THREE.Group();
   tmcp.add(tmcpAccessory);
@@ -207,7 +210,7 @@ function buildThumbSubsystem(f, palm, dbgMap, highlightMap, allMovers) {
   const tipIp = new THREE.Group();
   tipIp.position.set(proximalLen, 0, 0);
   tProx.group.add(tipIp);
-  tipIp.add(addHL(mkSphere(d.thumbWid[1] / 2, matFinger)));
+  tipIp.add(addHL(mkSphere(d.thumbWid[1] / 2, matFinger.clone())));
 
   const tDist = mkPhal(distalLen, d.thumbWid[1], matFinger);
   tDist.mesh.position.x = distalLen / 2;
@@ -226,9 +229,9 @@ function buildThumbSubsystem(f, palm, dbgMap, highlightMap, allMovers) {
   allMovers.push(tMeta.mesh, tProx.mesh, tDist.mesh);
   highlightMap.TH_MCP = [tProx.mesh];
   highlightMap.TH_IP = [tDist.mesh];
-  highlightMap.TH_CMC_ABD = [tMeta.mesh, tProx.mesh];
-  highlightMap.TH_CMC_FLEX = [tMeta.mesh, tProx.mesh];
-  highlightMap.TH_CMC_OPP = [tMeta.mesh, tProx.mesh];
+  highlightMap.TH_CMC_ABD = [cmcJointSphere, tMeta.mesh, tProx.mesh];
+  highlightMap.TH_CMC_FLEX = [cmcJointSphere, tMeta.mesh, tProx.mesh];
+  highlightMap.TH_CMC_OPP = [cmcJointSphere, tMeta.mesh, tProx.mesh];
 
   const mkThumbDebug = (node, key, axis, L, W, name, opts) => {
     const pkg = makeDebugPkg(node, key, axis, L, W * 2.2, W * 1.6, `${name}: 0 deg`, opts);
