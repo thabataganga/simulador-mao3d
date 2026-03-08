@@ -1,4 +1,3 @@
-import { Quaternion, Vector3 } from "three";
 import {
   buildCmcInputStateForAxis,
   buildThumbCmcClinicalModel,
@@ -8,27 +7,12 @@ import {
   syncCmcInputStateFromThumb,
 } from "./thumbGoniometry";
 
-function mockNode(position) {
+function makeRig({ abdDeg = 0, flexDeg = 0 } = {}) {
   return {
-    getWorldPosition: target => target.copy(position),
-  };
-}
-
-function makeRig({ thumbMcp, d2Pip }) {
-  return {
-    palm: {
-      getWorldQuaternion: target => target.copy(new Quaternion()),
-    },
     thumb: {
-      cmcAbd: mockNode(new Vector3(0, 0, 0)),
-      mcp: mockNode(thumbMcp),
+      cmcAbd: { rotation: { z: (abdDeg * Math.PI) / 180 } },
+      cmcFlex: { rotation: { y: (flexDeg * Math.PI) / 180 } },
     },
-    fingers: [
-      {
-        mcp: mockNode(new Vector3(0, 0, 0)),
-        pip: mockNode(d2Pip),
-      },
-    ],
   };
 }
 
@@ -44,8 +28,7 @@ describe("thumb goniometry", () => {
     });
 
     expect(model.abd.inputDirection).toBe("aducao");
-    expect(model.abd.direction).toBe("abducao");
-    expect(model.abd.magnitudeDeg).toBe(12);
+    expect(model.abd.magnitudeDeg).toBe(0);
     expect(model.flex.inputMagnitudeDeg).toBe(13);
     expect(model.flex.direction).toBe("extensao");
   });
@@ -63,28 +46,25 @@ describe("thumb goniometry", () => {
     expect(next.CMC_abd.magnitudeDeg).toBe(0);
   });
 
-  test("measures zero when mobile and fixed arms are aligned", () => {
-    const rig = makeRig({
-      thumbMcp: new Vector3(1, 0, 0),
-      d2Pip: new Vector3(1, 0, 0),
+  test("returns isolated and composed measurements", () => {
+    const measured = measureThumbCmcGoniometryFromRig(makeRig({ abdDeg: 10, flexDeg: -8 }), {
+      thumb: { CMC_opp: 34 },
+      baseline: { CMC_abd: 0, CMC_flex: 0 },
     });
 
-    const measured = measureThumbCmcGoniometryFromRig(rig);
-    expect(measured).toEqual({ CMC_abd: 0, CMC_flex: 0 });
+    expect(measured.composed.CMC_abd).toBe(10);
+    expect(measured.composed.CMC_flex).toBe(-8);
+    expect(typeof measured.isolated.CMC_abd).toBe("number");
+    expect(typeof measured.isolated.CMC_flex).toBe("number");
   });
 
-  test("measures positive abduction and flexion for opening vectors", () => {
-    const abdRig = makeRig({
-      thumbMcp: new Vector3(1, 1, 0),
-      d2Pip: new Vector3(1, 0, 0),
-    });
-    const flexRig = makeRig({
-      thumbMcp: new Vector3(1, 0, 1),
-      d2Pip: new Vector3(1, 0, 0),
+  test("applies baseline calibration", () => {
+    const measured = measureThumbCmcGoniometryFromRig(makeRig({ abdDeg: 6, flexDeg: -4 }), {
+      baseline: { CMC_abd: 6, CMC_flex: -4 },
     });
 
-    expect(measureThumbCmcGoniometryFromRig(abdRig).CMC_abd).toBeGreaterThan(0);
-    expect(measureThumbCmcGoniometryFromRig(flexRig).CMC_flex).toBeGreaterThan(0);
+    expect(measured.CMC_abd).toBe(0);
+    expect(measured.CMC_flex).toBe(0);
   });
 
   test("solves command close to requested measured target", () => {

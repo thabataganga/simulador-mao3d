@@ -1,10 +1,11 @@
 import { Vector3 } from "three";
-import { RANGES } from "../constants";
+import { RANGES, THUMB_CMC } from "../constants";
 import { getCmcCommandRange, mapClinicalCmcToRigAngles } from "./thumbCmcMapping";
 import { toPalmFrameVector } from "./thumbFrameUtils";
 
 const RAD_TO_DEG = 180 / Math.PI;
 const TOLERANCE_DEG = 1;
+const CMC_ZERO_EPSILON = 0.5;
 
 const AXIS_CONFIG = {
   CMC_abd: {
@@ -47,6 +48,10 @@ function toRoundedDeg(radians) {
   return normalizeSignedZero(Math.round((Number(radians) || 0) * RAD_TO_DEG));
 }
 
+function toRoundedNumber(value) {
+  return normalizeSignedZero(Math.round(Number(value) || 0));
+}
+
 function getDirectionFromSigned(value, positiveDirection, negativeDirection, fallbackDirection) {
   if (value > 0) return positiveDirection;
   if (value < 0) return negativeDirection;
@@ -56,6 +61,59 @@ function getDirectionFromSigned(value, positiveDirection, negativeDirection, fal
 function toSignedFromDirection(direction, magnitude, positiveDirection) {
   const absValue = Math.abs(Number(magnitude) || 0);
   return direction === positiveDirection ? absValue : -absValue;
+}
+
+function readComposedFromRig(rig) {
+  const abdRad = rig?.thumb?.cmcAbd?.rotation?.z;
+  const flexRad = rig?.thumb?.cmcFlex?.rotation?.y;
+  if (typeof abdRad === "number" && typeof flexRad === "number") {
+    return {
+      CMC_abd: toRoundedDeg(abdRad),
+      CMC_flex: toRoundedDeg(flexRad),
+    };
+  }
+
+  const cmcOrigin = rig?.thumb?.cmcAbd?.getWorldPosition?.(new Vector3());
+  const thumbMcp = rig?.thumb?.mcp?.getWorldPosition?.(new Vector3());
+  const d2Mcp = rig?.fingers?.[0]?.mcp?.getWorldPosition?.(new Vector3());
+  const d2Pip = rig?.fingers?.[0]?.pip?.getWorldPosition?.(new Vector3());
+  if (!cmcOrigin || !thumbMcp || !d2Mcp || !d2Pip || !rig?.palm) return null;
+
+  const mobileWorld = thumbMcp.clone().sub(cmcOrigin);
+  const fixedWorld = d2Pip.clone().sub(d2Mcp);
+
+  const mobilePalm = toPalmFrameVector(rig.palm, mobileWorld);
+  const fixedPalm = toPalmFrameVector(rig.palm, fixedWorld);
+
+  const palmNormal = new Vector3(0, 1, 0);
+  const palmTransverse = new Vector3(0, 0, 1);
+
+  const fixedAbdPlane = projectOnPlane(fixedPalm, palmNormal);
+  const mobileAbdPlane = projectOnPlane(mobilePalm, palmNormal);
+  const abdMeasured = -signedAngleOnPlane(fixedAbdPlane, mobileAbdPlane, palmNormal);
+
+  const fixedFlexPlane = projectOnPlane(fixedPalm, palmTransverse);
+  const mobileFlexPlane = projectOnPlane(mobilePalm, palmTransverse);
+  const flexMeasured = signedAngleOnPlane(fixedFlexPlane, mobileFlexPlane, palmTransverse);
+
+  return {
+    CMC_abd: normalizeSignedZero(Math.round(flexMeasured)),
+    CMC_flex: normalizeSignedZero(Math.round(abdMeasured)),
+  };
+}
+
+function deriveIsolatedFromComposed(composed, thumb) {
+  if (!composed) return null;
+  if (!thumb) return { ...composed };
+
+  const opp = Number(thumb.CMC_opp) || 0;
+  const abdCoupling = THUMB_CMC.CLINICAL_ABD_SIGN * THUMB_CMC.OPP_COUPLING.ABD_GAIN * opp;
+  const flexCoupling = THUMB_CMC.OPP_COUPLING.FLEX_GAIN * opp;
+
+  return {
+    CMC_abd: toRoundedNumber(composed.CMC_abd - abdCoupling),
+    CMC_flex: toRoundedNumber(composed.CMC_flex - flexCoupling),
+  };
 }
 
 export function createDefaultCmcInputState() {
@@ -156,57 +214,35 @@ export function buildCmcInputStateForAxis({ axis, direction, magnitudeDeg, thumb
   };
 }
 
-export function measureThumbCmcGoniometryFromRig(rig) {
-  const isolatedAbdRad = rig?.thumb?.cmcAbd?.rotation?.z;
-  const isolatedFlexRad = rig?.thumb?.cmcFlex?.rotation?.y;
-  if (typeof isolatedAbdRad === "number" && typeof isolatedFlexRad === "number") {
-    return {
-      CMC_abd: toRoundedDeg(isolatedAbdRad),
-      CMC_flex: toRoundedDeg(isolatedFlexRad),
-    };
-  }
+export function measureThumbCmcGoniometryFromRig(rig, options = {}) {
+  const composed = readComposedFromRig(rig);
+  if (!composed) return null;
 
-  const cmcOrigin = rig?.thumb?.cmcAbd?.getWorldPosition?.(new Vector3());
-  const thumbMcp = rig?.thumb?.mcp?.getWorldPosition?.(new Vector3());
-  const d2Mcp = rig?.fingers?.[0]?.mcp?.getWorldPosition?.(new Vector3());
-  const d2Pip = rig?.fingers?.[0]?.pip?.getWorldPosition?.(new Vector3());
-  if (!cmcOrigin || !thumbMcp || !d2Mcp || !d2Pip) return null;
+  const isolatedRaw = deriveIsolatedFromComposed(composed, options.thumb);
+  const baseline = options.baseline || { CMC_abd: 0, CMC_flex: 0 };
 
-  const palm = rig.palm;
-  if (!palm) return null;
+  const isolated = {
+    CMC_abd: toRoundedNumber((isolatedRaw?.CMC_abd ?? composed.CMC_abd) - (Number(baseline.CMC_abd) || 0)),
+    CMC_flex: toRoundedNumber((isolatedRaw?.CMC_flex ?? composed.CMC_flex) - (Number(baseline.CMC_flex) || 0)),
+  };
 
-  const mobileWorld = thumbMcp.clone().sub(cmcOrigin);
-  const fixedWorld = d2Pip.clone().sub(d2Mcp);
-
-  const mobilePalm = toPalmFrameVector(palm, mobileWorld);
-  const fixedPalm = toPalmFrameVector(palm, fixedWorld);
-
-  const palmNormal = new Vector3(0, 1, 0);
-  const palmTransverse = new Vector3(0, 0, 1);
-
-  const fixedAbdPlane = projectOnPlane(fixedPalm, palmNormal);
-  const mobileAbdPlane = projectOnPlane(mobilePalm, palmNormal);
-  const abdMeasured = -signedAngleOnPlane(fixedAbdPlane, mobileAbdPlane, palmNormal);
-
-  const fixedFlexPlane = projectOnPlane(fixedPalm, palmTransverse);
-  const mobileFlexPlane = projectOnPlane(mobilePalm, palmTransverse);
-  const flexMeasured = signedAngleOnPlane(fixedFlexPlane, mobileFlexPlane, palmTransverse);
-
-  // cmcAbd rotates on rig Z and is observed in palm XY plane.
-  // cmcFlex rotates on rig Y and is observed in palm XZ plane.
   return {
-    CMC_abd: normalizeSignedZero(Math.round(flexMeasured)),
-    CMC_flex: normalizeSignedZero(Math.round(abdMeasured)),
+    CMC_abd: isolated.CMC_abd,
+    CMC_flex: isolated.CMC_flex,
+    isolated,
+    composed,
   };
 }
 
 function buildAxisClinicalModel({ axis, thumb, measured, inputState }) {
   const config = AXIS_CONFIG[axis];
   const commandDeg = Number(thumb?.[axis]) || 0;
-  const measuredDeg = Number(measured?.[axis]) || 0;
   const direction = inputState?.direction || config.positiveDirection;
   const magnitudeDeg = Number(inputState?.magnitudeDeg) || 0;
   const targetMeasuredDeg = Number(inputState?.targetMeasuredDeg) || 0;
+
+  const measuredRaw = Number(measured?.isolated?.[axis] ?? measured?.[axis]) || 0;
+  const measuredDeg = Math.abs(magnitudeDeg) <= CMC_ZERO_EPSILON ? 0 : measuredRaw;
 
   return {
     commandDeg,
