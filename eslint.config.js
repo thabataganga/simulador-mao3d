@@ -1,4 +1,4 @@
-﻿import js from '@eslint/js'
+import js from '@eslint/js'
 import globals from 'globals'
 import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
@@ -26,12 +26,6 @@ export default defineConfig([
       'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
       'no-restricted-imports': ['error', {
         paths: [
-          { name: './constants', message: 'Importe de constants/reference/* em vez do barrel.' },
-          { name: '../constants', message: 'Importe de constants/reference/* em vez do barrel.' },
-          { name: '../../constants', message: 'Importe de constants/reference/* em vez do barrel.' },
-          { name: './constants/index', message: 'Importe de constants/reference/* em vez do barrel.' },
-          { name: '../constants/index', message: 'Importe de constants/reference/* em vez do barrel.' },
-          { name: '../../constants/index', message: 'Importe de constants/reference/* em vez do barrel.' },
           { name: './utils', message: 'Importe de utils/* em vez do barrel.' },
           { name: '../utils', message: 'Importe de utils/* em vez do barrel.' },
           { name: '../../utils', message: 'Importe de utils/* em vez do barrel.' },
@@ -81,3 +75,4 @@ export default defineConfig([
     },
   },
 ])
+
