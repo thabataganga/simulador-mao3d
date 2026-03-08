@@ -1,5 +1,5 @@
-import { Vector3 } from "three";
-import { RANGES, THUMB_CMC } from "../constants";
+﻿import { Vector3 } from "three";
+import { RANGES, THUMB_CMC } from "../constants/reference/biomechanics";
 import { getCmcCommandRange, mapClinicalCmcToRigAngles } from "./thumbCmcMapping";
 import { toPalmFrameVector } from "./thumbFrameUtils";
 
@@ -271,3 +271,6 @@ export function buildThumbCmcClinicalModel({ thumb, measured, inputState }) {
     flex: buildAxisClinicalModel({ axis: "CMC_flex", thumb, measured, inputState: state.CMC_flex }),
   };
 }
+
+
+

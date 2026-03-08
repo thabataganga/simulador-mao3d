@@ -1,4 +1,4 @@
-import { PERC_OPTIONS } from "../constants";
+﻿import { PERC_OPTIONS } from "../constants/reference/anthropometry";
 
 export function AnthropometryForm({ sex, percentile, age, onSex, onPercentile, onAge }) {
   return (
@@ -23,3 +23,5 @@ export function AnthropometryForm({ sex, percentile, age, onSex, onPercentile, o
     </div>
   );
 }
+
+

@@ -34,4 +34,24 @@ describe("thumb Kapandji clinical model", () => {
     expect(model.description).toContain("Kapandji 7");
     expect(model.targetId).toBe("kapandji-7");
   });
+
+  test("prefers rig measurement fields when provided in context", () => {
+    const model = buildThumbOppositionClinicalModel({
+      thumb: { CMC_opp: 12 },
+      kapandjiLevel: 3,
+      context: {
+        rigMeasurement: {
+          level: 8,
+          rigDirection: "retroposicao",
+          rigMagnitudeDeg: 56,
+        },
+      },
+    });
+
+    expect(model.estimatedLevel).toBe(8);
+    expect(model.scaleLabel).toBe("Kapandji 8");
+    expect(model.rigDirection).toBe("retroposicao");
+    expect(model.rigMagnitudeDeg).toBe(56);
+    expect(model.rigMeasuredDeg).toBe(-56);
+  });
 });

@@ -40,3 +40,4 @@ describe("threeScene lifecycle utils", () => {
     expect(disposeMatB).toHaveBeenCalledTimes(1);
   });
 });
+

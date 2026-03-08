@@ -1,8 +1,8 @@
-import { Box3, Quaternion, Vector3 } from "three";
+﻿import { Box3, Quaternion, Vector3 } from "three";
 import { setLabelText } from "../three/helpers";
-import { deg2rad, clamp } from "../utils";
-import { RANGES } from "../constants";
-import { mapClinicalThumbToRigRadians, measureThumbCmcGoniometryFromRig } from "../domain/thumb";
+import { deg2rad, clamp } from "../utils/math/core";
+import { RANGES } from "../constants/reference/biomechanics";
+import { mapClinicalThumbToRigRadians, measureThumbCmcGoniometryFromRig, resolveKapandjiOperationalPose } from "../domain/thumb";
 
 export const GLOBAL_DEBUG_KEY_TO_JOINT = {
   GLOBAL_MCP: "MCP",
@@ -436,11 +436,19 @@ export function applyPoseToRig(rig, fingers, thumb, thumbClinical, thumbGoniomet
   const cmcMeasured = measureThumbCmcGoniometryFromRig(rig, { thumb, baseline: cmcBaseline });
   const safeCmcMeasured = cmcMeasured || { CMC_abd: 0, CMC_flex: 0 };
   const kapandjiEstimatedLevel = updateThumbOppositionOverlay(rig, debugKey, dims, thumbClinical, viewport, thumb);
+  const oppositionOperational = resolveKapandjiOperationalPose(kapandjiEstimatedLevel);
+  const oppositionSignedDeg = Number(oppositionOperational.commandDeg) || 0;
+  const oppositionMetric = {
+    level: kapandjiEstimatedLevel,
+    rigDirection: oppositionSignedDeg >= 0 ? "oposicao" : "retroposicao",
+    rigMagnitudeDeg: Math.abs(oppositionSignedDeg),
+  };
   applyMainLabels(rig, fingers, thumb, thumbClinical, thumbGoniometry, wrist);
   updateCmcGoniometerOverlay(rig, debugKey, dims, viewport);
   return {
     ...safeCmcMeasured,
     kapandjiEstimatedLevel,
+    oppositionMetric,
   };
 }
 
@@ -532,3 +540,5 @@ export function applyDebugSelection(rig, debugKey, dims, thumbClinical, thumb, t
     }
   });
 }
+
+

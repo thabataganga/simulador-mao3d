@@ -1,5 +1,5 @@
-import { RANGES, THUMB_CMC, THUMB_RANGE_KEY } from "../../constants";
-import { clamp } from "../../utils";
+﻿import { RANGES, THUMB_CMC, THUMB_RANGE_KEY } from "../../constants/reference/biomechanics";
+import { clamp } from "../../utils/math/core";
 import {
   buildCmcInputStateForAxis,
   createDefaultCmcInputState,
@@ -34,6 +34,24 @@ export const ZERO_OVERLAY = {
 };
 
 const GONIOMETRY_STATE_EPSILON = 1e-4;
+
+function normalizeOppositionMetric(value, fallbackLevel) {
+  if (Number.isFinite(value)) {
+    return {
+      level: Math.round(Number(value)),
+      rigDirection: null,
+      rigMagnitudeDeg: null,
+    };
+  }
+
+  const levelRaw = Number(value?.level);
+  const level = Number.isFinite(levelRaw) ? Math.round(levelRaw) : fallbackLevel;
+  const rigDirection = value?.rigDirection === "retroposicao" ? "retroposicao" : "oposicao";
+  const rigMagnitudeRaw = Number(value?.rigMagnitudeDeg);
+  const rigMagnitudeDeg = Number.isFinite(rigMagnitudeRaw) ? Math.abs(rigMagnitudeRaw) : null;
+
+  return { level, rigDirection, rigMagnitudeDeg };
+}
 
 function getDirectionForTarget(axis, target, fallbackDirection) {
   const cfg = CMC_AXIS_DIRECTIONS[axis];
@@ -119,6 +137,11 @@ export function createHandPoseInitialState() {
     thumbMeasured: { CMC_abd: 0, CMC_flex: 0 },
     cmcInput: nextInput,
     kapandjiEstimatedFromRig: getKapandjiLevelFromCommand(nextThumb.CMC_opp),
+    thumbOppRig: {
+      level: getKapandjiLevelFromCommand(nextThumb.CMC_opp),
+      rigDirection: nextThumb.CMC_opp >= 0 ? "oposicao" : "retroposicao",
+      rigMagnitudeDeg: Math.abs(nextThumb.CMC_opp),
+    },
     isExplorationMode: false,
     exploreOverlayState: { ...ZERO_OVERLAY },
     explorationOppositionIntensity: 0,
@@ -165,11 +188,20 @@ export function poseReducer(state, action) {
       };
     }
     case "SET_OPPOSITION_ESTIMATE": {
-      const nextLevel = Number.isFinite(action.value) ? Math.round(Number(action.value)) : state.kapandjiEstimatedFromRig;
-      if (nextLevel === state.kapandjiEstimatedFromRig) return state;
+      const nextMetric = normalizeOppositionMetric(action.value, state.kapandjiEstimatedFromRig);
+      const levelUnchanged = nextMetric.level === state.kapandjiEstimatedFromRig;
+      const directionUnchanged = nextMetric.rigDirection === state.thumbOppRig?.rigDirection;
+      const magnitudeUnchanged = nextMetric.rigMagnitudeDeg === state.thumbOppRig?.rigMagnitudeDeg;
+      if (levelUnchanged && directionUnchanged && magnitudeUnchanged) return state;
+
       return {
         ...state,
-        kapandjiEstimatedFromRig: nextLevel,
+        kapandjiEstimatedFromRig: nextMetric.level,
+        thumbOppRig: {
+          level: nextMetric.level,
+          rigDirection: nextMetric.rigDirection,
+          rigMagnitudeDeg: nextMetric.rigMagnitudeDeg,
+        },
       };
     }
     case "SET_WRIST":
@@ -218,19 +250,6 @@ export function poseReducer(state, action) {
           [axis]: nextInputAxisState,
         },
         userEditedThumb: { ...state.userEditedThumb, [axis]: true },
-      };
-    }
-    case "SET_THUMB_OPP_INPUT": {
-      const { direction, magnitudeDeg } = action.value;
-      const absMagnitude = Math.abs(Number(magnitudeDeg) || 0);
-      const signed = direction === "oposicao" ? absMagnitude : -absMagnitude;
-      return {
-        ...state,
-        thumb: {
-          ...state.thumb,
-          CMC_opp: signed,
-        },
-        userEditedThumb: { ...state.userEditedThumb, CMC_opp: true },
       };
     }
     case "ENTER_OPPOSITION_EXPLORATION": {
@@ -322,6 +341,11 @@ export function poseReducer(state, action) {
         globalMode: "functional",
         grip: 50,
         activePreset: "functional",
+        thumbOppRig: {
+          level: getKapandjiLevelFromCommand(nextThumb.CMC_opp),
+          rigDirection: nextThumb.CMC_opp >= 0 ? "oposicao" : "retroposicao",
+          rigMagnitudeDeg: Math.abs(nextThumb.CMC_opp),
+        },
       });
     }
     case "APPLY_PRESET_NEUTRAL": {
@@ -344,6 +368,11 @@ export function poseReducer(state, action) {
         wrist: neutralPose.wrist,
         grip: neutralPose.grip,
         activePreset: neutralPose.activePreset,
+        thumbOppRig: {
+          level: getKapandjiLevelFromCommand(nextThumb.CMC_opp),
+          rigDirection: nextThumb.CMC_opp >= 0 ? "oposicao" : "retroposicao",
+          rigMagnitudeDeg: Math.abs(nextThumb.CMC_opp),
+        },
       });
     }
     case "APPLY_PRESET_ZERO": {
@@ -354,6 +383,11 @@ export function poseReducer(state, action) {
         thumb: zeroPose.thumb,
         cmcInput: syncCmcInputStateFromThumb(state.cmcInput, zeroPose.thumb),
         kapandjiEstimatedFromRig: getKapandjiLevelFromCommand(zeroPose.thumb.CMC_opp),
+        thumbOppRig: {
+          level: getKapandjiLevelFromCommand(zeroPose.thumb.CMC_opp),
+          rigDirection: zeroPose.thumb.CMC_opp >= 0 ? "oposicao" : "retroposicao",
+          rigMagnitudeDeg: Math.abs(zeroPose.thumb.CMC_opp),
+        },
         wrist: zeroPose.wrist,
         grip: zeroPose.grip,
         activePreset: zeroPose.activePreset,
@@ -374,3 +408,5 @@ export function poseReducer(state, action) {
       return state;
   }
 }
+
+

@@ -79,7 +79,7 @@ describe("GripPanel", () => {
 });
 
 describe("ThumbPanel", () => {
-  test("shows read-only opposition section when exploration is off", () => {
+  test("shows read-only opposition card and exploration button when exploration is off", () => {
     const onEnterOppositionExploration = jest.fn();
     const onClearPreset = jest.fn();
     const onHighlight = jest.fn();
@@ -104,7 +104,6 @@ describe("ThumbPanel", () => {
       explorationOppositionIntensity: 0,
       onThumbVal: jest.fn(),
       onThumbCmcInput: jest.fn(),
-      onThumbOppInput: jest.fn(),
       onEnterOppositionExploration,
       onUpdateOppositionExploration: jest.fn(),
       onRestoreUserInputData: jest.fn(),
@@ -114,16 +113,17 @@ describe("ThumbPanel", () => {
     });
 
     const oppGroup = elements[2];
-    expect(oppGroup.props.children[0]).toBeNull();
+    const oppInfoCard = oppGroup.props.children[0];
     const explorationPanel = oppGroup.props.children[1];
+
+    expect(oppInfoCard.props.clinical.scaleLabel).toBe("Kapandji 6");
     explorationPanel.props.onEnter();
 
     expect(onEnterOppositionExploration).toHaveBeenCalledTimes(1);
     expect(onClearPreset).toHaveBeenCalledTimes(1);
   });
 
-  test("shows editable opposition slider when exploration is on", () => {
-    const onThumbOppInput = jest.fn();
+  test("updates exploration intensity without direct CMC opposition editing", () => {
     const onUpdateOppositionExploration = jest.fn();
     const onRestoreUserInputData = jest.fn();
     const onExitOppositionExploration = jest.fn();
@@ -149,7 +149,6 @@ describe("ThumbPanel", () => {
       explorationOppositionIntensity: 12,
       onThumbVal: jest.fn(),
       onThumbCmcInput: jest.fn(),
-      onThumbOppInput,
       onEnterOppositionExploration: jest.fn(),
       onUpdateOppositionExploration,
       onRestoreUserInputData,
@@ -159,20 +158,14 @@ describe("ThumbPanel", () => {
     });
 
     const oppGroup = elements[2];
-    const oppControl = oppGroup.props.children[0];
-    expect(oppControl.props.axis).toBe("CMC_opp");
-    oppControl.props.onApply("CMC_opp", "retroposicao", 8);
-
     const explorationPanel = oppGroup.props.children[1];
     explorationPanel.props.onUpdate(15);
     explorationPanel.props.onRestore();
     explorationPanel.props.onExit();
 
-    expect(onThumbOppInput).toHaveBeenCalledWith("CMC_opp", "retroposicao", 8);
     expect(onUpdateOppositionExploration).toHaveBeenCalledWith(15);
     expect(onRestoreUserInputData).toHaveBeenCalledTimes(1);
     expect(onExitOppositionExploration).toHaveBeenCalledTimes(1);
-    expect(onClearPreset).toHaveBeenCalledTimes(2);
+    expect(onClearPreset).toHaveBeenCalledTimes(1);
   });
 });
-

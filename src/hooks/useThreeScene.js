@@ -17,6 +17,10 @@ import { attachRendererToElement, detachRendererFromElement, disposeSceneMateria
 export function useThreeScene(mountRef, viewcubeRef) {
   const orbitRef = useRef(null);
   const [controlsReady, setControlsReady] = useState(false);
+  const invertedCameraQuaternionRef = useRef(new Quaternion());
+  const mainRendererSizeRef = useRef({ width: 0, height: 0 });
+  const miniRendererSizeRef = useRef({ width: 0, height: 0 });
+  const miniAttachedRef = useRef(false);
 
   const three = useMemo(() => {
     const scene = new Scene();
@@ -54,10 +58,21 @@ export function useThreeScene(mountRef, viewcubeRef) {
     if (!mount) return;
 
     const { scene, camera, renderer } = three;
+    const { scene: miniScene, camera: miniCamera, renderer: miniRenderer, cube: miniCube } = mini;
+
     const resize = () => {
-      camera.aspect = mount.clientWidth / mount.clientHeight;
+      const width = mount.clientWidth;
+      const height = mount.clientHeight;
+      if (width <= 0 || height <= 0) return;
+
+      camera.aspect = width / height;
       camera.updateProjectionMatrix();
-      renderer.setSize(mount.clientWidth, mount.clientHeight);
+
+      const prev = mainRendererSizeRef.current;
+      if (prev.width !== width || prev.height !== height) {
+        renderer.setSize(width, height);
+        mainRendererSizeRef.current = { width, height };
+      }
     };
 
     resize();
@@ -72,8 +87,14 @@ export function useThreeScene(mountRef, viewcubeRef) {
       if (disposed) return;
       raf = requestAnimationFrame(animate);
       controls?.update();
-      mini.cube.setRotationFromQuaternion(new Quaternion().copy(camera.quaternion).invert());
+
+      invertedCameraQuaternionRef.current.copy(camera.quaternion).invert();
+      miniCube.setRotationFromQuaternion(invertedCameraQuaternionRef.current);
+
       renderer.render(scene, camera);
+      if (miniAttachedRef.current) {
+        miniRenderer.render(miniScene, miniCamera);
+      }
     };
 
     (async () => {
@@ -102,25 +123,26 @@ export function useThreeScene(mountRef, viewcubeRef) {
       renderer.dispose();
       disposeSceneMaterials(scene);
     };
-  }, [mountRef, mini, three]);
+  }, [mini, mountRef, three]);
 
   useEffect(() => {
     const viewcube = viewcubeRef.current;
     if (!viewcube) return;
 
-    const { scene, camera, renderer } = mini;
-    renderer.setSize(100, 100);
+    const { renderer } = mini;
+    const targetWidth = 100;
+    const targetHeight = 100;
+    const prev = miniRendererSizeRef.current;
+    if (prev.width !== targetWidth || prev.height !== targetHeight) {
+      renderer.setSize(targetWidth, targetHeight);
+      miniRendererSizeRef.current = { width: targetWidth, height: targetHeight };
+    }
+
     attachRendererToElement(viewcube, renderer);
+    miniAttachedRef.current = true;
 
-    let raf = 0;
-    const loop = () => {
-      raf = requestAnimationFrame(loop);
-      renderer.render(scene, camera);
-    };
-
-    loop();
     return () => {
-      cancelAnimationFrame(raf);
+      miniAttachedRef.current = false;
       detachRendererFromElement(viewcube, renderer);
       renderer.dispose();
     };

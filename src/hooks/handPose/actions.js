@@ -43,9 +43,6 @@ export function createPoseActions({ dispatch, track, dims, globalMode }) {
     setThumbCmcInput: (axis, direction, magnitudeDeg) => {
       dispatch({ type: "SET_THUMB_CMC_INPUT", value: { axis, direction, magnitudeDeg } });
     },
-    setThumbOppInput: (axis, direction, magnitudeDeg) => {
-      dispatch({ type: "SET_THUMB_OPP_INPUT", value: { axis, direction, magnitudeDeg } });
-    },
     enterOppositionExploration: () => dispatch({ type: "ENTER_OPPOSITION_EXPLORATION" }),
     updateOppositionExploration: intensity => {
       dispatch({ type: "UPDATE_OPPOSITION_EXPLORATION", value: { intensity } });
@@ -70,3 +67,4 @@ export function createPoseActions({ dispatch, track, dims, globalMode }) {
     },
   };
 }
+

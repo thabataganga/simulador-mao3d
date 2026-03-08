@@ -1,5 +1,5 @@
-import { KAPANDJI_LEVEL_LABELS, KAPANDJI_RANGE, KAPANDJI_TO_CMC_OPP_COMMAND } from "../constants";
-import { clamp } from "../utils";
+﻿import { KAPANDJI_LEVEL_LABELS, KAPANDJI_RANGE, KAPANDJI_TO_CMC_OPP_COMMAND } from "../constants/reference/kapandji";
+import { clamp } from "../utils/math/core";
 
 function defaultOperationalResolver(level) {
   return KAPANDJI_TO_CMC_OPP_COMMAND[level] ?? KAPANDJI_TO_CMC_OPP_COMMAND[0];
@@ -39,9 +39,16 @@ export function getKapandjiLevelFromCommand(commandDeg, context = {}) {
 export function buildThumbOppositionClinicalModel({ thumb, kapandjiLevel, context = {} }) {
   const commandDeg = Number(thumb?.CMC_opp) || 0;
   const derivedLevel = getKapandjiLevelFromCommand(commandDeg, context);
-  const estimatedLevel = clampKapandjiLevel(kapandjiLevel ?? derivedLevel);
+  const rigLevel = Number(context?.rigMeasurement?.level);
+  const estimatedLevel = clampKapandjiLevel(
+    Number.isFinite(rigLevel) ? rigLevel : (kapandjiLevel ?? derivedLevel),
+  );
   const { commandDeg: operationalCommandDeg } = resolveKapandjiOperationalPose(estimatedLevel, context);
   const label = KAPANDJI_LEVEL_LABELS[estimatedLevel] || KAPANDJI_LEVEL_LABELS[0];
+  const rigDirection = context?.rigMeasurement?.rigDirection || (commandDeg >= 0 ? "oposicao" : "retroposicao");
+  const rigMagnitudeDegRaw = Number(context?.rigMeasurement?.rigMagnitudeDeg);
+  const rigMagnitudeDeg = Number.isFinite(rigMagnitudeDegRaw) ? Math.abs(rigMagnitudeDegRaw) : Math.abs(commandDeg);
+  const rigSignedDeg = rigDirection === "retroposicao" ? -rigMagnitudeDeg : rigMagnitudeDeg;
 
   return {
     level: estimatedLevel,
@@ -49,7 +56,9 @@ export function buildThumbOppositionClinicalModel({ thumb, kapandjiLevel, contex
     estimatedLabel: label,
     commandDeg,
     clinicalTargetDeg: commandDeg,
-    rigMeasuredDeg: commandDeg,
+    rigMeasuredDeg: rigSignedDeg,
+    rigDirection,
+    rigMagnitudeDeg,
     inputDirection: commandDeg >= 0 ? "oposicao" : "retroposicao",
     inputMagnitudeDeg: Math.abs(commandDeg),
     operationalCommandDeg,
@@ -59,3 +68,4 @@ export function buildThumbOppositionClinicalModel({ thumb, kapandjiLevel, contex
     scaleLabel: `Kapandji ${estimatedLevel}`,
   };
 }
+

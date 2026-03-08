@@ -145,3 +145,4 @@ describe("thumb goniometry", () => {
     expect(solved.saturated).toBe(false);
   });
 });
+

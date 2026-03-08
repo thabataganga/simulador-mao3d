@@ -21,3 +21,4 @@ describe("useThreeScene lifecycle guards", () => {
     expect(host.removeChild).not.toHaveBeenCalled();
   });
 });
+

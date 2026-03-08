@@ -1,4 +1,5 @@
-import { RANGES, THUMB_SLIDER_CONFIG } from "../constants";
+﻿import { RANGES } from "../constants/reference/biomechanics";
+import { THUMB_SLIDER_CONFIG } from "../constants/reference/uiConfig";
 import { LabeledSlider } from "./LabeledSlider";
 
 function DirectionMagnitudeSlider({
@@ -100,9 +101,32 @@ function DirectionMagnitudeSlider({
   );
 }
 
+function OppInfoCard({ clinical, onHighlight }) {
+  return (
+    <div
+      className="mb-3 border border-gray-200 rounded-md p-2"
+      role="button"
+      tabIndex={0}
+      onMouseEnter={onHighlight}
+      onFocus={onHighlight}
+      onClick={onHighlight}
+      onKeyDown={event => {
+        if (event.key === "Enter" || event.key === " ") onHighlight?.();
+      }}
+    >
+      <div className="text-sm font-medium mb-2">CMC Oposicao</div>
+      <div className="mt-1 text-xs text-gray-600">
+        Medida do rig: <strong>{clinical.rigDirection || clinical.direction || clinical.inputDirection} {clinical.rigMagnitudeDeg ?? clinical.magnitudeDeg ?? clinical.inputMagnitudeDeg}deg</strong>
+      </div>
+      <div className="mt-1 text-xs text-gray-600">
+        Kapandji estimado: <strong>{clinical.scaleLabel}</strong> <span className="text-[11px] text-gray-500">{clinical.estimatedLabel}</span>
+      </div>
+    </div>
+  );
+}
+
 function OppositionExplorationPanel({
   isExplorationMode,
-  clinical,
   intensity,
   onEnter,
   onUpdate,
@@ -120,24 +144,16 @@ function OppositionExplorationPanel({
       </p>
 
       {!isExplorationMode ? (
-        <>
-          <div className="mt-1 text-xs text-gray-600">
-            Medida do rig: <strong>{clinical.rigDirection || clinical.direction || clinical.inputDirection} {clinical.rigMagnitudeDeg ?? clinical.magnitudeDeg ?? clinical.inputMagnitudeDeg}deg</strong>
-          </div>
-          <div className="mt-1 text-xs text-gray-600">
-            Kapandji estimado: <strong>{clinical.scaleLabel}</strong> <span className="text-[11px] text-gray-500">{clinical.estimatedLabel}</span>
-          </div>
-          <button
-            type="button"
-            className="mt-2 px-3 py-1 text-xs rounded-md border border-blue-400 text-blue-700"
-            onClick={() => {
-              onEnter();
-              onHighlight?.();
-            }}
-          >
-            Explorar oposicao
-          </button>
-        </>
+        <button
+          type="button"
+          className="mt-1 px-3 py-1 text-xs rounded-md border border-blue-400 text-blue-700"
+          onClick={() => {
+            onEnter();
+            onHighlight?.();
+          }}
+        >
+          Explorar oposicao
+        </button>
       ) : (
         <>
           <div className="mb-2">
@@ -187,7 +203,6 @@ export function ThumbPanel({
   explorationOppositionIntensity,
   onThumbVal,
   onThumbCmcInput,
-  onThumbOppInput,
   onEnterOppositionExploration,
   onUpdateOppositionExploration,
   onRestoreUserInputData,
@@ -247,26 +262,12 @@ export function ThumbPanel({
     if (item.key === "CMC_opp") {
       return (
         <div key={item.key}>
-          {isExplorationMode ? (
-            <DirectionMagnitudeSlider
-              axis="CMC_opp"
-              label="CMC Oposicao"
-              clinical={thumbClinical.opp}
-              positiveDirection="oposicao"
-              negativeDirection="retroposicao"
-              min={min}
-              max={max}
-              onApply={(axis, direction, magnitude) => {
-                onThumbOppInput(axis, direction, magnitude);
-                onClearPreset();
-              }}
-              onHighlight={() => onHighlight(item.debugKey)}
-              extraFooter={<span>Kapandji estimado: <strong>{thumbClinical.opp.scaleLabel}</strong> <span className="text-[11px] text-gray-500">{thumbClinical.opp.estimatedLabel}</span></span>}
-            />
-          ) : null}
+          <OppInfoCard
+            clinical={thumbClinical.opp}
+            onHighlight={() => onHighlight(item.debugKey)}
+          />
           <OppositionExplorationPanel
             isExplorationMode={isExplorationMode}
-            clinical={thumbClinical.opp}
             intensity={explorationOppositionIntensity}
             onEnter={() => {
               onEnterOppositionExploration();
@@ -302,3 +303,4 @@ export function ThumbPanel({
     );
   });
 }
+

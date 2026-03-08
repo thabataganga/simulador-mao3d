@@ -1,5 +1,5 @@
-import { RANGES, THUMB_CMC } from "../constants";
-import { clamp, deg2rad } from "../utils";
+﻿import { RANGES, THUMB_CMC } from "../constants/reference/biomechanics";
+import { clamp, deg2rad } from "../utils/math/core";
 
 export function getCmcCommandRange(axis) {
   const oppMin = RANGES.CMC_OPP[0];
@@ -61,3 +61,6 @@ export function mapClinicalCmcToRigRadians(thumb) {
     },
   };
 }
+
+
+

@@ -21,7 +21,6 @@ function baseProps(overrides = {}) {
     explorationOppositionIntensity: 10,
     onThumbVal: jest.fn(),
     onThumbCmcInput: jest.fn(),
-    onThumbOppInput: jest.fn(),
     onEnterOppositionExploration: jest.fn(),
     onUpdateOppositionExploration: jest.fn(),
     onRestoreUserInputData: jest.fn(),
@@ -41,6 +40,33 @@ describe("ThumbPanel structure and callbacks", () => {
     expect(elements[1].props.axis).toBe("CMC_abd");
     expect(elements[3].props.label).toContain("MCP");
     expect(elements[4].props.label).toContain("IP");
+  });
+
+  test("shows CMC opposition read-only card and keeps exploration controls", () => {
+    const onUpdateOppositionExploration = jest.fn();
+    const onClearPreset = jest.fn();
+    const onHighlight = jest.fn();
+
+    const elements = ThumbPanel(
+      baseProps({
+        isExplorationMode: true,
+        onUpdateOppositionExploration,
+        onClearPreset,
+        onHighlight,
+      }),
+    );
+
+    const oppGroup = elements[2];
+    const oppInfoCard = oppGroup.props.children[0];
+    const explorationPanel = oppGroup.props.children[1];
+
+    expect(oppInfoCard.props.clinical.scaleLabel).toBe("Kapandji 4");
+    oppInfoCard.props.onHighlight();
+    expect(onHighlight).toHaveBeenCalledTimes(1);
+
+    explorationPanel.props.onUpdate(15);
+    expect(onUpdateOppositionExploration).toHaveBeenCalledWith(15);
+    expect(onClearPreset).toHaveBeenCalledTimes(1);
   });
 
   test("non-CMC sliders clear preset and forward value", () => {

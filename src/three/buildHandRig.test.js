@@ -29,7 +29,7 @@ jest.mock("three/examples/jsm/lines/LineMaterial.js", () => ({
   },
 }));
 
-import { buildProfile, makeDims } from "../utils";
+import { buildProfile, makeDims } from "../utils/anthropometry/profile";
 import { buildHandRig } from "./buildHandRig";
 
 describe("buildHandRig debug anchors", () => {
@@ -69,3 +69,5 @@ describe("buildHandRig debug anchors", () => {
     expect(rig.thumb.debug.cmcOpp.parent).not.toBe(rig.thumb.cmcPronation);
   });
 });
+
+

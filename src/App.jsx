@@ -1,17 +1,13 @@
-import { lazy, Suspense, useCallback, useEffect, useState } from "react";
-import { CMC_TEMP_RANGE } from "./constants";
+﻿import { lazy, Suspense, useCallback, useEffect, useState } from "react";
+import { CMC_TEMP_RANGE } from "./constants/reference/biomechanics";
 
 import { useHandPose } from "./hooks/useHandPose";
 
-import { AccordionItem } from "./components/AccordionItem";
-import { AnthropometryForm } from "./components/AnthropometryForm";
-import { PresetButtons } from "./components/PresetButtons";
-import { GlobalD2D5Panel } from "./components/GlobalD2D5Panel";
-import { ThumbPanel } from "./components/ThumbPanel";
-import { WristPanel } from "./components/WristPanel";
-import { GripPanel } from "./components/GripPanel";
+import { AccordionItem, AnthropometryForm, PresetButtons, GlobalD2D5Panel, GripPanel } from "./features/pose-controls";
+import { ThumbPanel } from "./features/thumb";
+import { WristPanel } from "./features/wrist";
 
-const HandScene3D = lazy(() => import("./components/HandScene3D"));
+const HandScene3D = lazy(() => import("./features/scene3d"));
 
 export default function HandSimulatorApp() {
   const [debugKey, setDebugKey] = useState("off");
@@ -142,7 +138,6 @@ export default function HandSimulatorApp() {
             explorationOppositionIntensity={poseState.explorationOppositionIntensity}
             onThumbVal={poseActions.setThumbVal}
             onThumbCmcInput={poseActions.setThumbCmcInput}
-            onThumbOppInput={poseActions.setThumbOppInput}
             onEnterOppositionExploration={poseActions.enterOppositionExploration}
             onUpdateOppositionExploration={poseActions.updateOppositionExploration}
             onRestoreUserInputData={poseActions.restoreUserInputData}
@@ -197,3 +192,4 @@ export default function HandSimulatorApp() {
     </div>
   );
 }
+

@@ -84,3 +84,4 @@ describe("three label helpers", () => {
     expect(label.scale.x).toBe(initialScaleX);
   });
 });
+

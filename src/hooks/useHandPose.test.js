@@ -1,5 +1,5 @@
 import { applyGlobalGripToPose } from "../domain/pose";
-import { buildProfile, makeDims } from "../utils";
+import { buildProfile, makeDims } from "../utils/anthropometry/profile";
 import { buildCmcInputStateForAxis, createDefaultCmcInputState } from "../domain/thumb";
 import { __testables } from "./useHandPose";
 
@@ -63,24 +63,6 @@ describe("useHandPose reducer", () => {
     expect(next.cmcInput.CMC_abd.direction).toBe("abducao");
   });
 
-  test("SET_THUMB_OPP_INPUT updates only CMC opposition command", () => {
-    const state = {
-      ...__testables.createInitialState(),
-      anthropometry: { sex: "masculino", percentile: 50, age: 25 },
-    };
-
-    const next = __testables.poseReducer(state, {
-      type: "SET_THUMB_OPP_INPUT",
-      value: { axis: "CMC_opp", direction: "oposicao", magnitudeDeg: 23 },
-    });
-
-    expect(next.thumb.CMC_opp).toBe(23);
-    expect(next.thumb.CMC_flex).toBe(state.thumb.CMC_flex);
-    expect(next.thumb.CMC_abd).toBe(state.thumb.CMC_abd);
-    expect(next.thumb.MCP_flex).toBe(state.thumb.MCP_flex);
-    expect(next.thumb.IP).toBe(state.thumb.IP);
-  });
-
   test("SET_THUMB_GONIOMETRY ignores Kapandji feedback values", () => {
     const state = {
       ...__testables.createInitialState(),
@@ -98,6 +80,31 @@ describe("useHandPose reducer", () => {
     expect(next.thumbMeasured.CMC_flex).toBeCloseTo(-8.25, 6);
   });
 
+
+  test("SET_OPPOSITION_ESTIMATE supports structured rig payload and legacy number", () => {
+    const state = {
+      ...__testables.createInitialState(),
+      anthropometry: { sex: "masculino", percentile: 50, age: 25 },
+      kapandjiEstimatedFromRig: 4,
+      thumbOppRig: { level: 4, rigDirection: "oposicao", rigMagnitudeDeg: 23 },
+    };
+
+    const withObject = __testables.poseReducer(state, {
+      type: "SET_OPPOSITION_ESTIMATE",
+      value: { level: 7, rigDirection: "retroposicao", rigMagnitudeDeg: 48 },
+    });
+
+    expect(withObject.kapandjiEstimatedFromRig).toBe(7);
+    expect(withObject.thumbOppRig).toEqual({ level: 7, rigDirection: "retroposicao", rigMagnitudeDeg: 48 });
+
+    const withLegacyNumber = __testables.poseReducer(withObject, {
+      type: "SET_OPPOSITION_ESTIMATE",
+      value: 5,
+    });
+
+    expect(withLegacyNumber.kapandjiEstimatedFromRig).toBe(5);
+    expect(withLegacyNumber.thumbOppRig).toEqual({ level: 5, rigDirection: null, rigMagnitudeDeg: null });
+  });
   test("SET_THUMB_GONIOMETRY returns same state when values are unchanged", () => {
     const state = {
       ...__testables.createInitialState(),
@@ -187,3 +194,4 @@ describe("useHandPose reducer", () => {
     expect(next.anthropometry).toEqual({ sex: "masculino", percentile: 95, age: 25 });
   });
 });
+

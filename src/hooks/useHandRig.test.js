@@ -99,3 +99,4 @@ describe("useHandRig testables", () => {
     expect(pkgOpp.setLabelPosition).toHaveBeenCalledWith(null);
   });
 });
+

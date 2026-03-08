@@ -1,4 +1,4 @@
-import { RANGES } from "../constants";
+﻿import { RANGES } from "../constants/reference/biomechanics";
 import { LabeledSlider } from "./LabeledSlider";
 
 const SLIDERS = [
@@ -30,3 +30,6 @@ export function GlobalD2D5Panel({ globalD2D5, onUpdate, onHighlight, onClearPres
     </>
   );
 }
+
+
+

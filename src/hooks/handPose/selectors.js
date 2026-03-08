@@ -1,4 +1,4 @@
-import { buildProfile, makeDims } from "../../utils";
+import { buildProfile, makeDims } from "../../utils/anthropometry/profile";
 import { buildThumbCmcClinicalModel, buildThumbOppositionClinicalModel } from "../../domain/thumb";
 import { calculateGlobalD2D5, createSceneInput } from "../../domain/pose";
 import { composeThumbWithOverlay } from "./reducer";
@@ -31,11 +31,12 @@ export function selectThumbGoniometry(thumb, thumbMeasured, cmcInput) {
   });
 }
 
-export function selectThumbClinical(renderedThumb, kapandjiEstimatedFromRig) {
+export function selectThumbClinical(renderedThumb, kapandjiEstimatedFromRig, thumbOppRig) {
   return {
     opp: buildThumbOppositionClinicalModel({
       thumb: renderedThumb,
       kapandjiLevel: kapandjiEstimatedFromRig,
+      context: { rigMeasurement: thumbOppRig },
     }),
   };
 }

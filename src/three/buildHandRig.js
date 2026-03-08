@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { THUMB_CMC_NEUTRAL } from "../domain/thumb";
-import { deg2rad } from "../utils";
+import { deg2rad } from "../utils/math/core";
 import { makeDebugPkg } from "./helpers";
 
 const matArm = new THREE.MeshStandardMaterial({ color: 0xcad4e0, roughness: 0.8, metalness: 0.05 });
@@ -329,3 +329,5 @@ export function buildHandRig(d) {
     highlight: { map: highlightMap, all: hlList },
   };
 }
+
+

@@ -47,11 +47,33 @@ export function useHandRig({
 
   const emitOppositionEstimate = useCallback(
     measured => {
-      const nextLevel = Number(measured?.kapandjiEstimatedLevel);
-      if (!onOppositionEstimate || !Number.isFinite(nextLevel)) return;
-      if (lastOppositionEstimateRef.current === nextLevel) return;
-      lastOppositionEstimateRef.current = nextLevel;
-      onOppositionEstimate(nextLevel);
+      if (!onOppositionEstimate) return;
+
+      const metric = measured?.oppositionMetric;
+      if (!metric) return;
+
+      const nextLevel = Number(metric.level);
+      const nextDirection = metric.rigDirection === "retroposicao" ? "retroposicao" : "oposicao";
+      const nextMagnitudeRaw = Number(metric.rigMagnitudeDeg);
+      const nextMagnitudeDeg = Number.isFinite(nextMagnitudeRaw) ? Math.abs(nextMagnitudeRaw) : null;
+      if (!Number.isFinite(nextLevel)) return;
+
+      const prev = lastOppositionEstimateRef.current;
+      const unchanged =
+        prev &&
+        prev.level === nextLevel &&
+        prev.rigDirection === nextDirection &&
+        prev.rigMagnitudeDeg === nextMagnitudeDeg;
+      if (unchanged) return;
+
+      const nextPayload = {
+        level: Math.round(nextLevel),
+        rigDirection: nextDirection,
+        rigMagnitudeDeg: nextMagnitudeDeg,
+      };
+
+      lastOppositionEstimateRef.current = nextPayload;
+      onOppositionEstimate(nextPayload);
     },
     [onOppositionEstimate],
   );
