@@ -43,6 +43,10 @@ function normalizeSignedZero(value) {
   return Object.is(value, -0) ? 0 : value;
 }
 
+function toRoundedDeg(radians) {
+  return normalizeSignedZero(Math.round((Number(radians) || 0) * RAD_TO_DEG));
+}
+
 function getDirectionFromSigned(value, positiveDirection, negativeDirection, fallbackDirection) {
   if (value > 0) return positiveDirection;
   if (value < 0) return negativeDirection;
@@ -153,6 +157,15 @@ export function buildCmcInputStateForAxis({ axis, direction, magnitudeDeg, thumb
 }
 
 export function measureThumbCmcGoniometryFromRig(rig) {
+  const isolatedAbdRad = rig?.thumb?.cmcAbd?.rotation?.z;
+  const isolatedFlexRad = rig?.thumb?.cmcFlex?.rotation?.y;
+  if (typeof isolatedAbdRad === "number" && typeof isolatedFlexRad === "number") {
+    return {
+      CMC_abd: toRoundedDeg(isolatedAbdRad),
+      CMC_flex: toRoundedDeg(isolatedFlexRad),
+    };
+  }
+
   const cmcOrigin = rig?.thumb?.cmcAbd?.getWorldPosition?.(new Vector3());
   const thumbMcp = rig?.thumb?.mcp?.getWorldPosition?.(new Vector3());
   const d2Mcp = rig?.fingers?.[0]?.mcp?.getWorldPosition?.(new Vector3());

@@ -27,12 +27,6 @@ function projectOnPlane(vector, planeNormal) {
   return vector.clone().sub(normal.multiplyScalar(vector.dot(normal)));
 }
 
-function toPalmFrameVector(palm, worldVector) {
-  const quaternion = palm.getWorldQuaternion(new Quaternion());
-  const inverse = quaternion.clone().invert();
-  return worldVector.clone().applyQuaternion(inverse);
-}
-
 function toNodeLocalVector(node, worldVector) {
   const quaternion = node.getWorldQuaternion(new Quaternion());
   const inverse = quaternion.clone().invert();
@@ -97,6 +91,17 @@ function buildGoniometerSegments({ fixedDir, movingDir, planeNormal, rayLength, 
   }
 
   return segments;
+}
+
+function rotateAroundAxis(vector, axis, radians) {
+  const q = new Quaternion().setFromAxisAngle(axis.clone().normalize(), radians);
+  return vector.clone().applyQuaternion(q);
+}
+
+function ensureProjectedUnit(vector, planeNormal, fallback) {
+  const projected = projectOnPlane(vector, planeNormal);
+  if (projected.lengthSq() < 1e-8) return fallback.clone();
+  return projected.normalize();
 }
 
 function getViewportSize(three) {
@@ -164,47 +169,44 @@ function computeCmcLabelPosition({
 }
 
 function computeCmcGoniometerVectors(rig) {
-  const cmcOrigin = rig?.thumb?.cmcAbd?.getWorldPosition?.(new Vector3());
-  const thumbMcp = rig?.thumb?.mcp?.getWorldPosition?.(new Vector3());
+  const cmcAbdNode = rig?.thumb?.cmcAbd;
+  const cmcFlexNode = rig?.thumb?.cmcFlex;
   const d2Mcp = rig?.fingers?.[0]?.mcp?.getWorldPosition?.(new Vector3());
   const d2Pip = rig?.fingers?.[0]?.pip?.getWorldPosition?.(new Vector3());
-  const palm = rig?.palm;
-  if (!cmcOrigin || !thumbMcp || !d2Mcp || !d2Pip || !palm) return null;
+  if (!cmcAbdNode || !cmcFlexNode || !d2Mcp || !d2Pip) return null;
 
-  const mobileWorld = thumbMcp.clone().sub(cmcOrigin);
   const fixedWorld = d2Pip.clone().sub(d2Mcp);
+  const abdAngle = Number(cmcAbdNode.rotation?.z) || 0;
+  const flexAngle = Number(cmcFlexNode.rotation?.y) || 0;
 
-  const mobilePalm = toPalmFrameVector(palm, mobileWorld);
-  const fixedPalm = toPalmFrameVector(palm, fixedWorld);
+  const abdNormalLocal = new Vector3(0, 0, 1);
+  const flexNormalLocal = new Vector3(0, 1, 0);
+  const fallbackAxis = new Vector3(1, 0, 0);
 
-  const palmNormal = new Vector3(0, 1, 0);
-  const palmTransverse = new Vector3(0, 0, 1);
+  const fixedAbdLocal = ensureProjectedUnit(
+    toNodeLocalVector(cmcAbdNode, fixedWorld),
+    abdNormalLocal,
+    fallbackAxis,
+  );
+  const fixedFlexLocal = ensureProjectedUnit(
+    toNodeLocalVector(cmcFlexNode, fixedWorld),
+    flexNormalLocal,
+    fallbackAxis,
+  );
 
-  const flexFixedPalm = projectOnPlane(fixedPalm, palmNormal);
-  const flexMovingPalm = projectOnPlane(mobilePalm, palmNormal);
-
-  const abdFixedPalm = projectOnPlane(fixedPalm, palmTransverse);
-  const abdMovingPalm = projectOnPlane(mobilePalm, palmTransverse);
-
-  const worldFromPalm = palm.getWorldQuaternion(new Quaternion());
-  const flexFixedWorld = flexFixedPalm.clone().normalize().applyQuaternion(worldFromPalm);
-  const flexMovingWorld = flexMovingPalm.clone().normalize().applyQuaternion(worldFromPalm);
-  const flexNormalWorld = palmNormal.clone().applyQuaternion(worldFromPalm).normalize();
-
-  const abdFixedWorld = abdFixedPalm.clone().normalize().applyQuaternion(worldFromPalm);
-  const abdMovingWorld = abdMovingPalm.clone().normalize().applyQuaternion(worldFromPalm);
-  const abdNormalWorld = palmTransverse.clone().applyQuaternion(worldFromPalm).normalize();
+  const movingAbdLocal = rotateAroundAxis(fixedAbdLocal, abdNormalLocal, abdAngle);
+  const movingFlexLocal = rotateAroundAxis(fixedFlexLocal, flexNormalLocal, flexAngle);
 
   return {
     TH_CMC_FLEX: {
-      fixedWorld: flexFixedWorld,
-      movingWorld: flexMovingWorld,
-      normalWorld: flexNormalWorld,
+      fixedLocal: fixedFlexLocal,
+      movingLocal: movingFlexLocal,
+      normalLocal: flexNormalLocal,
     },
     TH_CMC_ABD: {
-      fixedWorld: abdFixedWorld,
-      movingWorld: abdMovingWorld,
-      normalWorld: abdNormalWorld,
+      fixedLocal: fixedAbdLocal,
+      movingLocal: movingAbdLocal,
+      normalLocal: abdNormalLocal,
     },
   };
 }
@@ -240,9 +242,9 @@ function updateCmcGoniometerOverlay(rig, debugKey, dims, viewport) {
       return;
     }
 
-    const fixedDir = toNodeLocalVector(pkg.plane.parent, v.fixedWorld);
-    const movingDir = toNodeLocalVector(pkg.plane.parent, v.movingWorld);
-    const planeNormal = toNodeLocalVector(pkg.plane.parent, v.normalWorld);
+    const fixedDir = v.fixedLocal.clone();
+    const movingDir = v.movingLocal.clone();
+    const planeNormal = v.normalLocal.clone();
 
     const palmLength = dims?.palm?.LENGTH ?? 70;
     const palmWidth = dims?.palm?.WIDTH ?? 55;
