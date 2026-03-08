@@ -133,7 +133,6 @@ function KapandjiControl({ clinical, onApply, onHighlight }) {
         Referencia clinica de oposicao: <strong>{clinical.scaleLabel}</strong>
       </div>
       <div className="mt-1 text-[11px] text-gray-500">{clinical.label}</div>
-      <div className="mt-1 text-[11px] text-gray-500">Mapeamento operacional interno do simulador para dirigir o rig 3D.</div>
     </div>
   );
 }

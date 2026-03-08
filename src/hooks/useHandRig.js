@@ -168,14 +168,19 @@ function computeCmcLabelPosition({
   return candidate;
 }
 
+function getPalmLongitudinalWorld(rig) {
+  const palmQuaternion = rig?.palm?.getWorldQuaternion?.(new Quaternion());
+  if (!palmQuaternion) return new Vector3(1, 0, 0);
+  return new Vector3(1, 0, 0).applyQuaternion(palmQuaternion).normalize();
+}
+
 function computeCmcGoniometerVectors(rig) {
+  const anchor = rig?.thumb?.mount;
   const cmcAbdNode = rig?.thumb?.cmcAbd;
   const cmcFlexNode = rig?.thumb?.cmcFlex;
-  const d2Mcp = rig?.fingers?.[0]?.mcp?.getWorldPosition?.(new Vector3());
-  const d2Pip = rig?.fingers?.[0]?.pip?.getWorldPosition?.(new Vector3());
-  if (!cmcAbdNode || !cmcFlexNode || !d2Mcp || !d2Pip) return null;
+  if (!anchor || !cmcAbdNode || !cmcFlexNode) return null;
 
-  const fixedWorld = d2Pip.clone().sub(d2Mcp);
+  const fixedWorld = getPalmLongitudinalWorld(rig);
   const abdAngle = Number(cmcAbdNode.rotation?.z) || 0;
   const flexAngle = Number(cmcFlexNode.rotation?.y) || 0;
 
@@ -184,12 +189,12 @@ function computeCmcGoniometerVectors(rig) {
   const fallbackAxis = new Vector3(1, 0, 0);
 
   const fixedAbdLocal = ensureProjectedUnit(
-    toNodeLocalVector(cmcAbdNode, fixedWorld),
+    toNodeLocalVector(anchor, fixedWorld),
     abdNormalLocal,
     fallbackAxis,
   );
   const fixedFlexLocal = ensureProjectedUnit(
-    toNodeLocalVector(cmcFlexNode, fixedWorld),
+    toNodeLocalVector(anchor, fixedWorld),
     flexNormalLocal,
     fallbackAxis,
   );
@@ -277,10 +282,7 @@ function updateCmcGoniometerOverlay(rig, debugKey, dims, viewport) {
   });
 }
 
-function buildOppositionReferencePoints(rig, dims) {
-  const node = rig?.thumb?.cmcPronation;
-  if (!node) return null;
-
+function buildOppositionReferencePoints(dims) {
   const palmLength = dims?.palm?.LENGTH ?? 70;
   const palmWidth = dims?.palm?.WIDTH ?? 55;
   const thumbLen = dims?.thumbLen ?? [20, 14];
@@ -309,7 +311,7 @@ function computeOppositionLabelPosition(points, targetIndex) {
   return target.clone().add(new Vector3(4.5, 7.5, 0));
 }
 
-function updateThumbOppositionOverlay(rig, debugKey, dims, thumbClinical) {
+function updateThumbOppositionOverlay(rig, debugKey, dims, thumbClinical, viewport) {
   const pkg = rig?.dbgMap?.[OPPOSITION_DEBUG_KEY];
   if (!pkg?.setOppositionReference) return;
 
@@ -319,7 +321,7 @@ function updateThumbOppositionOverlay(rig, debugKey, dims, thumbClinical) {
     return;
   }
 
-  const points = buildOppositionReferencePoints(rig, dims);
+  const points = buildOppositionReferencePoints(dims);
   if (!points) {
     pkg.setOppositionReference(null);
     pkg.setLabelPosition(null);
@@ -332,6 +334,8 @@ function updateThumbOppositionOverlay(rig, debugKey, dims, thumbClinical) {
     targetIndex: level,
     pointRadius: (dims?.thumbWid?.[0] ?? 10) * 0.08,
     targetRadius: (dims?.thumbWid?.[0] ?? 10) * 0.13,
+    viewport,
+    lineWidthPx: 4.5,
   });
   pkg.setLabelPosition(computeOppositionLabelPosition(points, level));
 }
@@ -352,7 +356,7 @@ function applyMainLabels(rig, fingers, thumb, thumbClinical, wrist, cmcMeasured)
 
   setLabelText(thumbLabels.abd, `CMC: ${formatDirectional("abducao", "aducao", measuredAbd)}`);
   setLabelText(thumbLabels.flex, `CMC: ${formatDirectional("flexao", "extensao", measuredFlex)}`);
-  setLabelText(thumbLabels.opp, `CMC opp: ${thumbClinical?.opp?.scaleLabel || `Kapandji ${thumb.CMC_opp}`}`);
+  setLabelText(thumbLabels.opp, `CMC: ${thumbClinical?.opp?.scaleLabel || `Kapandji ${thumb.CMC_opp}`}`);
   setLabelText(thumbLabels.mcp, `MCP: ${formatDegree(thumb.MCP_flex)}`);
   setLabelText(thumbLabels.ip, `IP: ${formatDegree(thumb.IP)}`);
 }
@@ -384,7 +388,7 @@ function applyPoseToRig(rig, fingers, thumb, thumbClinical, wrist, debugKey, dim
   const cmcMeasured = measureThumbCmcGoniometryFromRig(rig);
   applyMainLabels(rig, fingers, thumb, thumbClinical, wrist, cmcMeasured);
   updateCmcGoniometerOverlay(rig, debugKey, dims, viewport);
-  updateThumbOppositionOverlay(rig, debugKey, dims, thumbClinical);
+  updateThumbOppositionOverlay(rig, debugKey, dims, thumbClinical, viewport);
   return cmcMeasured;
 }
 
@@ -504,9 +508,12 @@ export function useHandRig({ three, orbitRef, controlsReady = false, dims, finge
 
     if (debugKey !== OPPOSITION_DEBUG_KEY) {
       map.TH_CMC_OPP?.setOppositionReference(null);
+      map.TH_CMC_OPP?.setLabelPosition(null);
     } else {
       if (map.TH_CMC_OPP?.axes) map.TH_CMC_OPP.axes.visible = false;
-      updateThumbOppositionOverlay(rig, debugKey, dims, thumbClinical);
+      const viewport = getViewportSize(three);
+      map.TH_CMC_OPP?.setOppositionReferenceResolution(viewport);
+      updateThumbOppositionOverlay(rig, debugKey, dims, thumbClinical, viewport);
     }
 
     const highlight = rig.highlight;
@@ -532,15 +539,21 @@ export function useHandRig({ three, orbitRef, controlsReady = false, dims, finge
   useEffect(() => {
     const onResize = () => {
       const rig = handRig.current;
-      if (!rig || !ANGULAR_CMC_DEBUG_KEYS.has(debugKey)) return;
+      if (!rig) return;
       const viewport = getViewportSize(three);
-      rig.dbgMap?.TH_CMC_FLEX?.setGoniometerResolution(viewport);
-      rig.dbgMap?.TH_CMC_ABD?.setGoniometerResolution(viewport);
-      updateCmcGoniometerOverlay(rig, debugKey, dims, viewport);
+      if (ANGULAR_CMC_DEBUG_KEYS.has(debugKey)) {
+        rig.dbgMap?.TH_CMC_FLEX?.setGoniometerResolution(viewport);
+        rig.dbgMap?.TH_CMC_ABD?.setGoniometerResolution(viewport);
+        updateCmcGoniometerOverlay(rig, debugKey, dims, viewport);
+      }
+      if (debugKey === OPPOSITION_DEBUG_KEY) {
+        rig.dbgMap?.TH_CMC_OPP?.setOppositionReferenceResolution(viewport);
+        updateThumbOppositionOverlay(rig, debugKey, dims, thumbClinical, viewport);
+      }
     };
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
-  }, [debugKey, dims, three]);
+  }, [debugKey, dims, thumbClinical, three]);
 
   return handRig;
 }

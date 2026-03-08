@@ -102,6 +102,7 @@ describe("ThumbPanel", () => {
 
     const kapandjiControl = elements[2];
     expect(kapandjiControl.props.clinical.level).toBe(6);
+    expect(JSON.stringify(kapandjiControl)).not.toContain("Mapeamento operacional interno do simulador para dirigir o rig 3D.");
     kapandjiControl.props.onApply(8);
     kapandjiControl.props.onHighlight();
 

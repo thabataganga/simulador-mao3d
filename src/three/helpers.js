@@ -3,35 +3,16 @@ import { Line2 } from "three/examples/jsm/lines/Line2.js";
 import { LineGeometry } from "three/examples/jsm/lines/LineGeometry.js";
 import { LineMaterial } from "three/examples/jsm/lines/LineMaterial.js";
 
-export function makeLabel(text, scale = 3.5) {
-  const canvas = document.createElement("canvas");
-  const ctx = canvas.getContext("2d");
-  const fontPx = Math.round(44 * scale);
-  const pad = 10;
+function drawLabelCanvas(canvas, text, fontPx, pad) {
+  let ctx = canvas.getContext("2d");
   ctx.font = `${fontPx}px Arial`;
-  const w = Math.ceil(ctx.measureText(text).width + pad * 2);
-  const h = Math.ceil(fontPx + pad * 2);
-  canvas.width = w;
-  canvas.height = h;
-  ctx.fillStyle = "rgba(14,30,53,0.88)";
-  ctx.fillRect(0, 0, w, h);
-  ctx.fillStyle = "#fff";
-  ctx.textBaseline = "middle";
-  ctx.font = `${fontPx}px Arial`;
-  ctx.fillText(text, pad, h / 2);
-  const tex = new THREE.CanvasTexture(canvas);
-  tex.minFilter = THREE.LinearFilter;
-  const spr = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false }));
-  const u = 0.02 * scale;
-  spr.scale.set(w * u, h * u, 1);
-  spr.renderOrder = 999;
-  spr.userData = { canvas, ctx, tex, pad, fontPx };
-  return spr;
-}
-
-export function setLabelText(spr, text) {
-  if (!spr) return;
-  const { canvas, ctx, tex, pad, fontPx } = spr.userData;
+  const width = Math.ceil(ctx.measureText(text).width + pad * 2);
+  const height = Math.ceil(fontPx + pad * 2);
+  if (canvas.width !== width || canvas.height !== height) {
+    canvas.width = width;
+    canvas.height = height;
+    ctx = canvas.getContext("2d");
+  }
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.fillStyle = "rgba(14,30,53,0.88)";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -39,6 +20,31 @@ export function setLabelText(spr, text) {
   ctx.textBaseline = "middle";
   ctx.font = `${fontPx}px Arial`;
   ctx.fillText(text, pad, canvas.height / 2);
+  return { ctx, width: canvas.width, height: canvas.height };
+}
+
+export function makeLabel(text, scale = 3.5) {
+  const canvas = document.createElement("canvas");
+  const fontPx = Math.round(44 * scale);
+  const pad = 10;
+  const { ctx, width, height } = drawLabelCanvas(canvas, text, fontPx, pad);
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.minFilter = THREE.LinearFilter;
+  const spr = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false }));
+  const u = 0.02 * scale;
+  spr.scale.set(width * u, height * u, 1);
+  spr.renderOrder = 999;
+  spr.userData = { canvas, ctx, tex, pad, fontPx, scaleFactor: scale };
+  return spr;
+}
+
+export function setLabelText(spr, text) {
+  if (!spr) return;
+  const { canvas, tex, pad, fontPx, scaleFactor = 3.5 } = spr.userData;
+  const { ctx, width, height } = drawLabelCanvas(canvas, text, fontPx, pad);
+  const u = 0.02 * scaleFactor;
+  spr.scale.set(width * u, height * u, 1);
+  spr.userData.ctx = ctx;
   tex.needsUpdate = true;
 }
 
@@ -54,23 +60,22 @@ function signedAngleOnPlane(from, to, planeNormal) {
   return angle * sign;
 }
 
-function createGoniometerVisual(group, color) {
-  const mkLine = () => {
-    const material = new LineMaterial({
-      color,
-      transparent: true,
-      opacity: 0.98,
-      depthTest: false,
-      linewidth: 4,
-      worldUnits: false,
-    });
-    const line = new Line2(new LineGeometry(), material);
-    return line;
-  };
+function createLine2(color, defaultWidth = 4) {
+  const material = new LineMaterial({
+    color,
+    transparent: true,
+    opacity: 0.98,
+    depthTest: false,
+    linewidth: defaultWidth,
+    worldUnits: false,
+  });
+  return new Line2(new LineGeometry(), material);
+}
 
-  const fixedRay = mkLine();
-  const movingRay = mkLine();
-  const angleArc = mkLine();
+function createGoniometerVisual(group, color) {
+  const fixedRay = createLine2(color, 4);
+  const movingRay = createLine2(color, 4);
+  const angleArc = createLine2(color, 4);
   fixedRay.renderOrder = 1001;
   movingRay.renderOrder = 1001;
   angleArc.renderOrder = 1001;
@@ -179,10 +184,7 @@ function createGoniometerVisual(group, color) {
 }
 
 function createOppositionReferenceVisual(group, color) {
-  const trail = new THREE.Line(
-    new THREE.BufferGeometry(),
-    new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.85, depthTest: false }),
-  );
+  const trail = createLine2(color, 4.5);
   trail.renderOrder = 1001;
   group.add(trail);
 
@@ -206,6 +208,18 @@ function createOppositionReferenceVisual(group, color) {
     target.visible = false;
   };
 
+  const setResolution = ({ width, height } = {}) => {
+    const safeW = Math.max(1, Number(width) || 1);
+    const safeH = Math.max(1, Number(height) || 1);
+    trail.material.resolution.set(safeW, safeH);
+  };
+
+  const setLineWidth = px => {
+    const width = Math.max(1, Number(px) || 4.5);
+    trail.material.linewidth = width;
+    trail.material.needsUpdate = true;
+  };
+
   const setReference = input => {
     if (!input?.points || input.points.length < 2) {
       hide();
@@ -213,7 +227,12 @@ function createOppositionReferenceVisual(group, color) {
     }
 
     const points = input.points;
-    trail.geometry.setFromPoints(points);
+    setResolution(input.viewport);
+    setLineWidth(input.lineWidthPx);
+    const positions = [];
+    points.forEach(point => positions.push(point.x, point.y, point.z));
+    trail.geometry.setPositions(positions);
+    trail.computeLineDistances();
     trail.visible = true;
 
     const pointRadius = Math.max(0.35, Number(input.pointRadius) || 0.6);
@@ -244,6 +263,7 @@ function createOppositionReferenceVisual(group, color) {
     markers,
     target,
     setReference,
+    setResolution,
     hide,
   };
 }
@@ -277,7 +297,7 @@ export function makeDebugPkg(group, key, planeAxis, sx, sy, axSz, labelText, wit
   const withGoniometer = Boolean(opts.withGoniometer);
   const withOppositionReference = Boolean(opts.withOppositionReference);
   const goniometerColor = opts.goniometerColor ?? 0xff2b2b;
-  const oppositionReferenceColor = opts.oppositionReferenceColor ?? 0xff7a1a;
+  const oppositionReferenceColor = opts.oppositionReferenceColor ?? 0xff2b2b;
 
   const axes = new THREE.AxesHelper(axSz);
   group.add(axes);
@@ -323,6 +343,7 @@ export function makeDebugPkg(group, key, planeAxis, sx, sy, axSz, labelText, wit
     setGoniometer: goniometer?.setGoniometer ?? (() => {}),
     setGoniometerResolution: goniometer?.setResolution ?? (() => {}),
     setOppositionReference: oppositionReference?.setReference ?? (() => {}),
+    setOppositionReferenceResolution: oppositionReference?.setResolution ?? (() => {}),
     setLabelPosition: labelHandle.setLabelPosition,
     setVisible,
   };
