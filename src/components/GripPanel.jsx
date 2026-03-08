@@ -1,6 +1,6 @@
 import { LabeledSlider } from "./LabeledSlider";
 
-export function GripPanel({ grip, globalMode, onGlobalMode, onGrip }) {
+export function GripPanel({ grip, globalMode, onGlobalMode, onGrip, onClearHighlight }) {
   return (
     <div>
       <div className="flex items-center gap-2 mb-2">
@@ -8,7 +8,10 @@ export function GripPanel({ grip, globalMode, onGlobalMode, onGrip }) {
           type="button"
           className="px-2 py-1 border rounded text-xs"
           style={globalMode === "functional" ? { backgroundColor: "var(--lmb-blue)", color: "#fff" } : null}
-          onClick={() => onGlobalMode("functional")}
+          onClick={() => {
+            onClearHighlight?.();
+            onGlobalMode("functional");
+          }}
         >
           Funcional
         </button>
@@ -16,7 +19,10 @@ export function GripPanel({ grip, globalMode, onGlobalMode, onGrip }) {
           type="button"
           className="px-2 py-1 border rounded text-xs"
           style={globalMode === "pinch" ? { backgroundColor: "var(--lmb-blue)", color: "#fff" } : null}
-          onClick={() => onGlobalMode("pinch")}
+          onClick={() => {
+            onClearHighlight?.();
+            onGlobalMode("pinch");
+          }}
         >
           Pinca
         </button>
@@ -26,7 +32,11 @@ export function GripPanel({ grip, globalMode, onGlobalMode, onGrip }) {
         min={0}
         max={100}
         value={grip}
-        onChange={onGrip}
+        unit="%"
+        onChange={value => {
+          onClearHighlight?.();
+          onGrip(value);
+        }}
       />
     </div>
   );

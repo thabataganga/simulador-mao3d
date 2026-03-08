@@ -89,6 +89,11 @@ function createInitialState() {
   };
 }
 
+export const __testables = {
+  createInitialState,
+  poseReducer,
+};
+
 function poseReducer(state, action) {
   switch (action.type) {
     case "SET_FINGERS":
@@ -160,11 +165,12 @@ function poseReducer(state, action) {
         action.grip,
         action.modeOverride,
       );
+      const cmcResolved = applyCmcClinicalTargets(nextPose.thumb, state.cmcInput);
       return {
         ...state,
         fingers: nextPose.fingers,
-        thumb: nextPose.thumb,
-        cmcInput: syncCmcInputStateFromThumb(state.cmcInput, nextPose.thumb),
+        thumb: cmcResolved.nextThumb,
+        cmcInput: cmcResolved.nextInput,
         wrist: nextPose.wrist,
         grip: action.grip,
       };

@@ -68,14 +68,43 @@ describe("pose domain", () => {
     expect(next.thumb.CMC_abd).toBe(45);
   });
 
-  test("applyGlobalGripToPose in pinch mode updates only index finger pose", () => {
+  test("applyGlobalGripToPose functional closed keeps requested thumb target", () => {
+    const next = applyGlobalGripToPose(basePose(), 100, "functional");
+    expect(next.thumb.CMC_flex).toBe(-20);
+    expect(next.thumb.CMC_abd).toBe(35);
+    expect(next.thumb.CMC_opp).toBe(70);
+    expect(next.thumb.MCP_flex).toBe(0);
+    expect(next.thumb.IP).toBe(40);
+    expect(next.fingers).toEqual(Array.from({ length: 4 }, () => ({ MCP: 80, PIP: 90, DIP: 60 })));
+    expect(next.wrist).toEqual({ flex: -35, dev: -15 });
+  });
+
+  test("applyGlobalGripToPose in pinch mode updates D2 and keeps D3-D5 locked", () => {
     const next = applyGlobalGripToPose(basePose(), 50, "pinch");
 
     expect(next.fingers[0]).not.toEqual({ MCP: 0, PIP: 0, DIP: 0 });
-    expect(next.fingers[1]).toEqual({ MCP: 0, PIP: 0, DIP: 0 });
-    expect(next.fingers[2]).toEqual({ MCP: 0, PIP: 0, DIP: 0 });
-    expect(next.fingers[3]).toEqual({ MCP: 0, PIP: 0, DIP: 0 });
+    expect(next.fingers[1]).toEqual({ MCP: 90, PIP: 65, DIP: 48 });
+    expect(next.fingers[2]).toEqual({ MCP: 90, PIP: 65, DIP: 48 });
+    expect(next.fingers[3]).toEqual({ MCP: 90, PIP: 65, DIP: 48 });
+    expect(next.thumb.CMC_abd).toBe(60);
+    expect(next.thumb.CMC_opp).toBe(40);
+    expect(next.thumb.CMC_flex).toBe(0);
     expect(next.wrist).toEqual({ flex: 0, dev: 0 });
+  });
+
+  test("applyGlobalGripToPose in pinch mode at grip=100 matches closed clinical target", () => {
+    const next = applyGlobalGripToPose(basePose(), 100, "pinch");
+
+    expect(next.fingers[0]).toEqual({ MCP: 90, PIP: 73, DIP: 10 });
+    expect(next.fingers[1]).toEqual({ MCP: 90, PIP: 65, DIP: 48 });
+    expect(next.fingers[2]).toEqual({ MCP: 90, PIP: 65, DIP: 48 });
+    expect(next.fingers[3]).toEqual({ MCP: 90, PIP: 65, DIP: 48 });
+
+    expect(next.thumb.CMC_flex).toBe(0);
+    expect(next.thumb.CMC_abd).toBe(65);
+    expect(next.thumb.CMC_opp).toBe(70);
+    expect(next.thumb.MCP_flex).toBe(0);
+    expect(next.thumb.IP).toBe(40);
   });
 
   test("createNeutralPose returns pose derived from dims", () => {

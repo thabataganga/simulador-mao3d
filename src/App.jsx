@@ -55,10 +55,17 @@ export default function HandSimulatorApp() {
     setOpenPanel("thumb");
   }, [setActivePreset, setThumbVal]);
 
-  const togglePanel = id => setOpenPanel(prev => (prev === id ? "none" : id));
+  const togglePanel = id => {
+    setOpenPanel(prev => {
+      const next = prev === id ? "none" : id;
+      if (next === "global") setDebugKey("off");
+      return next;
+    });
+  };
   const clearPreset = useCallback(() => poseActions.setActivePreset("none"), [poseActions]);
   const handleGrip = useCallback(
     value => {
+      setDebugKey("off");
       poseActions.setGrip(value);
       poseActions.applyGlobalGrip(value);
     },
@@ -66,6 +73,7 @@ export default function HandSimulatorApp() {
   );
   const handleGlobalMode = useCallback(
     mode => {
+      setDebugKey("off");
       poseActions.setGlobalMode(mode);
       poseActions.applyGlobalGrip(poseState.grip, mode);
     },
@@ -140,6 +148,7 @@ export default function HandSimulatorApp() {
             globalMode={poseState.globalMode}
             onGlobalMode={handleGlobalMode}
             onGrip={handleGrip}
+            onClearHighlight={() => setDebugKey("off")}
           />
         </AccordionItem>
 
