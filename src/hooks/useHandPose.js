@@ -3,7 +3,10 @@ import { buildProfile, makeDims } from "../utils";
 import {
   buildCmcInputStateForAxis,
   buildThumbCmcClinicalModel,
+  buildThumbOppositionClinicalModel,
   createDefaultCmcInputState,
+  getKapandjiLevelFromCommand,
+  resolveKapandjiOperationalPose,
   syncCmcInputStateFromThumb,
 } from "../domain/thumb";
 import {
@@ -82,6 +85,7 @@ function createInitialState() {
     thumb: nextThumb,
     thumbMeasured: { CMC_abd: 0, CMC_flex: 0 },
     cmcInput: nextInput,
+    kapandjiLevel: getKapandjiLevelFromCommand(nextThumb.CMC_opp),
     wrist: functionalPose.wrist,
     grip: 50,
     globalMode: "functional",
@@ -103,6 +107,7 @@ function poseReducer(state, action) {
         ...state,
         thumb: action.value,
         cmcInput: syncCmcInputStateFromThumb(state.cmcInput, action.value),
+        kapandjiLevel: getKapandjiLevelFromCommand(action.value.CMC_opp),
       };
     case "SET_THUMB_GONIOMETRY":
       return {
@@ -125,7 +130,11 @@ function poseReducer(state, action) {
     case "SET_THUMB_ANGLE": {
       const nextThumb = setThumbAngle(state.thumb, action.key, action.value);
       if (action.key !== "CMC_abd" && action.key !== "CMC_flex") {
-        return { ...state, thumb: nextThumb };
+        return {
+          ...state,
+          thumb: nextThumb,
+          kapandjiLevel: action.key === "CMC_opp" ? getKapandjiLevelFromCommand(nextThumb.CMC_opp) : state.kapandjiLevel,
+        };
       }
       return {
         ...state,
@@ -154,6 +163,17 @@ function poseReducer(state, action) {
         },
       };
     }
+    case "SET_THUMB_KAPANDJI": {
+      const resolved = resolveKapandjiOperationalPose(action.value);
+      return {
+        ...state,
+        kapandjiLevel: resolved.level,
+        thumb: {
+          ...state.thumb,
+          CMC_opp: resolved.commandDeg,
+        },
+      };
+    }
     case "APPLY_GRIP": {
       const nextPose = applyGlobalGripToPose(
         {
@@ -171,6 +191,7 @@ function poseReducer(state, action) {
         fingers: nextPose.fingers,
         thumb: cmcResolved.nextThumb,
         cmcInput: cmcResolved.nextInput,
+        kapandjiLevel: getKapandjiLevelFromCommand(cmcResolved.nextThumb.CMC_opp),
         wrist: nextPose.wrist,
         grip: action.grip,
       };
@@ -192,6 +213,7 @@ function poseReducer(state, action) {
         fingers: nextPose.fingers,
         thumb: nextThumb,
         cmcInput: nextInput,
+        kapandjiLevel: getKapandjiLevelFromCommand(nextThumb.CMC_opp),
         wrist: nextPose.wrist,
         globalMode: "functional",
         grip: 50,
@@ -215,6 +237,7 @@ function poseReducer(state, action) {
         fingers: neutralPose.fingers,
         thumb: nextThumb,
         cmcInput: nextInput,
+        kapandjiLevel: getKapandjiLevelFromCommand(nextThumb.CMC_opp),
         wrist: neutralPose.wrist,
         grip: neutralPose.grip,
         activePreset: neutralPose.activePreset,
@@ -227,6 +250,7 @@ function poseReducer(state, action) {
         fingers: zeroPose.fingers,
         thumb: zeroPose.thumb,
         cmcInput: syncCmcInputStateFromThumb(state.cmcInput, zeroPose.thumb),
+        kapandjiLevel: getKapandjiLevelFromCommand(zeroPose.thumb.CMC_opp),
         wrist: zeroPose.wrist,
         grip: zeroPose.grip,
         activePreset: zeroPose.activePreset,
@@ -314,6 +338,7 @@ export function useHandPose() {
   const setThumbCmcInput = useCallback((axis, direction, magnitudeDeg) => {
     dispatch({ type: "SET_THUMB_CMC_INPUT", value: { axis, direction, magnitudeDeg } });
   }, []);
+  const setThumbKapandji = useCallback(level => dispatch({ type: "SET_THUMB_KAPANDJI", value: level }), []);
 
   const applyGlobalGrip = useCallback(
     (nextGrip, modeOverride) => {
@@ -350,6 +375,12 @@ export function useHandPose() {
       measured: state.thumbMeasured,
       inputState: state.cmcInput,
     }),
+    thumbClinical: {
+      opp: buildThumbOppositionClinicalModel({
+        thumb: state.thumb,
+        kapandjiLevel: state.kapandjiLevel,
+      }),
+    },
     profile,
     dims,
     globalD2D5,
@@ -373,6 +404,7 @@ export function useHandPose() {
       updateGlobalD2D5,
       setThumbVal,
       setThumbCmcInput,
+      setThumbKapandji,
       applyGlobalGrip,
       presetFunctional,
       presetNeutral,
@@ -392,6 +424,7 @@ export function useHandPose() {
       setSex,
       setThumb,
       setThumbGoniometry,
+      setThumbKapandji,
       setThumbVal,
       setThumbCmcInput,
       setWrist,

@@ -10,3 +10,9 @@ export {
   solveCmcCommandForMeasuredTarget,
   syncCmcInputStateFromThumb,
 } from "../thumbGoniometry";
+export {
+  buildThumbOppositionClinicalModel,
+  clampKapandjiLevel,
+  getKapandjiLevelFromCommand,
+  resolveKapandjiOperationalPose,
+} from "../thumbKapandji";

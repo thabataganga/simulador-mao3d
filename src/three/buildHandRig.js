@@ -242,7 +242,7 @@ function buildThumbSubsystem(f, palm, dbgMap, highlightMap, allMovers) {
   const thumbLabels = {
     abd: mkThumbDebug(cmcAbd, "TH_CMC_ABD", "XY", metacarpalLen, d.thumbWid[0], "CMC abd", { withGoniometer: true }),
     flex: mkThumbDebug(cmcFlex, "TH_CMC_FLEX", "ZX", metacarpalLen, d.thumbWid[0], "CMC flex", { withGoniometer: true }),
-    opp: mkThumbDebug(cmcPronation, "TH_CMC_OPP", "YZ", metacarpalLen, d.thumbWid[0], "CMC opp"),
+    opp: mkThumbDebug(cmcPronation, "TH_CMC_OPP", "YZ", metacarpalLen, d.thumbWid[0], "CMC opp", { withOppositionReference: true }),
     mcp: mkThumbDebug(tmcp, "TH_MCP", "XY", proximalLen, d.thumbWid[0], "MCP"),
     ip: mkThumbDebug(tipIp, "TH_IP", "XY", distalLen, d.thumbWid[1], "IP"),
   };

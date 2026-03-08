@@ -178,6 +178,76 @@ function createGoniometerVisual(group, color) {
   };
 }
 
+function createOppositionReferenceVisual(group, color) {
+  const trail = new THREE.Line(
+    new THREE.BufferGeometry(),
+    new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.85, depthTest: false }),
+  );
+  trail.renderOrder = 1001;
+  group.add(trail);
+
+  const markerMaterial = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.5, depthTest: false });
+  const targetMaterial = new THREE.MeshBasicMaterial({ color: 0xffcc66, transparent: true, opacity: 0.95, depthTest: false });
+  const markers = Array.from({ length: 11 }, () => {
+    const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.6, 10, 10), markerMaterial.clone());
+    mesh.renderOrder = 1002;
+    group.add(mesh);
+    return mesh;
+  });
+  const target = new THREE.Mesh(new THREE.SphereGeometry(0.95, 14, 14), targetMaterial);
+  target.renderOrder = 1003;
+  group.add(target);
+
+  const hide = () => {
+    trail.visible = false;
+    markers.forEach(marker => {
+      marker.visible = false;
+    });
+    target.visible = false;
+  };
+
+  const setReference = input => {
+    if (!input?.points || input.points.length < 2) {
+      hide();
+      return;
+    }
+
+    const points = input.points;
+    trail.geometry.setFromPoints(points);
+    trail.visible = true;
+
+    const pointRadius = Math.max(0.35, Number(input.pointRadius) || 0.6);
+    const targetRadius = Math.max(pointRadius * 1.25, Number(input.targetRadius) || 0.95);
+    const targetIndex = Math.min(points.length - 1, Math.max(0, Math.round(Number(input.targetIndex) || 0)));
+
+    markers.forEach((marker, index) => {
+      const point = points[index];
+      if (!point) {
+        marker.visible = false;
+        return;
+      }
+      marker.position.copy(point);
+      marker.scale.setScalar(pointRadius / 0.6);
+      marker.visible = true;
+      marker.material.opacity = index === targetIndex ? 0.8 : 0.42;
+    });
+
+    target.position.copy(points[targetIndex]);
+    target.scale.setScalar(targetRadius / 0.95);
+    target.visible = true;
+  };
+
+  hide();
+
+  return {
+    trail,
+    markers,
+    target,
+    setReference,
+    hide,
+  };
+}
+
 function createLabelHandle(group, sy, labelText, withLabel) {
   if (!withLabel) return { label: null, setLabelPosition: () => {} };
 
@@ -205,7 +275,9 @@ export function makeDebugPkg(group, key, planeAxis, sx, sy, axSz, labelText, wit
       : { withLabel: withLabelOrOptions };
   const withLabel = opts.withLabel !== false;
   const withGoniometer = Boolean(opts.withGoniometer);
+  const withOppositionReference = Boolean(opts.withOppositionReference);
   const goniometerColor = opts.goniometerColor ?? 0xff2b2b;
+  const oppositionReferenceColor = opts.oppositionReferenceColor ?? 0xff7a1a;
 
   const axes = new THREE.AxesHelper(axSz);
   group.add(axes);
@@ -226,12 +298,14 @@ export function makeDebugPkg(group, key, planeAxis, sx, sy, axSz, labelText, wit
 
   const labelHandle = createLabelHandle(group, sy, labelText, withLabel);
   const goniometer = withGoniometer ? createGoniometerVisual(group, goniometerColor) : null;
+  const oppositionReference = withOppositionReference ? createOppositionReferenceVisual(group, oppositionReferenceColor) : null;
 
   const setVisible = v => {
     axes.visible = v;
     plane.visible = v;
     if (labelHandle.label) labelHandle.label.visible = v;
     if (goniometer && !v) goniometer.hide();
+    if (oppositionReference && !v) oppositionReference.hide();
   };
 
   setVisible(false);
@@ -244,8 +318,11 @@ export function makeDebugPkg(group, key, planeAxis, sx, sy, axSz, labelText, wit
     fixedRay: goniometer?.fixedRay ?? null,
     movingRay: goniometer?.movingRay ?? null,
     angleArc: goniometer?.angleArc ?? null,
+    oppositionTrail: oppositionReference?.trail ?? null,
+    oppositionTarget: oppositionReference?.target ?? null,
     setGoniometer: goniometer?.setGoniometer ?? (() => {}),
     setGoniometerResolution: goniometer?.setResolution ?? (() => {}),
+    setOppositionReference: oppositionReference?.setReference ?? (() => {}),
     setLabelPosition: labelHandle.setLabelPosition,
     setVisible,
   };

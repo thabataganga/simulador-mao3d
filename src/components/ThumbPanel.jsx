@@ -1,4 +1,4 @@
-import { RANGES, THUMB_SLIDER_CONFIG } from "../constants";
+import { KAPANDJI_RANGE, RANGES, THUMB_SLIDER_CONFIG } from "../constants";
 import { LabeledSlider } from "./LabeledSlider";
 
 function DirectionMagnitudeSlider({
@@ -86,7 +86,59 @@ function DirectionMagnitudeSlider({
   );
 }
 
-export function ThumbPanel({ thumb, thumbGoniometry, onThumbVal, onThumbCmcInput, onHighlight, onClearPreset }) {
+function KapandjiControl({ clinical, onApply, onHighlight }) {
+  const [min, max] = KAPANDJI_RANGE;
+
+  const apply = value => {
+    onApply(Math.min(Math.max(Math.round(Number(value) || 0), min), max));
+  };
+
+  return (
+    <div className="mb-3 border border-gray-200 rounded-md p-2">
+      <div className="text-sm font-medium mb-2">CMC Oposicao (Kapandji)</div>
+
+      <div className="flex items-center gap-2 mb-2">
+        <input
+          type="number"
+          min={min}
+          max={max}
+          step={1}
+          value={clinical.level}
+          onChange={e => apply(e.target.value)}
+          onFocus={() => onHighlight?.()}
+          className="w-20 px-2 py-1 border border-gray-300 rounded-md text-right"
+        />
+        <span className="text-sm">nivel</span>
+      </div>
+
+      <input
+        type="range"
+        min={min}
+        max={max}
+        step={1}
+        value={clinical.level}
+        onChange={e => {
+          apply(e.target.value);
+          onHighlight?.();
+        }}
+        className="w-full"
+      />
+
+      <div className="mt-1 flex justify-between text-[11px] text-gray-500">
+        <span>Kapandji 0</span>
+        <span>Kapandji 10</span>
+      </div>
+
+      <div className="mt-2 text-xs text-gray-600">
+        Referencia clinica de oposicao: <strong>{clinical.scaleLabel}</strong>
+      </div>
+      <div className="mt-1 text-[11px] text-gray-500">{clinical.label}</div>
+      <div className="mt-1 text-[11px] text-gray-500">Mapeamento operacional interno do simulador para dirigir o rig 3D.</div>
+    </div>
+  );
+}
+
+export function ThumbPanel({ thumb, thumbGoniometry, thumbClinical, onThumbVal, onThumbCmcInput, onThumbKapandji, onHighlight, onClearPreset }) {
   const panelOrder = ["CMC_flex", "CMC_abd", "CMC_opp", "MCP_flex", "IP"];
   const orderedItems = panelOrder
     .map(key => THUMB_SLIDER_CONFIG.find(item => item.key === key))
@@ -132,6 +184,20 @@ export function ThumbPanel({ thumb, thumbGoniometry, onThumbVal, onThumbCmcInput
           }}
           onHighlight={() => onHighlight(item.debugKey)}
           negativeFirst
+        />
+      );
+    }
+
+    if (item.key === "CMC_opp") {
+      return (
+        <KapandjiControl
+          key={item.key}
+          clinical={thumbClinical.opp}
+          onApply={level => {
+            onThumbKapandji(level);
+            onClearPreset();
+          }}
+          onHighlight={() => onHighlight(item.debugKey)}
         />
       );
     }

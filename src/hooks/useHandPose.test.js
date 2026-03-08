@@ -1,5 +1,10 @@
 import { applyGlobalGripToPose } from "../domain/pose";
-import { buildCmcInputStateForAxis, createDefaultCmcInputState } from "../domain/thumb";
+import {
+  buildCmcInputStateForAxis,
+  createDefaultCmcInputState,
+  getKapandjiLevelFromCommand,
+  resolveKapandjiOperationalPose,
+} from "../domain/thumb";
 import { __testables } from "./useHandPose";
 
 describe("useHandPose reducer", () => {
@@ -60,5 +65,26 @@ describe("useHandPose reducer", () => {
     expect(next.cmcInput.CMC_abd.targetMeasuredDeg).toBeCloseTo(abdTarget, 6);
     expect(next.cmcInput.CMC_flex.direction).toBe("extensao");
     expect(next.cmcInput.CMC_abd.direction).toBe("abducao");
+    expect(next.kapandjiLevel).toBe(getKapandjiLevelFromCommand(next.thumb.CMC_opp));
+  });
+
+  test("SET_THUMB_KAPANDJI updates only the operational CMC opposition command", () => {
+    const state = {
+      ...__testables.createInitialState(),
+      anthropometry: { sex: "masculino", percentile: 50, age: 25 },
+    };
+
+    const next = __testables.poseReducer(state, {
+      type: "SET_THUMB_KAPANDJI",
+      value: 8,
+    });
+
+    const resolved = resolveKapandjiOperationalPose(8);
+    expect(next.kapandjiLevel).toBe(8);
+    expect(next.thumb.CMC_opp).toBe(resolved.commandDeg);
+    expect(next.thumb.CMC_flex).toBe(state.thumb.CMC_flex);
+    expect(next.thumb.CMC_abd).toBe(state.thumb.CMC_abd);
+    expect(next.thumb.MCP_flex).toBe(state.thumb.MCP_flex);
+    expect(next.thumb.IP).toBe(state.thumb.IP);
   });
 });
