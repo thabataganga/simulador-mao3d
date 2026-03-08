@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useReducer } from "react";
-import { buildProfile, makeDims } from "../utils";
+import { RANGES, THUMB_CMC, THUMB_RANGE_KEY } from "../constants";
+import { buildProfile, clamp, makeDims } from "../utils";
 import {
   buildCmcInputStateForAxis,
   buildThumbCmcClinicalModel,
@@ -28,6 +29,15 @@ const CMC_AXIS_DIRECTIONS = {
   CMC_abd: { positive: "abducao", negative: "aducao" },
   CMC_flex: { positive: "flexao", negative: "extensao" },
 };
+
+const ZERO_OVERLAY = {
+  CMC_abd: 0,
+  CMC_flex: 0,
+  CMC_opp: 0,
+  MCP_flex: 0,
+  IP: 0,
+};
+
 const GONIOMETRY_STATE_EPSILON = 1e-4;
 
 function getDirectionForTarget(axis, target, fallbackDirection) {
@@ -36,6 +46,23 @@ function getDirectionForTarget(axis, target, fallbackDirection) {
   if (target > 0) return cfg.positive;
   if (target < 0) return cfg.negative;
   return fallbackDirection || cfg.positive;
+}
+
+function clampThumbAxis(key, value) {
+  return clamp(value, RANGES[THUMB_RANGE_KEY[key]]);
+}
+
+function composeThumbWithOverlay(clinicalThumb, overlayState, enabled) {
+  if (!enabled) return clinicalThumb;
+
+  return {
+    ...clinicalThumb,
+    CMC_abd: clampThumbAxis("CMC_abd", (Number(clinicalThumb.CMC_abd) || 0) + (Number(overlayState?.CMC_abd) || 0)),
+    CMC_flex: clampThumbAxis("CMC_flex", (Number(clinicalThumb.CMC_flex) || 0) + (Number(overlayState?.CMC_flex) || 0)),
+    CMC_opp: clampThumbAxis("CMC_opp", (Number(clinicalThumb.CMC_opp) || 0) + (Number(overlayState?.CMC_opp) || 0)),
+    MCP_flex: clampThumbAxis("MCP_flex", (Number(clinicalThumb.MCP_flex) || 0) + (Number(overlayState?.MCP_flex) || 0)),
+    IP: clampThumbAxis("IP", (Number(clinicalThumb.IP) || 0) + (Number(overlayState?.IP) || 0)),
+  };
 }
 
 function applyCmcClinicalTargets(thumb, prevInput) {
@@ -85,7 +112,12 @@ function createInitialState() {
     thumb: nextThumb,
     thumbMeasured: { CMC_abd: 0, CMC_flex: 0 },
     cmcInput: nextInput,
-    kapandjiEstimatedLevel: getKapandjiLevelFromCommand(nextThumb.CMC_opp),
+    kapandjiEstimatedFromRig: getKapandjiLevelFromCommand(nextThumb.CMC_opp),
+    isExplorationMode: false,
+    exploreOverlayState: { ...ZERO_OVERLAY },
+    explorationOppositionIntensity: 0,
+    userEditedThumb: {},
+    explorationSnapshotThumb: {},
     wrist: functionalPose.wrist,
     grip: 50,
     globalMode: "functional",
@@ -124,6 +156,14 @@ function poseReducer(state, action) {
         },
       };
     }
+    case "SET_OPPOSITION_ESTIMATE": {
+      const nextLevel = Number.isFinite(action.value) ? Math.round(Number(action.value)) : state.kapandjiEstimatedFromRig;
+      if (nextLevel === state.kapandjiEstimatedFromRig) return state;
+      return {
+        ...state,
+        kapandjiEstimatedFromRig: nextLevel,
+      };
+    }
     case "SET_WRIST":
       return { ...state, wrist: action.value };
     case "SET_GRIP":
@@ -140,12 +180,14 @@ function poseReducer(state, action) {
         return {
           ...state,
           thumb: nextThumb,
+          userEditedThumb: { ...state.userEditedThumb, [action.key]: true },
         };
       }
       return {
         ...state,
         thumb: nextThumb,
         cmcInput: syncCmcInputStateFromThumb(state.cmcInput, nextThumb),
+        userEditedThumb: { ...state.userEditedThumb, [action.key]: true },
       };
     }
     case "SET_THUMB_CMC_INPUT": {
@@ -167,6 +209,7 @@ function poseReducer(state, action) {
           ...state.cmcInput,
           [axis]: nextInputAxisState,
         },
+        userEditedThumb: { ...state.userEditedThumb, [axis]: true },
       };
     }
     case "SET_THUMB_OPP_INPUT": {
@@ -179,8 +222,56 @@ function poseReducer(state, action) {
           ...state.thumb,
           CMC_opp: signed,
         },
+        userEditedThumb: { ...state.userEditedThumb, CMC_opp: true },
       };
     }
+    case "ENTER_OPPOSITION_EXPLORATION": {
+      const snapshot = Object.keys(state.userEditedThumb || {}).reduce((acc, key) => {
+        if (!state.userEditedThumb[key]) return acc;
+        acc[key] = state.thumb[key];
+        return acc;
+      }, {});
+
+      return {
+        ...state,
+        isExplorationMode: true,
+        explorationSnapshotThumb: snapshot,
+      };
+    }
+    case "UPDATE_OPPOSITION_EXPLORATION": {
+      const intensity = Number(action.value?.intensity) || 0;
+      return {
+        ...state,
+        isExplorationMode: true,
+        explorationOppositionIntensity: intensity,
+        exploreOverlayState: {
+          ...ZERO_OVERLAY,
+          CMC_opp: intensity,
+          CMC_abd: intensity * THUMB_CMC.CLINICAL_ABD_SIGN * THUMB_CMC.OPP_COUPLING.ABD_GAIN,
+          CMC_flex: intensity * THUMB_CMC.OPP_COUPLING.FLEX_GAIN,
+        },
+      };
+    }
+    case "RESTORE_USER_INPUT_DATA": {
+      const restoredThumb = { ...state.thumb };
+      Object.keys(state.explorationSnapshotThumb || {}).forEach(key => {
+        restoredThumb[key] = state.explorationSnapshotThumb[key];
+      });
+      return {
+        ...state,
+        thumb: restoredThumb,
+        isExplorationMode: false,
+        exploreOverlayState: { ...ZERO_OVERLAY },
+        explorationOppositionIntensity: 0,
+      };
+    }
+    case "EXIT_OPPOSITION_EXPLORATION":
+      return {
+        ...state,
+        isExplorationMode: false,
+        exploreOverlayState: { ...ZERO_OVERLAY },
+        explorationOppositionIntensity: 0,
+      };
     case "APPLY_GRIP": {
       const nextPose = applyGlobalGripToPose(
         {
@@ -223,6 +314,11 @@ function poseReducer(state, action) {
         globalMode: "functional",
         grip: 50,
         activePreset: "functional",
+        isExplorationMode: false,
+        exploreOverlayState: { ...ZERO_OVERLAY },
+        explorationOppositionIntensity: 0,
+        userEditedThumb: {},
+        explorationSnapshotThumb: {},
       };
     }
     case "APPLY_PRESET_NEUTRAL": {
@@ -245,6 +341,11 @@ function poseReducer(state, action) {
         wrist: neutralPose.wrist,
         grip: neutralPose.grip,
         activePreset: neutralPose.activePreset,
+        isExplorationMode: false,
+        exploreOverlayState: { ...ZERO_OVERLAY },
+        explorationOppositionIntensity: 0,
+        userEditedThumb: {},
+        explorationSnapshotThumb: {},
       };
     }
     case "APPLY_PRESET_ZERO": {
@@ -254,10 +355,15 @@ function poseReducer(state, action) {
         fingers: zeroPose.fingers,
         thumb: zeroPose.thumb,
         cmcInput: syncCmcInputStateFromThumb(state.cmcInput, zeroPose.thumb),
-        kapandjiEstimatedLevel: getKapandjiLevelFromCommand(zeroPose.thumb.CMC_opp),
+        kapandjiEstimatedFromRig: getKapandjiLevelFromCommand(zeroPose.thumb.CMC_opp),
         wrist: zeroPose.wrist,
         grip: zeroPose.grip,
         activePreset: zeroPose.activePreset,
+        isExplorationMode: false,
+        exploreOverlayState: { ...ZERO_OVERLAY },
+        explorationOppositionIntensity: 0,
+        userEditedThumb: {},
+        explorationSnapshotThumb: {},
       };
     }
     case "SET_ANTHROPOMETRY": {
@@ -289,6 +395,11 @@ export function useHandPose() {
   const dims = useMemo(() => makeDims(profile), [profile]);
   const globalD2D5 = useMemo(() => calculateGlobalD2D5(state.fingers), [state.fingers]);
 
+  const renderedThumb = useMemo(
+    () => composeThumbWithOverlay(state.thumb, state.exploreOverlayState, state.isExplorationMode),
+    [state.thumb, state.exploreOverlayState, state.isExplorationMode],
+  );
+
   const track = useCallback((eventName, payload = {}) => {
     if (typeof window === "undefined") return;
     window.dispatchEvent(
@@ -301,6 +412,7 @@ export function useHandPose() {
   const setFingers = useCallback(value => dispatch({ type: "SET_FINGERS", value }), []);
   const setThumb = useCallback(value => dispatch({ type: "SET_THUMB", value }), []);
   const setThumbGoniometry = useCallback(value => dispatch({ type: "SET_THUMB_GONIOMETRY", value }), []);
+  const setOppositionEstimate = useCallback(value => dispatch({ type: "SET_OPPOSITION_ESTIMATE", value }), []);
   const setWrist = useCallback(value => dispatch({ type: "SET_WRIST", value }), []);
   const setGrip = useCallback(value => dispatch({ type: "SET_GRIP", value }), []);
   const setActivePreset = useCallback(value => dispatch({ type: "SET_ACTIVE_PRESET", value }), []);
@@ -346,6 +458,13 @@ export function useHandPose() {
     dispatch({ type: "SET_THUMB_OPP_INPUT", value: { axis, direction, magnitudeDeg } });
   }, []);
 
+  const enterOppositionExploration = useCallback(() => dispatch({ type: "ENTER_OPPOSITION_EXPLORATION" }), []);
+  const updateOppositionExploration = useCallback(intensity => {
+    dispatch({ type: "UPDATE_OPPOSITION_EXPLORATION", value: { intensity } });
+  }, []);
+  const restoreUserInputData = useCallback(() => dispatch({ type: "RESTORE_USER_INPUT_DATA" }), []);
+  const exitOppositionExploration = useCallback(() => dispatch({ type: "EXIT_OPPOSITION_EXPLORATION" }), []);
+
   const applyGlobalGrip = useCallback(
     (nextGrip, modeOverride) => {
       dispatch({ type: "APPLY_GRIP", grip: nextGrip, modeOverride });
@@ -382,11 +501,11 @@ export function useHandPose() {
   const thumbClinical = useMemo(
     () => ({
       opp: buildThumbOppositionClinicalModel({
-        thumb: state.thumb,
-        kapandjiLevel: getKapandjiLevelFromCommand(state.thumb.CMC_opp),
+        thumb: renderedThumb,
+        kapandjiLevel: state.kapandjiEstimatedFromRig,
       }),
     }),
-    [state.thumb],
+    [renderedThumb, state.kapandjiEstimatedFromRig],
   );
 
   const poseState = {
@@ -398,6 +517,9 @@ export function useHandPose() {
     activePreset: state.activePreset,
     thumbGoniometry,
     thumbClinical,
+    isExplorationMode: state.isExplorationMode,
+    exploreOverlayState: state.exploreOverlayState,
+    explorationOppositionIntensity: state.explorationOppositionIntensity,
     profile,
     dims,
     globalD2D5,
@@ -411,6 +533,7 @@ export function useHandPose() {
       setFingers,
       setThumb,
       setThumbGoniometry,
+      setOppositionEstimate,
       setWrist,
       setGrip,
       setGlobalMode,
@@ -422,6 +545,10 @@ export function useHandPose() {
       setThumbVal,
       setThumbCmcInput,
       setThumbOppInput,
+      enterOppositionExploration,
+      updateOppositionExploration,
+      restoreUserInputData,
+      exitOppositionExploration,
       applyGlobalGrip,
       presetFunctional,
       presetNeutral,
@@ -429,9 +556,12 @@ export function useHandPose() {
     }),
     [
       applyGlobalGrip,
+      enterOppositionExploration,
+      exitOppositionExploration,
       presetFunctional,
       presetNeutral,
       presetZero,
+      restoreUserInputData,
       setActivePreset,
       setAge,
       setFingers,
@@ -441,21 +571,25 @@ export function useHandPose() {
       setSex,
       setThumb,
       setThumbGoniometry,
+      setOppositionEstimate,
       setThumbOppInput,
       setThumbVal,
       setThumbCmcInput,
       setWrist,
       updateGlobalD2D5,
+      updateOppositionExploration,
     ],
   );
 
   const sceneInput = useMemo(
-    () => createSceneInput({ dims, fingers: state.fingers, thumb: state.thumb, wrist: state.wrist }),
-    [dims, state.fingers, state.thumb, state.wrist],
+    () => createSceneInput({ dims, fingers: state.fingers, thumb: renderedThumb, wrist: state.wrist }),
+    [dims, renderedThumb, state.fingers, state.wrist],
   );
 
   return { poseState, poseActions, sceneInput };
 }
+
+
 
 
 

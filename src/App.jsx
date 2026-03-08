@@ -18,7 +18,7 @@ export default function HandSimulatorApp() {
   const [openPanel, setOpenPanel] = useState("global_d2d5");
 
   const { poseState, poseActions, sceneInput } = useHandPose();
-  const { setThumbVal, setActivePreset, setThumbGoniometry } = poseActions;
+  const { setThumbVal, setActivePreset, setThumbGoniometry, setOppositionEstimate } = poseActions;
 
   useEffect(() => {
     const link = document.createElement("link");
@@ -93,8 +93,10 @@ export default function HandSimulatorApp() {
     <div
       className="w-full h-screen text-gray-900 flex overflow-hidden"
       style={{
-        "--lmb-navy": "#0e1e35", "--lmb-coral": "#f04d4f",
-        "--lmb-teal": "#3bb7a2", "--lmb-ivory": "#f9f8f4",
+        "--lmb-navy": "#0e1e35",
+        "--lmb-coral": "#f04d4f",
+        "--lmb-teal": "#3bb7a2",
+        "--lmb-ivory": "#f9f8f4",
         "--lmb-blue": "#10315a",
         backgroundColor: "var(--lmb-ivory)",
         fontFamily: '"DM Sans",ui-sans-serif,system-ui',
@@ -136,9 +138,15 @@ export default function HandSimulatorApp() {
             thumb={poseState.thumb}
             thumbGoniometry={poseState.thumbGoniometry}
             thumbClinical={poseState.thumbClinical}
+            isExplorationMode={poseState.isExplorationMode}
+            explorationOppositionIntensity={poseState.explorationOppositionIntensity}
             onThumbVal={poseActions.setThumbVal}
             onThumbCmcInput={poseActions.setThumbCmcInput}
             onThumbOppInput={poseActions.setThumbOppInput}
+            onEnterOppositionExploration={poseActions.enterOppositionExploration}
+            onUpdateOppositionExploration={poseActions.updateOppositionExploration}
+            onRestoreUserInputData={poseActions.restoreUserInputData}
+            onExitOppositionExploration={poseActions.exitOppositionExploration}
             onHighlight={setDebugKey}
             onClearPreset={clearPreset}
           />
@@ -167,7 +175,10 @@ export default function HandSimulatorApp() {
           <summary className="cursor-pointer font-medium">Tabela tecnica - Limites</summary>
           <div className="mt-2 space-y-1">
             <p>MCP D2-D5: -45 deg a +90 deg | PIP: 0-100 deg | DIP: -20 deg a +80 deg</p>
-            <p>CMC Polegar: Abd {CMC_TEMP_RANGE[0]}..+{CMC_TEMP_RANGE[1]} deg | Flex/Ext {CMC_TEMP_RANGE[0]}..+{CMC_TEMP_RANGE[1]} deg | Oposicao: {CMC_TEMP_RANGE[0]}..+{CMC_TEMP_RANGE[1]} deg | Kapandji estimado 0..10</p>
+            <p>
+              CMC Polegar: Abd {CMC_TEMP_RANGE[0]}..+{CMC_TEMP_RANGE[1]} deg | Flex/Ext {CMC_TEMP_RANGE[0]}..+
+              {CMC_TEMP_RANGE[1]} deg | Oposicao: {CMC_TEMP_RANGE[0]}..+{CMC_TEMP_RANGE[1]} deg | Kapandji estimado 0..10
+            </p>
             <p>MCP Polegar: 0-60 deg | IP: -10 deg a +80 deg</p>
           </div>
         </details>
@@ -180,6 +191,7 @@ export default function HandSimulatorApp() {
           thumbGoniometry={poseState.thumbGoniometry}
           debugKey={debugKey}
           onThumbGoniometry={setThumbGoniometry}
+          onOppositionEstimate={setOppositionEstimate}
         />
       </Suspense>
     </div>

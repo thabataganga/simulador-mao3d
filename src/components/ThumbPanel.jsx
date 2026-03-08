@@ -100,7 +100,101 @@ function DirectionMagnitudeSlider({
   );
 }
 
-export function ThumbPanel({ thumb, thumbGoniometry, thumbClinical, onThumbVal, onThumbCmcInput, onThumbOppInput, onHighlight, onClearPreset }) {
+function OppositionExplorationPanel({
+  isExplorationMode,
+  clinical,
+  intensity,
+  onEnter,
+  onUpdate,
+  onRestore,
+  onExit,
+  onHighlight,
+}) {
+  const inputId = "opp-exploration-intensity";
+
+  return (
+    <div className="mb-3 border border-dashed border-blue-300 rounded-md p-2 bg-blue-50/50">
+      <div className="text-sm font-medium mb-2">Exploracao de oposicao</div>
+      <p className="text-xs text-gray-600 mb-2">
+        Simula oposicao possivel sem sobrescrever os dados clinicos digitados.
+      </p>
+
+      {!isExplorationMode ? (
+        <>
+          <div className="mt-1 text-xs text-gray-600">
+            Medida do rig: <strong>{clinical.rigDirection || clinical.direction || clinical.inputDirection} {clinical.rigMagnitudeDeg ?? clinical.magnitudeDeg ?? clinical.inputMagnitudeDeg}deg</strong>
+          </div>
+          <div className="mt-1 text-xs text-gray-600">
+            Kapandji estimado: <strong>{clinical.scaleLabel}</strong> <span className="text-[11px] text-gray-500">{clinical.estimatedLabel}</span>
+          </div>
+          <button
+            type="button"
+            className="mt-2 px-3 py-1 text-xs rounded-md border border-blue-400 text-blue-700"
+            onClick={() => {
+              onEnter();
+              onHighlight?.();
+            }}
+          >
+            Explorar oposicao
+          </button>
+        </>
+      ) : (
+        <>
+          <div className="mb-2">
+            <label htmlFor={inputId} className="text-xs text-gray-700">Intensidade tecnica ({Math.round(intensity)} deg)</label>
+            <input
+              id={inputId}
+              name={inputId}
+              type="range"
+              min={-100}
+              max={100}
+              step={1}
+              value={intensity}
+              onChange={e => {
+                onUpdate(Number(e.target.value));
+                onHighlight?.();
+              }}
+              className="w-full"
+            />
+          </div>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              className="px-3 py-1 text-xs rounded-md border border-gray-300 text-gray-700"
+              onClick={onRestore}
+            >
+              Voltar aos dados inputados
+            </button>
+            <button
+              type="button"
+              className="px-3 py-1 text-xs rounded-md border border-blue-400 text-blue-700"
+              onClick={onExit}
+            >
+              Sair exploracao
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+export function ThumbPanel({
+  thumb,
+  thumbGoniometry,
+  thumbClinical,
+  isExplorationMode,
+  explorationOppositionIntensity,
+  onThumbVal,
+  onThumbCmcInput,
+  onThumbOppInput,
+  onEnterOppositionExploration,
+  onUpdateOppositionExploration,
+  onRestoreUserInputData,
+  onExitOppositionExploration,
+  onHighlight,
+  onClearPreset,
+}) {
   const panelOrder = ["CMC_flex", "CMC_abd", "CMC_opp", "MCP_flex", "IP"];
   const orderedItems = panelOrder
     .map(key => THUMB_SLIDER_CONFIG.find(item => item.key === key))
@@ -152,22 +246,41 @@ export function ThumbPanel({ thumb, thumbGoniometry, thumbClinical, onThumbVal, 
 
     if (item.key === "CMC_opp") {
       return (
-        <DirectionMagnitudeSlider
-          key={item.key}
-          axis="CMC_opp"
-          label="CMC Oposicao"
-          clinical={thumbClinical.opp}
-          positiveDirection="oposicao"
-          negativeDirection="retroposicao"
-          min={min}
-          max={max}
-          onApply={(axis, direction, magnitude) => {
-            onThumbOppInput(axis, direction, magnitude);
-            onClearPreset();
-          }}
-          onHighlight={() => onHighlight(item.debugKey)}
-          extraFooter={<span>Kapandji estimado: <strong>{thumbClinical.opp.scaleLabel}</strong> <span className="text-[11px] text-gray-500">{thumbClinical.opp.estimatedLabel}</span></span>}
-        />
+        <div key={item.key}>
+          {isExplorationMode ? (
+            <DirectionMagnitudeSlider
+              axis="CMC_opp"
+              label="CMC Oposicao"
+              clinical={thumbClinical.opp}
+              positiveDirection="oposicao"
+              negativeDirection="retroposicao"
+              min={min}
+              max={max}
+              onApply={(axis, direction, magnitude) => {
+                onThumbOppInput(axis, direction, magnitude);
+                onClearPreset();
+              }}
+              onHighlight={() => onHighlight(item.debugKey)}
+              extraFooter={<span>Kapandji estimado: <strong>{thumbClinical.opp.scaleLabel}</strong> <span className="text-[11px] text-gray-500">{thumbClinical.opp.estimatedLabel}</span></span>}
+            />
+          ) : null}
+          <OppositionExplorationPanel
+            isExplorationMode={isExplorationMode}
+            clinical={thumbClinical.opp}
+            intensity={explorationOppositionIntensity}
+            onEnter={() => {
+              onEnterOppositionExploration();
+              onClearPreset();
+            }}
+            onUpdate={value => {
+              onUpdateOppositionExploration(value);
+              onClearPreset();
+            }}
+            onRestore={onRestoreUserInputData}
+            onExit={onExitOppositionExploration}
+            onHighlight={() => onHighlight(item.debugKey)}
+          />
+        </div>
       );
     }
 

@@ -84,7 +84,7 @@ describe("useHandPose reducer", () => {
     const state = {
       ...__testables.createInitialState(),
       anthropometry: { sex: "masculino", percentile: 50, age: 25 },
-      kapandjiEstimatedLevel: 4,
+      kapandjiEstimatedFromRig: 4,
     };
 
     const next = __testables.poseReducer(state, {
@@ -92,7 +92,7 @@ describe("useHandPose reducer", () => {
       value: { CMC_abd: 12.5, CMC_flex: -8.25, KAPANDJI_level: 9 },
     });
 
-    expect(next.kapandjiEstimatedLevel).toBe(4);
+    expect(next.kapandjiEstimatedFromRig).toBe(4);
     expect(next.thumbMeasured.CMC_abd).toBeCloseTo(12.5, 6);
     expect(next.thumbMeasured.CMC_flex).toBeCloseTo(-8.25, 6);
   });
@@ -102,7 +102,7 @@ describe("useHandPose reducer", () => {
       ...__testables.createInitialState(),
       anthropometry: { sex: "masculino", percentile: 50, age: 25 },
       thumbMeasured: { CMC_abd: 12.5, CMC_flex: -8.25 },
-      kapandjiEstimatedLevel: 6,
+      kapandjiEstimatedFromRig: 6,
     };
 
     const next = __testables.poseReducer(state, {
@@ -113,3 +113,4 @@ describe("useHandPose reducer", () => {
     expect(next).toBe(state);
   });
 });
+

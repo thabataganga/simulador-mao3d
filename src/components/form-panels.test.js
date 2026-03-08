@@ -79,8 +79,8 @@ describe("GripPanel", () => {
 });
 
 describe("ThumbPanel", () => {
-  test("renders direction+magnitude control for CMC opposition", () => {
-    const onThumbOppInput = jest.fn();
+  test("shows read-only opposition section when exploration is off", () => {
+    const onEnterOppositionExploration = jest.fn();
     const onClearPreset = jest.fn();
     const onHighlight = jest.fn();
 
@@ -100,20 +100,79 @@ describe("ThumbPanel", () => {
           estimatedLabel: "Oposicao palmar media",
         },
       },
+      isExplorationMode: false,
+      explorationOppositionIntensity: 0,
       onThumbVal: jest.fn(),
       onThumbCmcInput: jest.fn(),
-      onThumbOppInput,
+      onThumbOppInput: jest.fn(),
+      onEnterOppositionExploration,
+      onUpdateOppositionExploration: jest.fn(),
+      onRestoreUserInputData: jest.fn(),
+      onExitOppositionExploration: jest.fn(),
       onHighlight,
       onClearPreset,
     });
 
-    const oppControl = elements[2];
+    const oppGroup = elements[2];
+    expect(oppGroup.props.children[0]).toBeNull();
+    const explorationPanel = oppGroup.props.children[1];
+    explorationPanel.props.onEnter();
+
+    expect(onEnterOppositionExploration).toHaveBeenCalledTimes(1);
+    expect(onClearPreset).toHaveBeenCalledTimes(1);
+  });
+
+  test("shows editable opposition slider when exploration is on", () => {
+    const onThumbOppInput = jest.fn();
+    const onUpdateOppositionExploration = jest.fn();
+    const onRestoreUserInputData = jest.fn();
+    const onExitOppositionExploration = jest.fn();
+    const onClearPreset = jest.fn();
+
+    const elements = ThumbPanel({
+      thumb: { CMC_abd: 0, CMC_opp: 34, CMC_flex: 0, MCP_flex: 0, IP: 0 },
+      thumbGoniometry: {
+        abd: { inputDirection: "abducao", inputMagnitudeDeg: 0 },
+        flex: { inputDirection: "extensao", inputMagnitudeDeg: 0 },
+      },
+      thumbClinical: {
+        opp: {
+          inputDirection: "oposicao",
+          inputMagnitudeDeg: 34,
+          rigDirection: "oposicao",
+          rigMagnitudeDeg: 34,
+          scaleLabel: "Kapandji 6",
+          estimatedLabel: "Oposicao",
+        },
+      },
+      isExplorationMode: true,
+      explorationOppositionIntensity: 12,
+      onThumbVal: jest.fn(),
+      onThumbCmcInput: jest.fn(),
+      onThumbOppInput,
+      onEnterOppositionExploration: jest.fn(),
+      onUpdateOppositionExploration,
+      onRestoreUserInputData,
+      onExitOppositionExploration,
+      onHighlight: jest.fn(),
+      onClearPreset,
+    });
+
+    const oppGroup = elements[2];
+    const oppControl = oppGroup.props.children[0];
     expect(oppControl.props.axis).toBe("CMC_opp");
     oppControl.props.onApply("CMC_opp", "retroposicao", 8);
-    oppControl.props.onHighlight();
+
+    const explorationPanel = oppGroup.props.children[1];
+    explorationPanel.props.onUpdate(15);
+    explorationPanel.props.onRestore();
+    explorationPanel.props.onExit();
 
     expect(onThumbOppInput).toHaveBeenCalledWith("CMC_opp", "retroposicao", 8);
-    expect(onClearPreset).toHaveBeenCalledTimes(1);
-    expect(onHighlight).toHaveBeenCalledWith("TH_CMC_OPP");
+    expect(onUpdateOppositionExploration).toHaveBeenCalledWith(15);
+    expect(onRestoreUserInputData).toHaveBeenCalledTimes(1);
+    expect(onExitOppositionExploration).toHaveBeenCalledTimes(1);
+    expect(onClearPreset).toHaveBeenCalledTimes(2);
   });
 });
+
