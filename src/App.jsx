@@ -17,7 +17,7 @@ export default function HandSimulatorApp() {
   const [openPanel, setOpenPanel] = useState("global_d2d5");
 
   const { poseState, poseActions, sceneInput } = useHandPose();
-  const { setThumbVal, setActivePreset } = poseActions;
+  const { setThumbVal, setActivePreset, setThumbGoniometry } = poseActions;
 
   // Fonts loaded dynamically so UI keeps visual identity without blocking first paint.
   useEffect(() => {
@@ -117,7 +117,9 @@ export default function HandSimulatorApp() {
         <AccordionItem id="thumb" title="D1 - Polegar (CMC, MCP, IP)" isOpen={openPanel === "thumb"} onToggle={togglePanel}>
           <ThumbPanel
             thumb={poseState.thumb}
+            thumbGoniometry={poseState.thumbGoniometry}
             onThumbVal={poseActions.setThumbVal}
+            onThumbCmcInput={poseActions.setThumbCmcInput}
             onHighlight={setDebugKey}
             onClearPreset={clearPreset}
           />
@@ -152,7 +154,7 @@ export default function HandSimulatorApp() {
       </aside>
 
       <Suspense fallback={<main className="flex-1 grid place-items-center text-sm text-gray-500">Carregando cena 3D...</main>}>
-        <HandScene3D sceneInput={sceneInput} debugKey={debugKey} />
+        <HandScene3D sceneInput={sceneInput} debugKey={debugKey} onThumbGoniometry={setThumbGoniometry} />
       </Suspense>
     </div>
   );

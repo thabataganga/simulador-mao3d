@@ -293,6 +293,7 @@ export function buildHandRig(d) {
 
   return {
     root: wrist.root,
+    palm: wrist.palm,
     wrist: { dev: wrist.wristDev, flex: wrist.wristFlex },
     fingers: fingers.fingersRig,
     thumb: thumb.thumb,

@@ -1,6 +1,12 @@
 import { useCallback, useMemo, useReducer } from "react";
 import { buildProfile, makeDims, restFromDims } from "../utils";
 import {
+  buildCmcInputStateForAxis,
+  buildThumbCmcClinicalModel,
+  createDefaultCmcInputState,
+  syncCmcInputStateFromThumb,
+} from "../domain/thumb";
+import {
   applyGlobalGripToPose,
   calculateGlobalD2D5,
   createNeutralPose,
@@ -21,6 +27,8 @@ function createInitialState(dims) {
   return {
     fingers: f,
     thumb: t,
+    thumbMeasured: { CMC_abd: 0, CMC_flex: 0 },
+    cmcInput: createDefaultCmcInputState(),
     wrist: w,
     grip: 0,
     globalMode: "functional",
@@ -33,7 +41,19 @@ function poseReducer(state, action) {
     case "SET_FINGERS":
       return { ...state, fingers: action.value };
     case "SET_THUMB":
-      return { ...state, thumb: action.value };
+      return {
+        ...state,
+        thumb: action.value,
+        cmcInput: syncCmcInputStateFromThumb(state.cmcInput, action.value),
+      };
+    case "SET_THUMB_GONIOMETRY":
+      return {
+        ...state,
+        thumbMeasured: {
+          ...state.thumbMeasured,
+          ...action.value,
+        },
+      };
     case "SET_WRIST":
       return { ...state, wrist: action.value };
     case "SET_GRIP":
@@ -44,8 +64,38 @@ function poseReducer(state, action) {
       return { ...state, activePreset: action.value };
     case "SET_GLOBAL_FINGER_ANGLE":
       return { ...state, fingers: setGlobalFingerAngle(state.fingers, action.key, action.value) };
-    case "SET_THUMB_ANGLE":
-      return { ...state, thumb: setThumbAngle(state.thumb, action.key, action.value) };
+    case "SET_THUMB_ANGLE": {
+      const nextThumb = setThumbAngle(state.thumb, action.key, action.value);
+      if (action.key !== "CMC_abd" && action.key !== "CMC_flex") {
+        return { ...state, thumb: nextThumb };
+      }
+      return {
+        ...state,
+        thumb: nextThumb,
+        cmcInput: syncCmcInputStateFromThumb(state.cmcInput, nextThumb),
+      };
+    }
+    case "SET_THUMB_CMC_INPUT": {
+      const { axis, direction, magnitudeDeg } = action.value;
+      const { nextInputAxisState, solved } = buildCmcInputStateForAxis({
+        axis,
+        direction,
+        magnitudeDeg,
+        thumbContext: state.thumb,
+        prevState: state.cmcInput,
+      });
+      return {
+        ...state,
+        thumb: {
+          ...state.thumb,
+          [axis]: solved.commandDeg,
+        },
+        cmcInput: {
+          ...state.cmcInput,
+          [axis]: nextInputAxisState,
+        },
+      };
+    }
     case "APPLY_GRIP": {
       const nextPose = applyGlobalGripToPose(
         {
@@ -61,6 +111,7 @@ function poseReducer(state, action) {
         ...state,
         fingers: nextPose.fingers,
         thumb: nextPose.thumb,
+        cmcInput: syncCmcInputStateFromThumb(state.cmcInput, nextPose.thumb),
         wrist: nextPose.wrist,
         grip: action.grip,
       };
@@ -80,6 +131,7 @@ function poseReducer(state, action) {
         ...state,
         fingers: nextPose.fingers,
         thumb: nextPose.thumb,
+        cmcInput: syncCmcInputStateFromThumb(state.cmcInput, nextPose.thumb),
         wrist: nextPose.wrist,
         globalMode: "functional",
         grip: 50,
@@ -92,6 +144,7 @@ function poseReducer(state, action) {
         ...state,
         fingers: neutralPose.fingers,
         thumb: neutralPose.thumb,
+        cmcInput: syncCmcInputStateFromThumb(state.cmcInput, neutralPose.thumb),
         wrist: neutralPose.wrist,
         grip: neutralPose.grip,
         activePreset: neutralPose.activePreset,
@@ -103,6 +156,7 @@ function poseReducer(state, action) {
         ...state,
         fingers: zeroPose.fingers,
         thumb: zeroPose.thumb,
+        cmcInput: syncCmcInputStateFromThumb(state.cmcInput, zeroPose.thumb),
         wrist: zeroPose.wrist,
         grip: zeroPose.grip,
         activePreset: zeroPose.activePreset,
@@ -156,6 +210,7 @@ export function useHandPose() {
 
   const setFingers = useCallback(value => dispatch({ type: "SET_FINGERS", value }), []);
   const setThumb = useCallback(value => dispatch({ type: "SET_THUMB", value }), []);
+  const setThumbGoniometry = useCallback(value => dispatch({ type: "SET_THUMB_GONIOMETRY", value }), []);
   const setWrist = useCallback(value => dispatch({ type: "SET_WRIST", value }), []);
   const setGrip = useCallback(value => dispatch({ type: "SET_GRIP", value }), []);
   const setActivePreset = useCallback(value => dispatch({ type: "SET_ACTIVE_PRESET", value }), []);
@@ -194,6 +249,9 @@ export function useHandPose() {
 
   const updateGlobalD2D5 = useCallback((key, value) => dispatch({ type: "SET_GLOBAL_FINGER_ANGLE", key, value }), []);
   const setThumbVal = useCallback((key, value) => dispatch({ type: "SET_THUMB_ANGLE", key, value }), []);
+  const setThumbCmcInput = useCallback((axis, direction, magnitudeDeg) => {
+    dispatch({ type: "SET_THUMB_CMC_INPUT", value: { axis, direction, magnitudeDeg } });
+  }, []);
 
   const applyGlobalGrip = useCallback(
     (nextGrip, modeOverride) => {
@@ -225,6 +283,11 @@ export function useHandPose() {
     grip: state.grip,
     globalMode: state.globalMode,
     activePreset: state.activePreset,
+    thumbGoniometry: buildThumbCmcClinicalModel({
+      thumb: state.thumb,
+      measured: state.thumbMeasured,
+      inputState: state.cmcInput,
+    }),
     profile,
     dims,
     globalD2D5,
@@ -237,6 +300,7 @@ export function useHandPose() {
     () => ({
       setFingers,
       setThumb,
+      setThumbGoniometry,
       setWrist,
       setGrip,
       setGlobalMode,
@@ -246,6 +310,7 @@ export function useHandPose() {
       setAge,
       updateGlobalD2D5,
       setThumbVal,
+      setThumbCmcInput,
       applyGlobalGrip,
       presetFunctional,
       presetNeutral,
@@ -264,7 +329,9 @@ export function useHandPose() {
       setPercentile,
       setSex,
       setThumb,
+      setThumbGoniometry,
       setThumbVal,
+      setThumbCmcInput,
       setWrist,
       updateGlobalD2D5,
     ],

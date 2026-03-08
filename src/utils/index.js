@@ -109,9 +109,10 @@ export function makeDims(profile) {
   const baseX      = palmLen / 2 + MathUtils.clamp(0.3 * palmThick, 1.5, 6);
   const baseZ      = RATIOS.baseZ.map(r => r * palmWidth);
   const thumbBase  = {
+    // Keep the CMC origin near the radial-proximal edge and move laterally in Z.
     x: -palmLen / 2 + R.thumbBaseFromProx * palmLen,
     y: palmThick * (profile.thumbBase?.yT ?? THUMB_BASE_RATIO.yT),
-    z: palmWidth * (profile.thumbBase?.zW ?? THUMB_BASE_RATIO.zW),
+    z: palmWidth * (profile.thumbBase?.zW ?? THUMB_BASE_RATIO.zW) + MathUtils.clamp(0.08 * palmWidth, 2, 6),
   };
   const wrist   = { radius: palmWidth * R.wristRadToPalmWidth, length: palmThick * R.wristLenToPalmThick };
   const forearm = {

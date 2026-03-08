@@ -64,7 +64,7 @@ function poseCmc(clinical) {
 describe("CMC-first mapping", () => {
   test("uses explicit neutral mount constants", () => {
     expect(THUMB_CMC_NEUTRAL.mountRotationOrder).toBe("ZYX");
-    expect(THUMB_CMC_NEUTRAL.cmcNeutralMountDeg).toEqual({ z: -22, y: -36, x: 6 });
+    expect(THUMB_CMC_NEUTRAL.cmcNeutralMountDeg).toEqual({ z: 0, y: 0, x: 0 });
     expect(THUMB_CMC_NEUTRAL.cmcNeutralBaseOffset).toEqual({ dx: 0, dy: 0, dz: 0 });
   });
 

@@ -4,7 +4,7 @@ import { buildHandRig } from "../three/buildHandRig";
 import { setLabelText } from "../three/helpers";
 import { deg2rad, clamp } from "../utils";
 import { RANGES } from "../constants";
-import { mapClinicalThumbToRigRadians } from "../domain/thumb";
+import { mapClinicalThumbToRigRadians, measureThumbCmcGoniometryFromRig } from "../domain/thumb";
 
 
 const GLOBAL_DEBUG_KEY_TO_JOINT = {
@@ -15,7 +15,12 @@ const GLOBAL_DEBUG_KEY_TO_JOINT = {
 
 const formatDegree = value => String(Math.round(value)) + String.fromCharCode(176);
 
-function applyMainLabels(rig, fingers, thumb, wrist) {
+function formatDirectional(labelPositive, labelNegative, value) {
+  const direction = value >= 0 ? labelPositive : labelNegative;
+  return `${direction} ${formatDegree(Math.abs(value))}`;
+}
+
+function applyMainLabels(rig, fingers, thumb, wrist, cmcMeasured) {
   const map = rig.dbgMap;
   setLabelText(map.GLOBAL_MCP?.label, `MCP: ${formatDegree(fingers[1].MCP)}`);
   setLabelText(map.GLOBAL_PIP?.label, `PIP: ${formatDegree(fingers[1].PIP)}`);
@@ -26,8 +31,11 @@ function applyMainLabels(rig, fingers, thumb, wrist) {
   const thumbLabels = rig.thumbLabels;
   if (!thumbLabels) return;
 
-  setLabelText(thumbLabels.abd, `CMC abd: ${formatDegree(thumb.CMC_abd)}`);
-  setLabelText(thumbLabels.flex, `CMC flex: ${formatDegree(thumb.CMC_flex)}`);
+  const measuredAbd = cmcMeasured?.CMC_abd ?? thumb.CMC_abd;
+  const measuredFlex = cmcMeasured?.CMC_flex ?? thumb.CMC_flex;
+
+  setLabelText(thumbLabels.abd, `CMC abd: ${formatDirectional("abducao", "aducao", measuredAbd)}`);
+  setLabelText(thumbLabels.flex, `CMC: ${formatDirectional("flexao", "extensao", measuredFlex)}`);
   setLabelText(thumbLabels.opp, `CMC opp: ${formatDegree(thumb.CMC_opp)}`);
   setLabelText(thumbLabels.mcp, `MCP: ${formatDegree(thumb.MCP_flex)}`);
   setLabelText(thumbLabels.ip, `IP: ${formatDegree(thumb.IP)}`);
@@ -56,10 +64,13 @@ function applyPoseToRig(rig, fingers, thumb, wrist) {
   thumbRig.mcpAccessory.rotation.x = thumbMapped.radians.mcpAccessory;
   thumbRig.ip.rotation.z = -thumbMapped.radians.ipFlex;
 
-  applyMainLabels(rig, fingers, thumb, wrist);
+  rig.root.updateMatrixWorld(true);
+  const cmcMeasured = measureThumbCmcGoniometryFromRig(rig);
+  applyMainLabels(rig, fingers, thumb, wrist, cmcMeasured);
+  return cmcMeasured;
 }
 
-export function useHandRig({ three, orbitRef, controlsReady = false, dims, fingers, thumb, wrist, debugKey }) {
+export function useHandRig({ three, orbitRef, controlsReady = false, dims, fingers, thumb, wrist, debugKey, onThumbGoniometry }) {
   const handRig = useRef(null);
   const hasInitialFrameRef = useRef(false);
   const lastPalmLengthRef = useRef(null);
@@ -109,7 +120,8 @@ export function useHandRig({ three, orbitRef, controlsReady = false, dims, finge
     three.scene.add(handRig.current.root);
 
     const currentPose = poseRef.current;
-    applyPoseToRig(handRig.current, currentPose.fingers, currentPose.thumb, currentPose.wrist);
+    const measured = applyPoseToRig(handRig.current, currentPose.fingers, currentPose.thumb, currentPose.wrist);
+    if (measured && onThumbGoniometry) onThumbGoniometry(measured);
 
     const prevPalmLength = lastPalmLengthRef.current;
     const nextPalmLength = dims?.palm?.LENGTH || 0;
@@ -120,7 +132,7 @@ export function useHandRig({ three, orbitRef, controlsReady = false, dims, finge
 
     lastPalmLengthRef.current = nextPalmLength;
     if (controlsReady && shouldRefit) frameRig();
-  }, [controlsReady, dims, frameRig, three]);
+  }, [controlsReady, dims, frameRig, onThumbGoniometry, three]);
 
   // Ensure first frame is centered once controls are ready.
   useEffect(() => {
@@ -131,8 +143,9 @@ export function useHandRig({ three, orbitRef, controlsReady = false, dims, finge
 
   // Apply pose updates and refresh labels.
   useEffect(() => {
-    applyPoseToRig(handRig.current, fingers, thumb, wrist);
-  }, [fingers, thumb, wrist]);
+    const measured = applyPoseToRig(handRig.current, fingers, thumb, wrist);
+    if (measured && onThumbGoniometry) onThumbGoniometry(measured);
+  }, [fingers, onThumbGoniometry, thumb, wrist]);
 
   // Highlight active articulation.
   useEffect(() => {

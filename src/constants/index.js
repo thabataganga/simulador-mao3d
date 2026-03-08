@@ -70,9 +70,9 @@ export const WRIST_SLIDER_CONFIG = [
 export const THUMB_CMC_NEUTRAL = Object.freeze({
   mountRotationOrder: "ZYX",
   cmcNeutralMountDeg: Object.freeze({
-    z: -22,
-    y: -36,
-    x: 6,
+    z: 0,
+    y: 0,
+    x: 0,
   }),
   cmcNeutralBaseOffset: Object.freeze({
     dx: 0,
