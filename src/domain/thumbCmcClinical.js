@@ -1,4 +1,4 @@
-﻿import { RANGES } from "../constants/reference/biomechanics";
+import { RANGES } from "../constants/biomechanics";
 import { getCmcCommandRange, mapClinicalCmcToRigAngles } from "./thumbCmcMapping";
 
 const TOLERANCE_DEG = 1;
@@ -165,6 +165,7 @@ export function buildThumbCmcClinicalModel({ thumb, measured, inputState }) {
     flex: buildAxisClinicalModel({ axis: "CMC_flex", thumb, measured, inputState: state.CMC_flex }),
   };
 }
+
 
 
 

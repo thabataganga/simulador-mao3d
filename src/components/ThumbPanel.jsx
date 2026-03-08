@@ -1,5 +1,5 @@
-import { RANGES } from "../constants/reference/biomechanics";
-import { THUMB_SLIDER_CONFIG } from "../constants/reference/uiConfig";
+import { RANGES } from "../constants/biomechanics";
+import { THUMB_SLIDER_CONFIG } from "../constants/uiConfig";
 import { LabeledSlider } from "./LabeledSlider";
 
 function DirectionMagnitudeSlider({
@@ -341,5 +341,6 @@ export function ThumbPanel({
     );
   });
 }
+
 
 

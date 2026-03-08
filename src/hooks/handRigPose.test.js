@@ -3,9 +3,9 @@ jest.mock("../three/helpers", () => ({
 }));
 
 import { setLabelText } from "../three/helpers";
-import { applyMainLabels } from "./handRigMath";
+import { applyMainLabels } from "./handRig/pose";
 
-describe("handRigMath opposition label", () => {
+describe("handRig pose opposition label", () => {
   test("renders opposition label in Kapandji scale when available", () => {
     const rig = {
       dbgMap: {
@@ -40,3 +40,5 @@ describe("handRigMath opposition label", () => {
     expect(setLabelText).toHaveBeenCalledWith(rig.thumbLabels.opp, "CMC: Kapandji 5");
   });
 });
+
+

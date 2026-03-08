@@ -1,5 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useState } from "react";
-import { CMC_TEMP_RANGE } from "./constants/reference/biomechanics";
+import { CMC_TEMP_RANGE } from "./constants/biomechanics";
 
 import { useHandPose } from "./hooks/useHandPose";
 
@@ -193,3 +193,4 @@ export default function HandSimulatorApp() {
     </div>
   );
 }
+

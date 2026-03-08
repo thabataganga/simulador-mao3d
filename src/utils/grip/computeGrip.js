@@ -1,4 +1,4 @@
-﻿import { FUNC_KF, PINCH_KF } from "../../constants/reference/gripKeyframes";
+import { FUNC_KF, PINCH_KF } from "../../constants/gripKeyframes";
 import { interpPose } from "../math/core";
 
 export function computeGrip(g, mode) {
@@ -17,5 +17,6 @@ export function computeGrip(g, mode) {
 
   return { finger: interpPose(fA, fB, t), thumb: interpPose(tA, tB, t), wrist: interpPose(wA, wB, t), pinchOnly: false };
 }
+
 
 

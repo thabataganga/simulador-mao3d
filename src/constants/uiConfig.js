@@ -1,4 +1,5 @@
 import { RANGES } from "./biomechanics";
+import { TH_CMC_ABD_DEBUG_KEY, TH_CMC_FLEX_DEBUG_KEY, OPPOSITION_DEBUG_KEY } from "./debugKeys";
 
 export const THUMB_SLIDER_CONFIG = [
   {
@@ -7,7 +8,7 @@ export const THUMB_SLIDER_CONFIG = [
     rangeKey: "CMC_ABD",
     leftHint: "Aducao (-)",
     rightHint: "Abducao (+)",
-    debugKey: "TH_CMC_ABD",
+    debugKey: TH_CMC_ABD_DEBUG_KEY,
   },
   {
     key: "CMC_flex",
@@ -15,7 +16,7 @@ export const THUMB_SLIDER_CONFIG = [
     rangeKey: "CMC_FLEX",
     leftHint: "Extensao (-)",
     rightHint: "Flexao (+)",
-    debugKey: "TH_CMC_FLEX",
+    debugKey: TH_CMC_FLEX_DEBUG_KEY,
   },
   {
     key: "CMC_opp",
@@ -23,7 +24,7 @@ export const THUMB_SLIDER_CONFIG = [
     rangeKey: "CMC_OPP",
     leftHint: "Retroposicao (-)",
     rightHint: "Oposicao (+)",
-    debugKey: "TH_CMC_OPP",
+    debugKey: OPPOSITION_DEBUG_KEY,
   },
   {
     key: "MCP_flex",
@@ -65,4 +66,3 @@ export const WRIST_SLIDER_CONFIG = [
 export function getRangeByKey(rangeKey) {
   return RANGES[rangeKey];
 }
-

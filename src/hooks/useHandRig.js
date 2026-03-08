@@ -12,7 +12,7 @@ import {
   getViewportSize,
   updateCmcGoniometerOverlay,
   updateThumbOppositionOverlay,
-} from "./handRigMath";
+} from "./handRig";
 
 export const __testables = {
   didGoniometryChange,
@@ -188,3 +188,4 @@ export function useHandRig({
 
   return handRig;
 }
+

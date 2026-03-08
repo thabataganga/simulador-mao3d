@@ -1,4 +1,4 @@
-﻿import { RANGES, THUMB_CMC } from "../constants/reference/biomechanics";
+import { RANGES, THUMB_CMC } from "../constants/biomechanics";
 import { clamp, deg2rad } from "../utils/math/core";
 
 export function getCmcCommandRange(axis) {
@@ -61,6 +61,7 @@ export function mapClinicalCmcToRigRadians(thumb) {
     },
   };
 }
+
 
 
 

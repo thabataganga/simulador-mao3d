@@ -1,25 +1,8 @@
-import { Box3, Quaternion, Vector3 } from "three";
-import { setLabelText } from "../three/helpers";
-import { deg2rad, clamp } from "../utils/math/core";
-import { RANGES } from "../constants/reference/biomechanics";
-import { mapClinicalThumbToRigRadians, measureThumbCmcGoniometryFromRig, resolveKapandjiOperationalPose } from "../domain/thumb";
-
-export const GLOBAL_DEBUG_KEY_TO_JOINT = {
-  GLOBAL_MCP: "MCP",
-  GLOBAL_PIP: "PIP",
-  GLOBAL_DIP: "DIP",
-};
-
-export const ANGULAR_CMC_DEBUG_KEYS = new Set(["TH_CMC_FLEX", "TH_CMC_ABD"]);
-export const OPPOSITION_DEBUG_KEY = "TH_CMC_OPP";
-export const GONIOMETRY_EMIT_EPSILON = 1e-4;
-
-const formatDegree = value => String(Math.round(value)) + String.fromCharCode(176);
-
-function formatDirectional(labelPositive, labelNegative, value) {
-  const direction = value >= 0 ? labelPositive : labelNegative;
-  return `${direction} ${formatDegree(Math.abs(value))}`;
-}
+import { Quaternion, Vector3 } from "three";
+import { RANGES } from "../../constants/biomechanics";
+import { mapClinicalThumbToRigRadians } from "../../domain/thumb";
+import { ANGULAR_CMC_DEBUG_KEYS, GLOBAL_DEBUG_KEY_TO_JOINT, OPPOSITION_DEBUG_KEY } from "./constants";
+import { getViewportSize } from "./lifecycle";
 
 function projectOnPlane(vector, planeNormal) {
   const normal = planeNormal.clone().normalize();
@@ -101,12 +84,6 @@ function ensureProjectedUnit(vector, planeNormal, fallback) {
   const projected = projectOnPlane(vector, planeNormal);
   if (projected.lengthSq() < 1e-8) return fallback.clone();
   return projected.normalize();
-}
-
-export function getViewportSize(three) {
-  const width = three?.renderer?.domElement?.clientWidth || three?.renderer?.domElement?.width || 1;
-  const height = three?.renderer?.domElement?.clientHeight || three?.renderer?.domElement?.height || 1;
-  return { width, height };
 }
 
 function computeCmcLabelPosition({
@@ -350,17 +327,11 @@ export function updateThumbOppositionOverlay(rig, debugKey, dims, thumbClinical,
     pkg?.setLabelPosition?.(null);
     return Number(thumbClinical?.opp?.estimatedLevel) || 0;
   }
+
   const points = buildOppositionReferencePoints(rig, thumb);
   const estimatedLevel = estimateKapandjiFromRig(rig, points);
-
   const pkg = rig?.dbgMap?.[OPPOSITION_DEBUG_KEY];
   if (!pkg?.setOppositionReference) return estimatedLevel;
-
-  if (debugKey !== OPPOSITION_DEBUG_KEY) {
-    pkg.setOppositionReference(null);
-    pkg.setLabelPosition(null);
-    return estimatedLevel;
-  }
 
   if (!points) {
     pkg.setOppositionReference(null);
@@ -379,118 +350,6 @@ export function updateThumbOppositionOverlay(rig, debugKey, dims, thumbClinical,
   });
   pkg.setLabelPosition(computeOppositionLabelPosition(points, level));
   return estimatedLevel;
-}
-
-export function applyMainLabels(rig, fingers, thumb, thumbClinical, thumbGoniometry, wrist) {
-  const map = rig.dbgMap;
-  setLabelText(map.GLOBAL_MCP?.label, `MCP: ${formatDegree(fingers[1].MCP)}`);
-  setLabelText(map.GLOBAL_PIP?.label, `PIP: ${formatDegree(fingers[1].PIP)}`);
-  setLabelText(map.GLOBAL_DIP?.label, `DIP: ${formatDegree(fingers[1].DIP)}`);
-  setLabelText(map.WR_FLEX?.label, `Flex: ${formatDegree(wrist.flex)}`);
-  setLabelText(map.WR_DEV?.label, `Desvio: ${formatDegree(wrist.dev)}`);
-
-  const thumbLabels = rig.thumbLabels;
-  if (!thumbLabels) return;
-
-  const clinicalAbd = Number(thumbGoniometry?.abd?.clinicalTargetDeg ?? thumb.CMC_abd) || 0;
-  const clinicalFlex = Number(thumbGoniometry?.flex?.clinicalTargetDeg ?? thumb.CMC_flex) || 0;
-  const clinicalOpp = Number(thumbClinical?.opp?.clinicalTargetDeg ?? thumb.CMC_opp) || 0;
-  const kapandjiScale = thumbClinical?.opp?.clinicalEstimate?.scaleLabel || thumbClinical?.opp?.scaleLabel || null;
-
-  setLabelText(thumbLabels.abd, `CMC: ${formatDirectional("abducao", "aducao", clinicalAbd)}`);
-  setLabelText(thumbLabels.flex, `CMC: ${formatDirectional("flexao", "extensao", clinicalFlex)}`);
-  setLabelText(
-    thumbLabels.opp,
-    kapandjiScale ? `CMC: ${kapandjiScale}` : `CMC: ${formatDirectional("oposicao", "retroposicao", clinicalOpp)}`,
-  );
-  setLabelText(thumbLabels.mcp, `MCP: ${formatDegree(thumb.MCP_flex)}`);
-  setLabelText(thumbLabels.ip, `IP: ${formatDegree(thumb.IP)}`);
-}
-
-export function didGoniometryChange(previous, next, epsilon = GONIOMETRY_EMIT_EPSILON) {
-  if (!next) return false;
-  if (!previous) return true;
-
-  const prevAbd = Number(previous.CMC_abd) || 0;
-  const prevFlex = Number(previous.CMC_flex) || 0;
-  const nextAbd = Number(next.CMC_abd) || 0;
-  const nextFlex = Number(next.CMC_flex) || 0;
-
-  return Math.abs(nextAbd - prevAbd) > epsilon || Math.abs(nextFlex - prevFlex) > epsilon;
-}
-
-export function applyPoseToRig(rig, fingers, thumb, thumbClinical, thumbGoniometry, wrist, debugKey, dims, viewport, cmcBaseline) {
-  if (!rig) return;
-
-  fingers.forEach((fingerState, index) => {
-    const finger = rig.fingers[index];
-    finger.mcp.rotation.z = deg2rad(clamp(fingerState.MCP, RANGES.MCP));
-    finger.pip.rotation.z = deg2rad(clamp(fingerState.PIP, RANGES.PIP));
-    finger.dip.rotation.z = deg2rad(clamp(fingerState.DIP, RANGES.DIP));
-  });
-
-  rig.wrist.dev.rotation.x = deg2rad(clamp(wrist.dev, RANGES.WRIST_DEV));
-  rig.wrist.flex.rotation.z = deg2rad(clamp(wrist.flex, RANGES.WRIST_FLEX));
-
-  const thumbRig = rig.thumb;
-  const thumbMapped = mapClinicalThumbToRigRadians(thumb);
-
-  thumbRig.cmcAbd.rotation.z = thumbMapped.radians.cmcAbd;
-  thumbRig.cmcFlex.rotation.y = thumbMapped.radians.cmcFlex;
-  thumbRig.cmcPronation.rotation.x = thumbMapped.radians.cmcPronation;
-  thumbRig.mcp.rotation.z = -thumbMapped.radians.mcpFlex;
-  thumbRig.mcpAccessory.rotation.x = thumbMapped.radians.mcpAccessory;
-  thumbRig.ip.rotation.z = -thumbMapped.radians.ipFlex;
-
-  rig.root.updateMatrixWorld(true);
-  const cmcMeasured = measureThumbCmcGoniometryFromRig(rig, { thumb, baseline: cmcBaseline });
-  const safeCmcMeasured = cmcMeasured || { CMC_abd: 0, CMC_flex: 0 };
-  const kapandjiEstimatedLevel = updateThumbOppositionOverlay(rig, debugKey, dims, thumbClinical, viewport, thumb);
-  const oppositionOperational = resolveKapandjiOperationalPose(kapandjiEstimatedLevel);
-  const oppositionSignedDeg = Number(oppositionOperational.commandDeg) || 0;
-  const oppositionMetric = {
-    level: kapandjiEstimatedLevel,
-    rigDirection: oppositionSignedDeg >= 0 ? "oposicao" : "retroposicao",
-    rigMagnitudeDeg: Math.abs(oppositionSignedDeg),
-  };
-  applyMainLabels(rig, fingers, thumb, thumbClinical, thumbGoniometry, wrist);
-  updateCmcGoniometerOverlay(rig, debugKey, dims, viewport);
-  return {
-    ...safeCmcMeasured,
-    kapandjiEstimatedLevel,
-    oppositionMetric,
-  };
-}
-
-export function frameRigToView(root, controls, camera) {
-  if (!root || !controls || !camera) return;
-
-  root.updateMatrixWorld(true);
-  const box = new Box3().setFromObject(root);
-  const size = new Vector3();
-  box.getSize(size);
-  const center = new Vector3();
-  box.getCenter(center);
-
-  const maxDim = Math.max(size.x, size.y, size.z) || 1;
-  controls.target.copy(center);
-  camera.position.copy(center.clone().add(new Vector3(1, 0.9, 1).normalize().multiplyScalar(maxDim * 2.2)));
-  controls.minDistance = maxDim * 0.8;
-  controls.maxDistance = maxDim * 6;
-  controls.update();
-}
-
-export function disposeRigResources(rig) {
-  if (!rig?.root) return;
-  rig.root.traverse(object => {
-    if (!object?.geometry || !object?.material) return;
-    object.geometry?.dispose?.();
-    if (Array.isArray(object.material)) {
-      object.material.forEach(material => material?.dispose?.());
-    } else {
-      object.material?.dispose?.();
-    }
-  });
 }
 
 export function applyDebugSelection(rig, debugKey, dims, thumbClinical, thumb, three) {
@@ -550,9 +409,4 @@ export function applyDebugSelection(rig, debugKey, dims, thumbClinical, thumb, t
     }
   });
 }
-
-
-
-
-
 

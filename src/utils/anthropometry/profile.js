@@ -1,4 +1,4 @@
-﻿
+
 import {
   PALM_DIMS,
   PHAL_RATIOS,
@@ -7,7 +7,7 @@ import {
   THUMB_BASE_RATIO,
   THUMB_RATIOS,
   TIP_SOFT_MM,
-} from "../../constants/reference/anthropometry";
+} from "../../constants/anthropometry";
 import { deg2rad } from "../math/core";
 
 export const interpPercentileScale = p0 => {
@@ -125,6 +125,7 @@ export function makeDims(profile) {
     neutralThumb,
   };
 }
+
 
 
 
