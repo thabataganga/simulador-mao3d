@@ -12,6 +12,7 @@ import {
   Scene,
   WebGLRenderer,
 } from "three";
+import { attachRendererToElement, detachRendererFromElement, disposeSceneMaterials } from "./threeSceneLifecycle";
 
 export function useThreeScene(mountRef, viewcubeRef) {
   const orbitRef = useRef(null);
@@ -48,7 +49,6 @@ export function useThreeScene(mountRef, viewcubeRef) {
     return { scene, camera, renderer, cube };
   }, []);
 
-  // Main render loop and scene controls.
   useEffect(() => {
     const mount = mountRef.current;
     if (!mount) return;
@@ -62,7 +62,7 @@ export function useThreeScene(mountRef, viewcubeRef) {
 
     resize();
     window.addEventListener("resize", resize);
-    if (!mount.contains(renderer.domElement)) mount.appendChild(renderer.domElement);
+    attachRendererToElement(mount, renderer);
 
     let raf = 0;
     let disposed = false;
@@ -98,28 +98,19 @@ export function useThreeScene(mountRef, viewcubeRef) {
       orbitRef.current = null;
       setControlsReady(false);
 
-      if (renderer.domElement.parentNode === mount) mount.removeChild(renderer.domElement);
+      detachRendererFromElement(mount, renderer);
       renderer.dispose();
-      scene.traverse(object => {
-        if (!object?.geometry || !object?.material) return;
-        object.geometry?.dispose?.();
-        if (Array.isArray(object.material)) {
-          object.material.forEach(material => material?.dispose?.());
-        } else {
-          object.material?.dispose?.();
-        }
-      });
+      disposeSceneMaterials(scene);
     };
   }, [mountRef, mini, three]);
 
-  // Viewcube render loop.
   useEffect(() => {
     const viewcube = viewcubeRef.current;
     if (!viewcube) return;
 
     const { scene, camera, renderer } = mini;
     renderer.setSize(100, 100);
-    if (!viewcube.contains(renderer.domElement)) viewcube.appendChild(renderer.domElement);
+    attachRendererToElement(viewcube, renderer);
 
     let raf = 0;
     const loop = () => {
@@ -130,7 +121,7 @@ export function useThreeScene(mountRef, viewcubeRef) {
     loop();
     return () => {
       cancelAnimationFrame(raf);
-      if (renderer.domElement.parentNode === viewcube) viewcube.removeChild(renderer.domElement);
+      detachRendererFromElement(viewcube, renderer);
       renderer.dispose();
     };
   }, [mini, viewcubeRef]);

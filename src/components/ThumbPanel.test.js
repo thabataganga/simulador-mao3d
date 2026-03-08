@@ -1,0 +1,58 @@
+import { ThumbPanel } from "./ThumbPanel";
+
+function baseProps(overrides = {}) {
+  return {
+    thumb: { CMC_abd: 0, CMC_opp: 10, CMC_flex: 0, MCP_flex: 5, IP: 2 },
+    thumbGoniometry: {
+      abd: { inputDirection: "abducao", inputMagnitudeDeg: 0, direction: "abducao", magnitudeDeg: 0 },
+      flex: { inputDirection: "extensao", inputMagnitudeDeg: 0, direction: "extensao", magnitudeDeg: 0 },
+    },
+    thumbClinical: {
+      opp: {
+        inputDirection: "oposicao",
+        inputMagnitudeDeg: 10,
+        rigDirection: "oposicao",
+        rigMagnitudeDeg: 10,
+        scaleLabel: "Kapandji 4",
+        estimatedLabel: "Contato radial distal",
+      },
+    },
+    isExplorationMode: true,
+    explorationOppositionIntensity: 10,
+    onThumbVal: jest.fn(),
+    onThumbCmcInput: jest.fn(),
+    onThumbOppInput: jest.fn(),
+    onEnterOppositionExploration: jest.fn(),
+    onUpdateOppositionExploration: jest.fn(),
+    onRestoreUserInputData: jest.fn(),
+    onExitOppositionExploration: jest.fn(),
+    onHighlight: jest.fn(),
+    onClearPreset: jest.fn(),
+    ...overrides,
+  };
+}
+
+describe("ThumbPanel structure and callbacks", () => {
+  test("keeps configured panel order", () => {
+    const elements = ThumbPanel(baseProps());
+    expect(elements).toHaveLength(5);
+
+    expect(elements[0].props.axis).toBe("CMC_flex");
+    expect(elements[1].props.axis).toBe("CMC_abd");
+    expect(elements[3].props.label).toContain("MCP");
+    expect(elements[4].props.label).toContain("IP");
+  });
+
+  test("non-CMC sliders clear preset and forward value", () => {
+    const onThumbVal = jest.fn();
+    const onClearPreset = jest.fn();
+    const elements = ThumbPanel(baseProps({ onThumbVal, onClearPreset }));
+
+    const mcpSlider = elements[3];
+    mcpSlider.props.onChange(22);
+
+    expect(onThumbVal).toHaveBeenCalledWith("MCP_flex", 22);
+    expect(onClearPreset).toHaveBeenCalledTimes(1);
+  });
+});
+

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { clamp } from "../utils";
+import { normalizeSliderInput } from "./labeledSliderModel";
 
 export function LabeledSlider({
   label,
@@ -18,11 +18,10 @@ export function LabeledSlider({
   useEffect(() => setTemp(value), [value]);
 
   const commit = () => {
-    const n = Number(temp);
-    if (!Number.isFinite(n)) return setTemp(String(value));
-    const v = clamp(Math.round(n / step) * step, [min, max]);
-    setTemp(String(v));
-    onChange(v);
+    const normalized = normalizeSliderInput(temp, value, step, min, max);
+    setTemp(normalized);
+    if (normalized === String(value) && !Number.isFinite(Number(temp))) return;
+    onChange(Number(normalized));
     onHighlight?.();
   };
 
