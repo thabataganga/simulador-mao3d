@@ -244,14 +244,21 @@ function buildAxisClinicalModel({ axis, thumb, measured, inputState }) {
   const measuredRaw = Number(measured?.isolated?.[axis] ?? measured?.[axis]) || 0;
   const measuredDeg = Math.abs(magnitudeDeg) <= CMC_ZERO_EPSILON ? 0 : measuredRaw;
 
+  const rigDirection = getDirectionFromSigned(measuredDeg, config.positiveDirection, config.negativeDirection, config.positiveDirection);
+  const rigMagnitudeDeg = Math.abs(measuredDeg);
+
   return {
     commandDeg,
     inputDirection: direction,
     inputMagnitudeDeg: magnitudeDeg,
     targetMeasuredDeg,
+    clinicalTargetDeg: targetMeasuredDeg,
     measuredDeg,
-    direction: getDirectionFromSigned(measuredDeg, config.positiveDirection, config.negativeDirection, config.positiveDirection),
-    magnitudeDeg: Math.abs(measuredDeg),
+    rigMeasuredDeg: measuredDeg,
+    direction: rigDirection,
+    rigDirection,
+    magnitudeDeg: rigMagnitudeDeg,
+    rigMagnitudeDeg,
     deltaDeg: measuredDeg - targetMeasuredDeg,
     saturated: Boolean(inputState?.saturated),
   };

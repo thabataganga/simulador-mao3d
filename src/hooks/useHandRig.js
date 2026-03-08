@@ -4,7 +4,7 @@ import { buildHandRig } from "../three/buildHandRig";
 import { setLabelText } from "../three/helpers";
 import { deg2rad, clamp } from "../utils";
 import { RANGES } from "../constants";
-import { mapClinicalThumbToRigRadians, measureThumbCmcGoniometryFromRig, resolveKapandjiOperationalPose } from "../domain/thumb";
+import { mapClinicalThumbToRigRadians, measureThumbCmcGoniometryFromRig } from "../domain/thumb";
 
 const GLOBAL_DEBUG_KEY_TO_JOINT = {
   GLOBAL_MCP: "MCP",
@@ -298,12 +298,13 @@ function buildOppositionReferencePoints(rig, thumb) {
     ip: thumbRig.ip.rotation.z,
   };
 
+  const [oppMin, oppMax] = RANGES.CMC_OPP;
+  const step = (oppMax - oppMin) / 10;
   const points = [];
   for (let level = 0; level <= 10; level += 1) {
-    const { commandDeg } = resolveKapandjiOperationalPose(level);
     const sampleThumb = {
       ...thumb,
-      CMC_opp: commandDeg,
+      CMC_opp: oppMin + level * step,
     };
     const mapped = mapClinicalThumbToRigRadians(sampleThumb);
 
@@ -330,6 +331,24 @@ function buildOppositionReferencePoints(rig, thumb) {
   return points;
 }
 
+function estimateKapandjiFromRig(rig, points) {
+  const tipNode = rig?.tips?.thumb;
+  const localFrame = rig?.thumb?.debug?.cmcOpp;
+  if (!tipNode || !localFrame || !Array.isArray(points) || points.length < 11) return 0;
+
+  const tipLocal = localFrame.worldToLocal(tipNode.getWorldPosition(new Vector3()));
+  let bestIndex = 0;
+  let bestDistance = Number.POSITIVE_INFINITY;
+  points.forEach((point, index) => {
+    const distance = tipLocal.distanceTo(point);
+    if (distance < bestDistance) {
+      bestDistance = distance;
+      bestIndex = index;
+    }
+  });
+  return bestIndex;
+}
+
 function computeOppositionLabelPosition(points, targetIndex) {
   const target = points?.[targetIndex];
   if (!target) return null;
@@ -337,23 +356,25 @@ function computeOppositionLabelPosition(points, targetIndex) {
 }
 
 function updateThumbOppositionOverlay(rig, debugKey, dims, thumbClinical, viewport, thumb) {
+  const points = buildOppositionReferencePoints(rig, thumb);
+  const estimatedLevel = estimateKapandjiFromRig(rig, points);
+
   const pkg = rig?.dbgMap?.[OPPOSITION_DEBUG_KEY];
-  if (!pkg?.setOppositionReference) return;
+  if (!pkg?.setOppositionReference) return estimatedLevel;
 
   if (debugKey !== OPPOSITION_DEBUG_KEY) {
     pkg.setOppositionReference(null);
     pkg.setLabelPosition(null);
-    return;
+    return estimatedLevel;
   }
 
-  const points = buildOppositionReferencePoints(rig, thumb);
   if (!points) {
     pkg.setOppositionReference(null);
     pkg.setLabelPosition(null);
-    return;
+    return estimatedLevel;
   }
 
-  const level = Number(thumbClinical?.opp?.level) || 0;
+  const level = Number(thumbClinical?.opp?.estimatedLevel ?? estimatedLevel) || 0;
   pkg.setOppositionReference({
     points,
     targetIndex: level,
@@ -363,9 +384,10 @@ function updateThumbOppositionOverlay(rig, debugKey, dims, thumbClinical, viewpo
     lineWidthPx: 4.5,
   });
   pkg.setLabelPosition(computeOppositionLabelPosition(points, level));
+  return estimatedLevel;
 }
 
-function applyMainLabels(rig, fingers, thumb, thumbClinical, wrist, cmcMeasured) {
+function applyMainLabels(rig, fingers, thumb, thumbClinical, thumbGoniometry, wrist) {
   const map = rig.dbgMap;
   setLabelText(map.GLOBAL_MCP?.label, `MCP: ${formatDegree(fingers[1].MCP)}`);
   setLabelText(map.GLOBAL_PIP?.label, `PIP: ${formatDegree(fingers[1].PIP)}`);
@@ -376,12 +398,13 @@ function applyMainLabels(rig, fingers, thumb, thumbClinical, wrist, cmcMeasured)
   const thumbLabels = rig.thumbLabels;
   if (!thumbLabels) return;
 
-  const measuredAbd = cmcMeasured?.CMC_abd ?? thumb.CMC_abd;
-  const measuredFlex = cmcMeasured?.CMC_flex ?? thumb.CMC_flex;
+  const clinicalAbd = Number(thumbGoniometry?.abd?.clinicalTargetDeg ?? thumb.CMC_abd) || 0;
+  const clinicalFlex = Number(thumbGoniometry?.flex?.clinicalTargetDeg ?? thumb.CMC_flex) || 0;
+  const clinicalOpp = Number(thumbClinical?.opp?.clinicalTargetDeg ?? thumb.CMC_opp) || 0;
 
-  setLabelText(thumbLabels.abd, `CMC: ${formatDirectional("abducao", "aducao", measuredAbd)}`);
-  setLabelText(thumbLabels.flex, `CMC: ${formatDirectional("flexao", "extensao", measuredFlex)}`);
-  setLabelText(thumbLabels.opp, `CMC: ${thumbClinical?.opp?.scaleLabel || `Kapandji ${thumb.CMC_opp}`}`);
+  setLabelText(thumbLabels.abd, `CMC: ${formatDirectional("abducao", "aducao", clinicalAbd)}`);
+  setLabelText(thumbLabels.flex, `CMC: ${formatDirectional("flexao", "extensao", clinicalFlex)}`);
+  setLabelText(thumbLabels.opp, `CMC: ${formatDirectional("oposicao", "retroposicao", clinicalOpp)}`);
   setLabelText(thumbLabels.mcp, `MCP: ${formatDegree(thumb.MCP_flex)}`);
   setLabelText(thumbLabels.ip, `IP: ${formatDegree(thumb.IP)}`);
 }
@@ -392,13 +415,15 @@ function didGoniometryChange(previous, next, epsilon = GONIOMETRY_EMIT_EPSILON) 
 
   const prevAbd = Number(previous.CMC_abd) || 0;
   const prevFlex = Number(previous.CMC_flex) || 0;
+  const prevKapandji = Number(previous.KAPANDJI_level) || 0;
   const nextAbd = Number(next.CMC_abd) || 0;
   const nextFlex = Number(next.CMC_flex) || 0;
+  const nextKapandji = Number(next.KAPANDJI_level) || 0;
 
-  return Math.abs(nextAbd - prevAbd) > epsilon || Math.abs(nextFlex - prevFlex) > epsilon;
+  return Math.abs(nextAbd - prevAbd) > epsilon || Math.abs(nextFlex - prevFlex) > epsilon || Math.abs(nextKapandji - prevKapandji) > epsilon;
 }
 
-function applyPoseToRig(rig, fingers, thumb, thumbClinical, wrist, debugKey, dims, viewport, cmcBaseline) {
+function applyPoseToRig(rig, fingers, thumb, thumbClinical, thumbGoniometry, wrist, debugKey, dims, viewport, cmcBaseline) {
   if (!rig) return;
 
   fingers.forEach((fingerState, index) => {
@@ -423,23 +448,23 @@ function applyPoseToRig(rig, fingers, thumb, thumbClinical, wrist, debugKey, dim
 
   rig.root.updateMatrixWorld(true);
   const cmcMeasured = measureThumbCmcGoniometryFromRig(rig, { thumb, baseline: cmcBaseline });
-  applyMainLabels(rig, fingers, thumb, thumbClinical, wrist, cmcMeasured);
+  const kapandjiEstimatedLevel = updateThumbOppositionOverlay(rig, debugKey, dims, thumbClinical, viewport, thumb);
+  applyMainLabels(rig, fingers, thumb, thumbClinical, thumbGoniometry, wrist);
   updateCmcGoniometerOverlay(rig, debugKey, dims, viewport);
-  updateThumbOppositionOverlay(rig, debugKey, dims, thumbClinical, viewport, thumb);
-  return cmcMeasured;
+  return { ...cmcMeasured, KAPANDJI_level: kapandjiEstimatedLevel };
 }
 
-export function useHandRig({ three, orbitRef, controlsReady = false, dims, fingers, thumb, thumbClinical, wrist, debugKey, onThumbGoniometry }) {
+export function useHandRig({ three, orbitRef, controlsReady = false, dims, fingers, thumb, thumbClinical, thumbGoniometry, wrist, debugKey, onThumbGoniometry }) {
   const handRig = useRef(null);
   const hasInitialFrameRef = useRef(false);
   const lastPalmLengthRef = useRef(null);
   const cmcBaselineRef = useRef({ CMC_abd: 0, CMC_flex: 0 });
   const lastEmittedGoniometryRef = useRef(null);
-  const poseRef = useRef({ fingers, thumb, thumbClinical, wrist });
+  const poseRef = useRef({ fingers, thumb, thumbClinical, thumbGoniometry, wrist });
 
   useEffect(() => {
-    poseRef.current = { fingers, thumb, thumbClinical, wrist };
-  }, [fingers, thumb, thumbClinical, wrist]);
+    poseRef.current = { fingers, thumb, thumbClinical, thumbGoniometry, wrist };
+  }, [fingers, thumb, thumbClinical, thumbGoniometry, wrist]);
 
   const emitThumbGoniometry = useCallback(
     measured => {
@@ -447,6 +472,7 @@ export function useHandRig({ three, orbitRef, controlsReady = false, dims, finge
       lastEmittedGoniometryRef.current = {
         CMC_abd: Number(measured.CMC_abd) || 0,
         CMC_flex: Number(measured.CMC_flex) || 0,
+        KAPANDJI_level: Number(measured.KAPANDJI_level) || 0,
       };
       onThumbGoniometry(lastEmittedGoniometryRef.current);
     },
@@ -507,6 +533,7 @@ export function useHandRig({ three, orbitRef, controlsReady = false, dims, finge
       currentPose.fingers,
       currentPose.thumb,
       currentPose.thumbClinical,
+      currentPose.thumbGoniometry,
       currentPose.wrist,
       debugKey,
       dims,
@@ -533,9 +560,9 @@ export function useHandRig({ three, orbitRef, controlsReady = false, dims, finge
   }, [controlsReady, frameRig]);
 
   useEffect(() => {
-    const measured = applyPoseToRig(handRig.current, fingers, thumb, thumbClinical, wrist, debugKey, dims, getViewportSize(three), cmcBaselineRef.current);
+    const measured = applyPoseToRig(handRig.current, fingers, thumb, thumbClinical, thumbGoniometry, wrist, debugKey, dims, getViewportSize(three), cmcBaselineRef.current);
     emitThumbGoniometry(measured);
-  }, [debugKey, dims, emitThumbGoniometry, fingers, three, thumb, thumbClinical, wrist]);
+  }, [debugKey, dims, emitThumbGoniometry, fingers, three, thumb, thumbClinical, thumbGoniometry, wrist]);
 
   useEffect(() => {
     const rig = handRig.current;
@@ -617,3 +644,22 @@ export function useHandRig({ three, orbitRef, controlsReady = false, dims, finge
 
   return handRig;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -29,6 +29,8 @@ describe("thumb goniometry", () => {
 
     expect(model.abd.inputDirection).toBe("aducao");
     expect(model.abd.magnitudeDeg).toBe(0);
+    expect(model.abd.clinicalTargetDeg).toBe(0);
+    expect(model.abd.rigMeasuredDeg).toBe(0);
     expect(model.flex.inputMagnitudeDeg).toBe(13);
     expect(model.flex.direction).toBe("extensao");
   });
@@ -56,6 +58,22 @@ describe("thumb goniometry", () => {
     expect(measured.composed.CMC_flex).toBe(-8);
     expect(typeof measured.isolated.CMC_abd).toBe("number");
     expect(typeof measured.isolated.CMC_flex).toBe("number");
+  });
+
+  test("exposes clinical target and rig measured fields", () => {
+    const model = buildThumbCmcClinicalModel({
+      thumb: { CMC_abd: 12, CMC_flex: -9 },
+      measured: { isolated: { CMC_abd: 15, CMC_flex: -7 } },
+      inputState: {
+        CMC_abd: { direction: "abducao", magnitudeDeg: 12, targetMeasuredDeg: 12, saturated: false },
+        CMC_flex: { direction: "extensao", magnitudeDeg: 9, targetMeasuredDeg: -9, saturated: false },
+      },
+    });
+
+    expect(model.abd.clinicalTargetDeg).toBe(12);
+    expect(model.abd.rigMeasuredDeg).toBe(15);
+    expect(model.flex.clinicalTargetDeg).toBe(-9);
+    expect(model.flex.rigMeasuredDeg).toBe(-7);
   });
 
   test("applies baseline calibration", () => {

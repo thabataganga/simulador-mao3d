@@ -1,10 +1,5 @@
 import { applyGlobalGripToPose } from "../domain/pose";
-import {
-  buildCmcInputStateForAxis,
-  createDefaultCmcInputState,
-  getKapandjiLevelFromCommand,
-  resolveKapandjiOperationalPose,
-} from "../domain/thumb";
+import { buildCmcInputStateForAxis, createDefaultCmcInputState } from "../domain/thumb";
 import { __testables } from "./useHandPose";
 
 describe("useHandPose reducer", () => {
@@ -65,27 +60,41 @@ describe("useHandPose reducer", () => {
     expect(next.cmcInput.CMC_abd.targetMeasuredDeg).toBeCloseTo(abdTarget, 6);
     expect(next.cmcInput.CMC_flex.direction).toBe("extensao");
     expect(next.cmcInput.CMC_abd.direction).toBe("abducao");
-    expect(next.kapandjiLevel).toBe(getKapandjiLevelFromCommand(next.thumb.CMC_opp));
   });
 
-  test("SET_THUMB_KAPANDJI updates only the operational CMC opposition command", () => {
+  test("SET_THUMB_OPP_INPUT updates only CMC opposition command", () => {
     const state = {
       ...__testables.createInitialState(),
       anthropometry: { sex: "masculino", percentile: 50, age: 25 },
     };
 
     const next = __testables.poseReducer(state, {
-      type: "SET_THUMB_KAPANDJI",
-      value: 8,
+      type: "SET_THUMB_OPP_INPUT",
+      value: { axis: "CMC_opp", direction: "oposicao", magnitudeDeg: 23 },
     });
 
-    const resolved = resolveKapandjiOperationalPose(8);
-    expect(next.kapandjiLevel).toBe(8);
-    expect(next.thumb.CMC_opp).toBe(resolved.commandDeg);
+    expect(next.thumb.CMC_opp).toBe(23);
     expect(next.thumb.CMC_flex).toBe(state.thumb.CMC_flex);
     expect(next.thumb.CMC_abd).toBe(state.thumb.CMC_abd);
     expect(next.thumb.MCP_flex).toBe(state.thumb.MCP_flex);
     expect(next.thumb.IP).toBe(state.thumb.IP);
+  });
+
+  test("SET_THUMB_GONIOMETRY ignores Kapandji feedback values", () => {
+    const state = {
+      ...__testables.createInitialState(),
+      anthropometry: { sex: "masculino", percentile: 50, age: 25 },
+      kapandjiEstimatedLevel: 4,
+    };
+
+    const next = __testables.poseReducer(state, {
+      type: "SET_THUMB_GONIOMETRY",
+      value: { CMC_abd: 12.5, CMC_flex: -8.25, KAPANDJI_level: 9 },
+    });
+
+    expect(next.kapandjiEstimatedLevel).toBe(4);
+    expect(next.thumbMeasured.CMC_abd).toBeCloseTo(12.5, 6);
+    expect(next.thumbMeasured.CMC_flex).toBeCloseTo(-8.25, 6);
   });
 
   test("SET_THUMB_GONIOMETRY returns same state when values are unchanged", () => {
@@ -93,30 +102,14 @@ describe("useHandPose reducer", () => {
       ...__testables.createInitialState(),
       anthropometry: { sex: "masculino", percentile: 50, age: 25 },
       thumbMeasured: { CMC_abd: 12.5, CMC_flex: -8.25 },
+      kapandjiEstimatedLevel: 6,
     };
 
     const next = __testables.poseReducer(state, {
       type: "SET_THUMB_GONIOMETRY",
-      value: { CMC_abd: 12.5, CMC_flex: -8.25 },
+      value: { CMC_abd: 12.5, CMC_flex: -8.25, KAPANDJI_level: 6 },
     });
 
     expect(next).toBe(state);
-  });
-
-  test("SET_THUMB_GONIOMETRY updates measured values when they change", () => {
-    const state = {
-      ...__testables.createInitialState(),
-      anthropometry: { sex: "masculino", percentile: 50, age: 25 },
-      thumbMeasured: { CMC_abd: 10, CMC_flex: -5 },
-    };
-
-    const next = __testables.poseReducer(state, {
-      type: "SET_THUMB_GONIOMETRY",
-      value: { CMC_abd: 14.2, CMC_flex: -1.6 },
-    });
-
-    expect(next).not.toBe(state);
-    expect(next.thumbMeasured.CMC_abd).toBeCloseTo(14.2, 6);
-    expect(next.thumbMeasured.CMC_flex).toBeCloseTo(-1.6, 6);
   });
 });

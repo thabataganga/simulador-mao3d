@@ -1,7 +1,9 @@
+export const CMC_TEMP_RANGE = [-180, 180];
+
 // Ranges articulares
 export const RANGES = {
   MCP: [-45, 90], PIP: [0, 100], DIP: [-20, 80],
-  CMC_ABD: [-30, 90], CMC_OPP: [-40, 70], CMC_FLEX: [-90, 30],
+  CMC_ABD: CMC_TEMP_RANGE, CMC_OPP: CMC_TEMP_RANGE, CMC_FLEX: CMC_TEMP_RANGE,
   THUMB_MCP_FLEX: [0, 60], THUMB_IP: [-10, 80],
   WRIST_FLEX: [-70, 80], WRIST_DEV: [-20, 30],
 };
@@ -88,7 +90,7 @@ export const THUMB_RANGE_KEY = {
 export const THUMB_SLIDER_CONFIG = [
   { key: "CMC_abd", label: "CMC Abd/Aducao", rangeKey: "CMC_ABD", leftHint: "Aducao (-)", rightHint: "Abducao (+)", debugKey: "TH_CMC_ABD" },
   { key: "CMC_flex", label: "CMC Flexao", rangeKey: "CMC_FLEX", leftHint: "Extensao (-)", rightHint: "Flexao (+)", debugKey: "TH_CMC_FLEX" },
-  { key: "CMC_opp", label: "CMC Oposicao/Kapandji", rangeKey: "CMC_OPP", leftHint: "Kapandji 0", rightHint: "Kapandji 10", debugKey: "TH_CMC_OPP" },
+  { key: "CMC_opp", label: "CMC Oposicao", rangeKey: "CMC_OPP", leftHint: "Retroposicao (-)", rightHint: "Oposicao (+)", debugKey: "TH_CMC_OPP" },
   { key: "MCP_flex", label: "MCP Flexao", rangeKey: "THUMB_MCP_FLEX", leftHint: null, rightHint: "Flexao (+)", debugKey: "TH_MCP" },
   { key: "IP", label: "IP", rangeKey: "THUMB_IP", leftHint: "Extensao (-)", rightHint: "Flexao (+)", debugKey: "TH_IP" },
 ];
@@ -126,3 +128,5 @@ export const THUMB_CMC = Object.freeze({
 export const THUMB_KINEMATICS = Object.freeze({
   MCP_ACCESSORY_GAIN: 0.08,
 });
+
+

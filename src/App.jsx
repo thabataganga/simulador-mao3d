@@ -1,4 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useState } from "react";
+import { CMC_TEMP_RANGE } from "./constants";
 
 import { useHandPose } from "./hooks/useHandPose";
 
@@ -17,9 +18,8 @@ export default function HandSimulatorApp() {
   const [openPanel, setOpenPanel] = useState("global_d2d5");
 
   const { poseState, poseActions, sceneInput } = useHandPose();
-  const { setThumbVal, setThumbKapandji, setActivePreset, setThumbGoniometry } = poseActions;
+  const { setThumbVal, setActivePreset, setThumbGoniometry } = poseActions;
 
-  // Fonts loaded dynamically so UI keeps visual identity without blocking first paint.
   useEffect(() => {
     const link = document.createElement("link");
     link.rel = "stylesheet";
@@ -30,7 +30,6 @@ export default function HandSimulatorApp() {
     };
   }, []);
 
-  // Optional query-driven thumb pose for QA screenshots.
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("qaThumb") !== "1") return;
@@ -38,7 +37,7 @@ export default function HandSimulatorApp() {
     const kapandjiRaw = params.get("kapandji");
     if (kapandjiRaw != null) {
       const kapandjiValue = Number(kapandjiRaw);
-      if (Number.isFinite(kapandjiValue)) setThumbKapandji(kapandjiValue);
+      if (Number.isFinite(kapandjiValue)) setThumbVal("CMC_opp", kapandjiValue);
     }
 
     const map = {
@@ -60,7 +59,7 @@ export default function HandSimulatorApp() {
 
     setActivePreset("none");
     setOpenPanel("thumb");
-  }, [setActivePreset, setThumbKapandji, setThumbVal]);
+  }, [setActivePreset, setThumbVal]);
 
   const togglePanel = id => {
     setOpenPanel(prev => {
@@ -69,7 +68,9 @@ export default function HandSimulatorApp() {
       return next;
     });
   };
+
   const clearPreset = useCallback(() => poseActions.setActivePreset("none"), [poseActions]);
+
   const handleGrip = useCallback(
     value => {
       setDebugKey("off");
@@ -78,6 +79,7 @@ export default function HandSimulatorApp() {
     },
     [poseActions],
   );
+
   const handleGlobalMode = useCallback(
     mode => {
       setDebugKey("off");
@@ -136,7 +138,7 @@ export default function HandSimulatorApp() {
             thumbClinical={poseState.thumbClinical}
             onThumbVal={poseActions.setThumbVal}
             onThumbCmcInput={poseActions.setThumbCmcInput}
-            onThumbKapandji={poseActions.setThumbKapandji}
+            onThumbOppInput={poseActions.setThumbOppInput}
             onHighlight={setDebugKey}
             onClearPreset={clearPreset}
           />
@@ -165,14 +167,20 @@ export default function HandSimulatorApp() {
           <summary className="cursor-pointer font-medium">Tabela tecnica - Limites</summary>
           <div className="mt-2 space-y-1">
             <p>MCP D2-D5: -45 deg a +90 deg | PIP: 0-100 deg | DIP: -20 deg a +80 deg</p>
-            <p>CMC Polegar: Abd -30..+90 deg | Flex/Ext -90..+30 deg | Oposicao (comando): -40..+70 deg | Kapandji 0..10</p>
+            <p>CMC Polegar: Abd {CMC_TEMP_RANGE[0]}..+{CMC_TEMP_RANGE[1]} deg | Flex/Ext {CMC_TEMP_RANGE[0]}..+{CMC_TEMP_RANGE[1]} deg | Oposicao: {CMC_TEMP_RANGE[0]}..+{CMC_TEMP_RANGE[1]} deg | Kapandji estimado 0..10</p>
             <p>MCP Polegar: 0-60 deg | IP: -10 deg a +80 deg</p>
           </div>
         </details>
       </aside>
 
       <Suspense fallback={<main className="flex-1 grid place-items-center text-sm text-gray-500">Carregando cena 3D...</main>}>
-        <HandScene3D sceneInput={sceneInput} thumbClinical={poseState.thumbClinical} debugKey={debugKey} onThumbGoniometry={setThumbGoniometry} />
+        <HandScene3D
+          sceneInput={sceneInput}
+          thumbClinical={poseState.thumbClinical}
+          thumbGoniometry={poseState.thumbGoniometry}
+          debugKey={debugKey}
+          onThumbGoniometry={setThumbGoniometry}
+        />
       </Suspense>
     </div>
   );

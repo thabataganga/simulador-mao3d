@@ -39,17 +39,23 @@ export function getKapandjiLevelFromCommand(commandDeg, context = {}) {
 export function buildThumbOppositionClinicalModel({ thumb, kapandjiLevel, context = {} }) {
   const commandDeg = Number(thumb?.CMC_opp) || 0;
   const derivedLevel = getKapandjiLevelFromCommand(commandDeg, context);
-  const resolvedLevel = clampKapandjiLevel(kapandjiLevel ?? derivedLevel);
-  const { commandDeg: operationalCommandDeg } = resolveKapandjiOperationalPose(resolvedLevel, context);
-  const label = KAPANDJI_LEVEL_LABELS[resolvedLevel] || KAPANDJI_LEVEL_LABELS[0];
+  const estimatedLevel = clampKapandjiLevel(kapandjiLevel ?? derivedLevel);
+  const { commandDeg: operationalCommandDeg } = resolveKapandjiOperationalPose(estimatedLevel, context);
+  const label = KAPANDJI_LEVEL_LABELS[estimatedLevel] || KAPANDJI_LEVEL_LABELS[0];
 
   return {
-    level: resolvedLevel,
+    level: estimatedLevel,
+    estimatedLevel,
+    estimatedLabel: label,
     commandDeg,
+    clinicalTargetDeg: commandDeg,
+    rigMeasuredDeg: commandDeg,
+    inputDirection: commandDeg >= 0 ? "oposicao" : "retroposicao",
+    inputMagnitudeDeg: Math.abs(commandDeg),
     operationalCommandDeg,
     label,
-    description: `Kapandji ${resolvedLevel}: ${label}`,
-    targetId: `kapandji-${resolvedLevel}`,
-    scaleLabel: `Kapandji ${resolvedLevel}`,
+    description: `Kapandji ${estimatedLevel}: ${label}`,
+    targetId: `kapandji-${estimatedLevel}`,
+    scaleLabel: `Kapandji ${estimatedLevel}`,
   };
 }

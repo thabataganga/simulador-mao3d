@@ -79,8 +79,8 @@ describe("GripPanel", () => {
 });
 
 describe("ThumbPanel", () => {
-  test("renders Kapandji control for CMC opposition instead of degree slider", () => {
-    const onThumbKapandji = jest.fn();
+  test("renders direction+magnitude control for CMC opposition", () => {
+    const onThumbOppInput = jest.fn();
     const onClearPreset = jest.fn();
     const onHighlight = jest.fn();
 
@@ -91,22 +91,28 @@ describe("ThumbPanel", () => {
         flex: { inputDirection: "extensao", inputMagnitudeDeg: 0, direction: "extensao", magnitudeDeg: 0, saturated: false },
       },
       thumbClinical: {
-        opp: { level: 6, scaleLabel: "Kapandji 6", label: "Oposicao palmar media" },
+        opp: {
+          inputDirection: "oposicao",
+          inputMagnitudeDeg: 34,
+          rigDirection: "oposicao",
+          rigMagnitudeDeg: 34,
+          scaleLabel: "Kapandji 6",
+          estimatedLabel: "Oposicao palmar media",
+        },
       },
       onThumbVal: jest.fn(),
       onThumbCmcInput: jest.fn(),
-      onThumbKapandji,
+      onThumbOppInput,
       onHighlight,
       onClearPreset,
     });
 
-    const kapandjiControl = elements[2];
-    expect(kapandjiControl.props.clinical.level).toBe(6);
-    expect(JSON.stringify(kapandjiControl)).not.toContain("Mapeamento operacional interno do simulador para dirigir o rig 3D.");
-    kapandjiControl.props.onApply(8);
-    kapandjiControl.props.onHighlight();
+    const oppControl = elements[2];
+    expect(oppControl.props.axis).toBe("CMC_opp");
+    oppControl.props.onApply("CMC_opp", "retroposicao", 8);
+    oppControl.props.onHighlight();
 
-    expect(onThumbKapandji).toHaveBeenCalledWith(8);
+    expect(onThumbOppInput).toHaveBeenCalledWith("CMC_opp", "retroposicao", 8);
     expect(onClearPreset).toHaveBeenCalledTimes(1);
     expect(onHighlight).toHaveBeenCalledWith("TH_CMC_OPP");
   });
