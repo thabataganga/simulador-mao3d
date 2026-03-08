@@ -17,7 +17,7 @@ export default function HandSimulatorApp() {
   const [openPanel, setOpenPanel] = useState("global_d2d5");
 
   const { poseState, poseActions, sceneInput } = useHandPose();
-  const { setThumbVal, setActivePreset, setThumbGoniometry } = poseActions;
+  const { setThumbVal, setThumbKapandji, setActivePreset, setThumbGoniometry } = poseActions;
 
   // Fonts loaded dynamically so UI keeps visual identity without blocking first paint.
   useEffect(() => {
@@ -35,6 +35,12 @@ export default function HandSimulatorApp() {
     const params = new URLSearchParams(window.location.search);
     if (params.get("qaThumb") !== "1") return;
 
+    const kapandjiRaw = params.get("kapandji");
+    if (kapandjiRaw != null) {
+      const kapandjiValue = Number(kapandjiRaw);
+      if (Number.isFinite(kapandjiValue)) setThumbKapandji(kapandjiValue);
+    }
+
     const map = {
       CMC_abd: "cmc_abd",
       CMC_flex: "cmc_flex",
@@ -48,12 +54,13 @@ export default function HandSimulatorApp() {
       if (raw == null) return;
       const value = Number(raw);
       if (!Number.isFinite(value)) return;
+      if (key === "CMC_opp" && kapandjiRaw != null) return;
       setThumbVal(key, value);
     });
 
     setActivePreset("none");
     setOpenPanel("thumb");
-  }, [setActivePreset, setThumbVal]);
+  }, [setActivePreset, setThumbKapandji, setThumbVal]);
 
   const togglePanel = id => {
     setOpenPanel(prev => {
@@ -126,8 +133,10 @@ export default function HandSimulatorApp() {
           <ThumbPanel
             thumb={poseState.thumb}
             thumbGoniometry={poseState.thumbGoniometry}
+            thumbClinical={poseState.thumbClinical}
             onThumbVal={poseActions.setThumbVal}
             onThumbCmcInput={poseActions.setThumbCmcInput}
+            onThumbKapandji={poseActions.setThumbKapandji}
             onHighlight={setDebugKey}
             onClearPreset={clearPreset}
           />
@@ -156,14 +165,14 @@ export default function HandSimulatorApp() {
           <summary className="cursor-pointer font-medium">Tabela tecnica - Limites</summary>
           <div className="mt-2 space-y-1">
             <p>MCP D2-D5: -45 deg a +90 deg | PIP: 0-100 deg | DIP: -20 deg a +80 deg</p>
-            <p>CMC Polegar: Abd -10..+60 deg | Flex/Ext -20..+30 deg | Oposicao -40..+70 deg</p>
+            <p>CMC Polegar: Abd -10..+60 deg | Flex/Ext -20..+30 deg | Oposicao clinica por Kapandji 0..10</p>
             <p>MCP Polegar: 0-60 deg | IP: -10 deg a +80 deg</p>
           </div>
         </details>
       </aside>
 
       <Suspense fallback={<main className="flex-1 grid place-items-center text-sm text-gray-500">Carregando cena 3D...</main>}>
-        <HandScene3D sceneInput={sceneInput} debugKey={debugKey} onThumbGoniometry={setThumbGoniometry} />
+        <HandScene3D sceneInput={sceneInput} thumbClinical={poseState.thumbClinical} debugKey={debugKey} onThumbGoniometry={setThumbGoniometry} />
       </Suspense>
     </div>
   );

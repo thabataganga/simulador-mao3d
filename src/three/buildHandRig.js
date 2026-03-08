@@ -129,7 +129,7 @@ function buildFingersSubsystem(f, palm, dbgMap, highlightMap, allMovers) {
     makeFingerDebug(pip, `${digit}_PIP`, "XY", Lm, Wm);
     makeFingerDebug(dip, `${digit}_DIP`, "XY", Ld, Wd);
 
-    fingersRig.push({ mcp, pip, dip });
+    fingersRig.push({ base, mcp, prox: prox.group, pip, mid: mid.group, dip });
     tips.push(tip);
     tipOffsets.push(tipOff);
     allMovers.push(prox.mesh, mid.mesh, dist.mesh);
@@ -148,11 +148,16 @@ function buildGlobalFingerDebug(fingersRig, dims, dbgMap) {
   const [Wp3, Wm3, Wd3] = dims.fingerWid;
 
   const gMG = new THREE.Group();
-  d3.mcp.add(gMG);
+  d3.base.add(gMG);
+  gMG.position.copy(d3.mcp.position);
+
   const gPG = new THREE.Group();
-  d3.pip.add(gPG);
+  d3.prox.add(gPG);
+  gPG.position.copy(d3.pip.position);
+
   const gDG = new THREE.Group();
-  d3.dip.add(gDG);
+  d3.mid.add(gDG);
+  gDG.position.copy(d3.dip.position);
 
   dbgMap.GLOBAL_MCP = makeDebugPkg(gMG, "GLOBAL_MCP", "XY", Lp3 * 1.1, Wp3 * 2.2, Wp3 * 1.6, "MCP: 0 deg");
   dbgMap.GLOBAL_PIP = makeDebugPkg(gPG, "GLOBAL_PIP", "XY", Lm3 * 1.1, Wm3 * 2.2, Wm3 * 1.6, "PIP: 0 deg");
@@ -239,16 +244,33 @@ function buildThumbSubsystem(f, palm, dbgMap, highlightMap, allMovers) {
     return pkg.label;
   };
 
+  const cmcAbdDebug = new THREE.Group();
+  thumbMount.add(cmcAbdDebug);
+  const cmcFlexDebug = new THREE.Group();
+  thumbMount.add(cmcFlexDebug);
+  const cmcOppDebug = new THREE.Group();
+  thumbMount.add(cmcOppDebug);
+
   const thumbLabels = {
-    abd: mkThumbDebug(cmcAbd, "TH_CMC_ABD", "XY", metacarpalLen, d.thumbWid[0], "CMC abd", { withGoniometer: true }),
-    flex: mkThumbDebug(cmcFlex, "TH_CMC_FLEX", "ZX", metacarpalLen, d.thumbWid[0], "CMC flex", { withGoniometer: true }),
-    opp: mkThumbDebug(cmcPronation, "TH_CMC_OPP", "YZ", metacarpalLen, d.thumbWid[0], "CMC opp"),
+    abd: mkThumbDebug(cmcAbdDebug, "TH_CMC_ABD", "XY", metacarpalLen, d.thumbWid[0], "CMC abd", { withGoniometer: true }),
+    flex: mkThumbDebug(cmcFlexDebug, "TH_CMC_FLEX", "ZX", metacarpalLen, d.thumbWid[0], "CMC flex", { withGoniometer: true }),
+    opp: mkThumbDebug(cmcOppDebug, "TH_CMC_OPP", "YZ", metacarpalLen, d.thumbWid[0], "CMC opp", { withOppositionReference: true }),
     mcp: mkThumbDebug(tmcp, "TH_MCP", "XY", proximalLen, d.thumbWid[0], "MCP"),
     ip: mkThumbDebug(tipIp, "TH_IP", "XY", distalLen, d.thumbWid[1], "IP"),
   };
 
   return {
-    thumb: { cmcAbd, cmcFlex, cmcPronation, mcp: tmcp, mcpAccessory: tmcpAccessory, ip: tipIp },
+    thumb: {
+      base: thumbBase,
+      mount: thumbMount,
+      cmcAbd,
+      cmcFlex,
+      cmcPronation,
+      debug: { cmcAbd: cmcAbdDebug, cmcFlex: cmcFlexDebug, cmcOpp: cmcOppDebug },
+      mcp: tmcp,
+      mcpAccessory: tmcpAccessory,
+      ip: tipIp,
+    },
     tips: { thumb: tip },
     tipOffsets: { thumb: tipOff },
     thumbLabels,

@@ -44,7 +44,7 @@
     "url": "git+https://github.com/thabataganga/simulador-mao3d.git"
   },
   "author": "",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "bugs": {
     "url": "https://github.com/thabataganga/simulador-mao3d/issues"
   },

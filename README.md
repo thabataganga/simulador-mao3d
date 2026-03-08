@@ -167,4 +167,6 @@ Criterios esperados:
 
 ## Licenca
 
-MIT.
+Este projeto esta licenciado sob a Apache License 2.0. Veja o arquivo LICENSE para mais detalhes.
+
+O projeto foi desenvolvido no contexto de pesquisa e inovacao aplicada em saude digital e tecnologia assistiva.

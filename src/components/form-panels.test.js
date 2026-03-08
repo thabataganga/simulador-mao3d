@@ -1,5 +1,6 @@
 import { AnthropometryForm } from "./AnthropometryForm";
 import { GripPanel } from "./GripPanel";
+import { ThumbPanel } from "./ThumbPanel";
 
 function getControl(wrapperElement) {
   return wrapperElement.props.children[1];
@@ -74,5 +75,39 @@ describe("GripPanel", () => {
     const slider = element.props.children[1];
     expect(slider.props.label).toBe("Fechamento (funcional) 0-100");
     expect(slider.props.unit).toBe("%");
+  });
+});
+
+describe("ThumbPanel", () => {
+  test("renders Kapandji control for CMC opposition instead of degree slider", () => {
+    const onThumbKapandji = jest.fn();
+    const onClearPreset = jest.fn();
+    const onHighlight = jest.fn();
+
+    const elements = ThumbPanel({
+      thumb: { CMC_abd: 0, CMC_opp: 34, CMC_flex: 0, MCP_flex: 0, IP: 0 },
+      thumbGoniometry: {
+        abd: { inputDirection: "abducao", inputMagnitudeDeg: 0, direction: "abducao", magnitudeDeg: 0, saturated: false },
+        flex: { inputDirection: "extensao", inputMagnitudeDeg: 0, direction: "extensao", magnitudeDeg: 0, saturated: false },
+      },
+      thumbClinical: {
+        opp: { level: 6, scaleLabel: "Kapandji 6", label: "Oposicao palmar media" },
+      },
+      onThumbVal: jest.fn(),
+      onThumbCmcInput: jest.fn(),
+      onThumbKapandji,
+      onHighlight,
+      onClearPreset,
+    });
+
+    const kapandjiControl = elements[2];
+    expect(kapandjiControl.props.clinical.level).toBe(6);
+    expect(JSON.stringify(kapandjiControl)).not.toContain("Mapeamento operacional interno do simulador para dirigir o rig 3D.");
+    kapandjiControl.props.onApply(8);
+    kapandjiControl.props.onHighlight();
+
+    expect(onThumbKapandji).toHaveBeenCalledWith(8);
+    expect(onClearPreset).toHaveBeenCalledTimes(1);
+    expect(onHighlight).toHaveBeenCalledWith("TH_CMC_OPP");
   });
 });
