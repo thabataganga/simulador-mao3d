@@ -1,12 +1,12 @@
-// ─── Ranges articulares ───────────────────────────────────────────────────────
+// Ranges articulares 
 export const RANGES = {
   MCP: [-45, 90], PIP: [0, 100], DIP: [-20, 80],
-  CMC_ABD: [-10, 60], CMC_OPP: [-40, 70], CMC_FLEX: [0, 30],
+  CMC_ABD: [-30, 90], CMC_OPP: [-40, 70], CMC_FLEX: [-90, 30],
   THUMB_MCP_FLEX: [0, 60], THUMB_IP: [-10, 80],
   WRIST_FLEX: [-70, 80], WRIST_DEV: [-20, 30],
 };
 
-// ─── Geometria da palma ───────────────────────────────────────────────────────
+// Geometria da palma 
 export const PALM_DIMS = { LENGTH: 70, THICKNESS: 14, WIDTH: 55 };
 
 export const THUMB_BASE_RATIO = { xL: 24 / 70, yT: -2 / 14, zW: 28 / 55 };
@@ -35,20 +35,68 @@ export const SEX_RATIOS = {
 
 export const PERC_OPTIONS = [5, 25, 50, 75, 95];
 
-// ─── Keyframes de fechamento ──────────────────────────────────────────────────
+// Keyframes de fechamento 
 export const PINCH_KF = {
-  open:   { index: { MCP: 10, PIP: 15, DIP: 5  }, thumb: { CMC_abd: 35, CMC_flex: 10, CMC_opp: 15, MCP_flex: 15, IP: 5  } },
-  mid:    { index: { MCP: 55, PIP: 80, DIP: 60 }, thumb: { CMC_abd: 28, CMC_flex: 20, CMC_opp: 60, MCP_flex: 40, IP: 55 } },
-  closed: { index: { MCP: 90, PIP: 95, DIP: 70 }, thumb: { CMC_abd: 18, CMC_flex: 25, CMC_opp: 70, MCP_flex: 55, IP: 70 } },
+  open:   { index: { MCP: 10, PIP: 15, DIP: 5  }, thumb: { CMC_abd: 52, CMC_flex: -6, CMC_opp: 25, MCP_flex: 0, IP: 25 } },
+  mid:    { index: { MCP: 55, PIP: 80, DIP: 60 }, thumb: { CMC_abd: 60, CMC_flex: 0, CMC_opp: 40, MCP_flex: 0, IP: 40 } },
+  closed: { index: { MCP: 90, PIP: 73, DIP: 10 }, thumb: { CMC_abd: 65, CMC_flex: 0, CMC_opp: 70, MCP_flex: 0, IP: 40 } },
 };
 
 export const FUNC_KF = {
-  open:   { finger: { MCP: 10, PIP: 10, DIP: 0  }, thumb: { CMC_abd: 35, CMC_flex: 8,  CMC_opp: 10, MCP_flex: 8,  IP: 0  }, wrist: { flex: -10, dev: -2  } },
-  mid:    { finger: { MCP: 45, PIP: 35, DIP: 15 }, thumb: { CMC_abd: 45, CMC_flex: 12, CMC_opp: 12, MCP_flex: 10, IP: 5  }, wrist: { flex: -25, dev: -12 } },
-  closed: { finger: { MCP: 80, PIP: 90, DIP: 60 }, thumb: { CMC_abd: 35, CMC_flex: 20, CMC_opp: 20, MCP_flex: 30, IP: 45 }, wrist: { flex: -35, dev: -15 } },
+  open:   { finger: { MCP: 10, PIP: 10, DIP: 0  }, thumb: { CMC_abd: 35, CMC_flex: -8,  CMC_opp: 10, MCP_flex: 8,  IP: 0  }, wrist: { flex: -10, dev: -2  } },
+  mid:    { finger: { MCP: 45, PIP: 35, DIP: 15 }, thumb: { CMC_abd: 45, CMC_flex: -12, CMC_opp: 12, MCP_flex: 10, IP: 5  }, wrist: { flex: -25, dev: -12 } },
+  closed: { finger: { MCP: 80, PIP: 90, DIP: 60 }, thumb: { CMC_abd: 35, CMC_flex: -20, CMC_opp: 70, MCP_flex: 0, IP: 40 }, wrist: { flex: -35, dev: -15 } },
 };
 
 export const THUMB_RANGE_KEY = {
   CMC_abd: "CMC_ABD", CMC_flex: "CMC_FLEX", CMC_opp: "CMC_OPP",
   MCP_flex: "THUMB_MCP_FLEX", IP: "THUMB_IP",
 };
+
+
+export const THUMB_SLIDER_CONFIG = [
+  { key: "CMC_abd", label: "CMC Abd/Adução", rangeKey: "CMC_ABD", leftHint: "Adução (-)", rightHint: "Abdução (+)", debugKey: "TH_CMC_ABD" },
+  { key: "CMC_flex", label: "CMC Flexão", rangeKey: "CMC_FLEX", leftHint: "Extensão (-)", rightHint: "Flexão (+)", debugKey: "TH_CMC_FLEX" },
+  { key: "CMC_opp", label: "CMC Oposição", rangeKey: "CMC_OPP", leftHint: "Retroposição (-)", rightHint: "Oposição (+)", debugKey: "TH_CMC_OPP" },
+  { key: "MCP_flex", label: "MCP Flexão", rangeKey: "THUMB_MCP_FLEX", leftHint: null, rightHint: "Flexão (+)", debugKey: "TH_MCP" },
+  { key: "IP", label: "IP", rangeKey: "THUMB_IP", leftHint: "Extensão (-)", rightHint: "Flexão (+)", debugKey: "TH_IP" },
+];
+
+export const WRIST_SLIDER_CONFIG = [
+  { key: "flex", label: "Flexão/Extensão", rangeKey: "WRIST_FLEX", leftHint: "Extensão (-)", rightHint: "Flexão (+)", debugKey: "WR_FLEX" },
+  { key: "dev", label: "Desvio radial/ulnar", rangeKey: "WRIST_DEV", leftHint: "Ulnar (-)", rightHint: "Radial (+)", debugKey: "WR_DEV" },
+];
+
+export const THUMB_CMC_NEUTRAL = Object.freeze({
+  mountRotationOrder: "ZYX",
+  cmcNeutralMountDeg: Object.freeze({
+    z: 0,
+    y: 0,
+    x: 0,
+  }),
+  cmcNeutralBaseOffset: Object.freeze({
+    dx: 0,
+    dy: 0,
+    dz: 0,
+  }),
+});
+
+export const THUMB_CMC = Object.freeze({
+  // Clinical convention: +abduction (opening), -adduction (closing).
+  CLINICAL_ABD_SIGN: 1,
+  FLEX_EFFECTIVE_RANGE: [-90, 30],
+  OPP_COUPLING: Object.freeze({
+    ABD_GAIN: 0.18,
+    FLEX_GAIN: 0.22,
+    PRONATION_GAIN: 0.38,
+  }),
+});
+
+export const THUMB_KINEMATICS = Object.freeze({
+  MCP_ACCESSORY_GAIN: 0.08,
+});
+
+
+
+
+

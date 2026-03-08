@@ -38,21 +38,41 @@ describe("AnthropometryForm", () => {
 });
 
 describe("GripPanel", () => {
-  test("uses pinch label when globalMode is pinch", () => {
+  test("uses pinch label and wires slider callback", () => {
     const onGrip = jest.fn();
-    const element = GripPanel({ grip: 30, globalMode: "pinch", onGrip });
+    const onGlobalMode = jest.fn();
+    const onClearHighlight = jest.fn();
+    const element = GripPanel({ grip: 30, globalMode: "pinch", onGlobalMode, onGrip, onClearHighlight });
 
-    expect(element.props.label).toBe("Fechamento (pinça) 0-100");
-    expect(element.props.min).toBe(0);
-    expect(element.props.max).toBe(100);
-    expect(element.props.value).toBe(30);
+    const [modeButtonsWrap, slider] = element.props.children;
+    const [functionalButton, pinchButton] = modeButtonsWrap.props.children;
 
-    element.props.onChange(88);
+    expect(slider.props.label).toBe("Fechamento (pinca) 0-100");
+    expect(slider.props.min).toBe(0);
+    expect(slider.props.max).toBe(100);
+    expect(slider.props.value).toBe(30);
+    expect(slider.props.unit).toBe("%");
+
+    slider.props.onChange(88);
     expect(onGrip).toHaveBeenCalledWith(88);
+    expect(onClearHighlight).toHaveBeenCalledTimes(1);
+
+    functionalButton.props.onClick();
+    pinchButton.props.onClick();
+    expect(onGlobalMode).toHaveBeenNthCalledWith(1, "functional");
+    expect(onGlobalMode).toHaveBeenNthCalledWith(2, "pinch");
+    expect(onClearHighlight).toHaveBeenCalledTimes(3);
   });
 
   test("uses functional label when globalMode is functional", () => {
-    const element = GripPanel({ grip: 10, globalMode: "functional", onGrip: () => {} });
-    expect(element.props.label).toBe("Fechamento (funcional) 0-100");
+    const element = GripPanel({
+      grip: 10,
+      globalMode: "functional",
+      onGlobalMode: () => {},
+      onGrip: () => {},
+    });
+    const slider = element.props.children[1];
+    expect(slider.props.label).toBe("Fechamento (funcional) 0-100");
+    expect(slider.props.unit).toBe("%");
   });
 });

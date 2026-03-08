@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useState } from "react";
 
 import { useHandPose } from "./hooks/useHandPose";
 
@@ -17,6 +17,7 @@ export default function HandSimulatorApp() {
   const [openPanel, setOpenPanel] = useState("global_d2d5");
 
   const { poseState, poseActions, sceneInput } = useHandPose();
+  const { setThumbVal, setActivePreset, setThumbGoniometry } = poseActions;
 
   // Fonts loaded dynamically so UI keeps visual identity without blocking first paint.
   useEffect(() => {
@@ -29,8 +30,55 @@ export default function HandSimulatorApp() {
     };
   }, []);
 
-  const togglePanel = id => setOpenPanel(prev => (prev === id ? "none" : id));
-  const clearPreset = () => poseActions.setActivePreset("none");
+  // Optional query-driven thumb pose for QA screenshots.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("qaThumb") !== "1") return;
+
+    const map = {
+      CMC_abd: "cmc_abd",
+      CMC_flex: "cmc_flex",
+      CMC_opp: "cmc_opp",
+      MCP_flex: "mcp_flex",
+      IP: "ip",
+    };
+
+    Object.entries(map).forEach(([key, queryKey]) => {
+      const raw = params.get(queryKey);
+      if (raw == null) return;
+      const value = Number(raw);
+      if (!Number.isFinite(value)) return;
+      setThumbVal(key, value);
+    });
+
+    setActivePreset("none");
+    setOpenPanel("thumb");
+  }, [setActivePreset, setThumbVal]);
+
+  const togglePanel = id => {
+    setOpenPanel(prev => {
+      const next = prev === id ? "none" : id;
+      if (next === "global") setDebugKey("off");
+      return next;
+    });
+  };
+  const clearPreset = useCallback(() => poseActions.setActivePreset("none"), [poseActions]);
+  const handleGrip = useCallback(
+    value => {
+      setDebugKey("off");
+      poseActions.setGrip(value);
+      poseActions.applyGlobalGrip(value);
+    },
+    [poseActions],
+  );
+  const handleGlobalMode = useCallback(
+    mode => {
+      setDebugKey("off");
+      poseActions.setGlobalMode(mode);
+      poseActions.applyGlobalGrip(poseState.grip, mode);
+    },
+    [poseActions, poseState.grip],
+  );
 
   return (
     <div
@@ -45,9 +93,9 @@ export default function HandSimulatorApp() {
     >
       <aside className="w-[420px] max-w-[45%] h-full border-r border-gray-200 p-5 overflow-y-auto">
         <h1 className="text-xl font-semibold mb-1" style={{ fontFamily: '"Montserrat","DM Sans",ui-sans-serif' }}>
-          Simulador de Mão 3D
+          Simulador de Mao 3D
         </h1>
-        <p className="text-xs text-gray-500 mb-4">Positivo = flexão/abdução · Negativo = extensão/adução</p>
+        <p className="text-xs text-gray-500 mb-4">Positivo = flexao/abducao | Negativo = extensao/aducao</p>
 
         <AnthropometryForm
           sex={poseState.sex}
@@ -77,7 +125,9 @@ export default function HandSimulatorApp() {
         <AccordionItem id="thumb" title="D1 - Polegar (CMC, MCP, IP)" isOpen={openPanel === "thumb"} onToggle={togglePanel}>
           <ThumbPanel
             thumb={poseState.thumb}
+            thumbGoniometry={poseState.thumbGoniometry}
             onThumbVal={poseActions.setThumbVal}
+            onThumbCmcInput={poseActions.setThumbCmcInput}
             onHighlight={setDebugKey}
             onClearPreset={clearPreset}
           />
@@ -96,25 +146,24 @@ export default function HandSimulatorApp() {
           <GripPanel
             grip={poseState.grip}
             globalMode={poseState.globalMode}
-            onGrip={value => {
-              poseActions.setGrip(value);
-              poseActions.applyGlobalGrip(value);
-            }}
+            onGlobalMode={handleGlobalMode}
+            onGrip={handleGrip}
+            onClearHighlight={() => setDebugKey("off")}
           />
         </AccordionItem>
 
         <details className="mt-4 text-xs text-gray-500">
-          <summary className="cursor-pointer font-medium">Tabela técnica - Limites</summary>
+          <summary className="cursor-pointer font-medium">Tabela tecnica - Limites</summary>
           <div className="mt-2 space-y-1">
-            <p>MCP D2-D5: -45° a +90° · PIP: 0-100° · DIP: -20° a +80°</p>
-            <p>CMC Polegar: Abd -10..+60° · Flex 0..30° · Oposição -40..+70°</p>
-            <p>MCP Polegar: 0-60° · IP: -10° a +80°</p>
+            <p>MCP D2-D5: -45 deg a +90 deg | PIP: 0-100 deg | DIP: -20 deg a +80 deg</p>
+            <p>CMC Polegar: Abd -10..+60 deg | Flex/Ext -20..+30 deg | Oposicao -40..+70 deg</p>
+            <p>MCP Polegar: 0-60 deg | IP: -10 deg a +80 deg</p>
           </div>
         </details>
       </aside>
 
       <Suspense fallback={<main className="flex-1 grid place-items-center text-sm text-gray-500">Carregando cena 3D...</main>}>
-        <HandScene3D sceneInput={sceneInput} debugKey={debugKey} />
+        <HandScene3D sceneInput={sceneInput} debugKey={debugKey} onThumbGoniometry={setThumbGoniometry} />
       </Suspense>
     </div>
   );

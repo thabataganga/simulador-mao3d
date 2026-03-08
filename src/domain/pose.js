@@ -45,8 +45,10 @@ export function applyGlobalGripToPose(pose, grip, modeOverride) {
   const result = computeGrip(grip, mode);
 
   if (result.pinchOnly) {
+    const lockedPinchFinger = { MCP: 90, PIP: 65, DIP: 48 };
     return {
-      fingers: pose.fingers.map((_, index) => (index === 0 ? { ...pose.fingers[index], ...result.finger } : defaultFinger())),
+      fingers: pose.fingers.map((_, index) =>
+        index === 0 ? { ...pose.fingers[index], ...result.finger } : { ...lockedPinchFinger }),
       thumb: { ...pose.thumb, ...result.thumb },
       wrist: pose.wrist,
     };

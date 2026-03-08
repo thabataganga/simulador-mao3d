@@ -1,25 +1,25 @@
-import { RANGES } from "../constants";
+import { RANGES, WRIST_SLIDER_CONFIG } from "../constants";
 import { LabeledSlider } from "./LabeledSlider";
 
 export function WristPanel({ wrist, onWrist, onHighlight, onClearPreset }) {
-  return (
-    <>
+  return WRIST_SLIDER_CONFIG.map(item => {
+    const [min, max] = RANGES[item.rangeKey];
+
+    return (
       <LabeledSlider
-        label={`Flexão/Extensão (${RANGES.WRIST_FLEX[0]}..+${RANGES.WRIST_FLEX[1]})`}
-        min={RANGES.WRIST_FLEX[0]} max={RANGES.WRIST_FLEX[1]}
-        value={wrist.flex}
-        onChange={v => { onWrist(w => ({ ...w, flex: v })); onClearPreset(); }}
-        leftHint="Extensão (−)" rightHint="Flexão (+)"
-        onHighlight={() => onHighlight("WR_FLEX")}
+        key={item.key}
+        label={`${item.label} (${min}..+${max})`}
+        min={min}
+        max={max}
+        value={wrist[item.key]}
+        onChange={value => {
+          onWrist({ ...wrist, [item.key]: value });
+          onClearPreset();
+        }}
+        leftHint={item.leftHint}
+        rightHint={item.rightHint}
+        onHighlight={() => onHighlight(item.debugKey)}
       />
-      <LabeledSlider
-        label={`Desvio radial/ulnar (${RANGES.WRIST_DEV[0]}..+${RANGES.WRIST_DEV[1]})`}
-        min={RANGES.WRIST_DEV[0]} max={RANGES.WRIST_DEV[1]}
-        value={wrist.dev}
-        onChange={v => { onWrist(w => ({ ...w, dev: v })); onClearPreset(); }}
-        leftHint="Ulnar (−)" rightHint="Radial (+)"
-        onHighlight={() => onHighlight("WR_DEV")}
-      />
-    </>
-  );
+    );
+  });
 }

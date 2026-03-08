@@ -11,7 +11,9 @@
     "analyze:bundle": "npm run build:analyze && node scripts/print-bundle-stats.mjs",
     "lint": "eslint .",
     "test": "jest",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "lint:report": "mkdir reports 2>nul & npm run lint > reports\\lint-report.txt 2>&1",
+    "test:report": "mkdir reports 2>nul & npm test -- --runInBand > reports\\test-report.txt 2>&1"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.11",
