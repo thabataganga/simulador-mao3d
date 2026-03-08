@@ -1,4 +1,4 @@
-import { Vector3 } from "three";
+import { Quaternion, Vector3 } from "three";
 import {
   buildGoniometerSegments,
   clamp01,
@@ -66,8 +66,12 @@ function computeCmcLabelPosition({
 }
 
 function getPalmLongitudinalWorld(rig) {
-  const palmQuaternion = rig?.palm?.getWorldQuaternion?.();
-  if (!palmQuaternion) return new Vector3(1, 0, 0);
+  if (!rig?.palm?.getWorldQuaternion) return new Vector3(1, 0, 0);
+  const palmQuaternion = new Quaternion();
+  rig.palm.getWorldQuaternion(palmQuaternion);
+  if (!Number.isFinite(palmQuaternion.x + palmQuaternion.y + palmQuaternion.z + palmQuaternion.w)) {
+    return new Vector3(1, 0, 0);
+  }
   return new Vector3(1, 0, 0).applyQuaternion(palmQuaternion).normalize();
 }
 
@@ -170,4 +174,5 @@ export function updateCmcGoniometerOverlay(rig, debugKey, dims, viewport) {
     );
   });
 }
+
 
