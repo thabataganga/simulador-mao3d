@@ -1,2 +1,2 @@
-﻿// Feature contract: exports thumb controls used by the application shell.
-export { ThumbPanel } from "../../components/ThumbPanel";
+// Feature contract: thumb controls entry consumed by App.
+export { ThumbFeatureSection } from "./ThumbFeatureSection";

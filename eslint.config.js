@@ -50,6 +50,20 @@ export default defineConfig([
     },
   },
   {
+    files: ['src/**/*.{js,jsx}'],
+    ignores: ['src/components/**/*.{js,jsx}', 'src/features/**/*.{js,jsx}'],
+    rules: {
+      'no-restricted-imports': ['error', {
+        patterns: [
+          {
+            group: ['./components/*', '../components/*', '../../components/*', '../../../components/*'],
+            message: 'Apenas features/* e components/* podem importar components/* diretamente.',
+          },
+        ],
+      }],
+    },
+  },
+  {
     files: ['src/domain/**/*.js'],
     rules: {
       'no-restricted-imports': ['error', {
@@ -67,6 +81,23 @@ export default defineConfig([
     },
   },
   {
+    files: ['src/features/**/*.{js,jsx}'],
+    rules: {
+      'no-restricted-imports': ['error', {
+        patterns: [
+          {
+            group: ['../hooks/*', '../../hooks/*', '../../../hooks/*'],
+            message: 'Features devem expor contrato de UI e nao depender direto de hooks internos.',
+          },
+          {
+            group: ['../domain/*', '../../domain/*', '../../../domain/*'],
+            message: 'Features nao devem depender direto de domain/*; use contratos de hook/app.',
+          },
+        ],
+      }],
+    },
+  },
+  {
     files: ['**/*.test.{js,jsx}', '**/__tests__/**/*.{js,jsx}'],
     languageOptions: {
       globals: {
@@ -75,4 +106,3 @@ export default defineConfig([
     },
   },
 ])
-
