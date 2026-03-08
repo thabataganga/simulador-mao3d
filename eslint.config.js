@@ -67,6 +67,23 @@ export default defineConfig([
     },
   },
   {
+    files: ['src/features/**/*.{js,jsx}'],
+    rules: {
+      'no-restricted-imports': ['error', {
+        patterns: [
+          {
+            group: ['../hooks/*', '../../hooks/*', '../../../hooks/*'],
+            message: 'Features devem expor contrato de UI e nao depender direto de hooks internos.',
+          },
+          {
+            group: ['../domain/*', '../../domain/*', '../../../domain/*'],
+            message: 'Features nao devem depender direto de domain/*; use contratos de hook/app.',
+          },
+        ],
+      }],
+    },
+  },
+  {
     files: ['**/*.test.{js,jsx}', '**/__tests__/**/*.{js,jsx}'],
     languageOptions: {
       globals: {
@@ -75,4 +92,3 @@ export default defineConfig([
     },
   },
 ])
-
