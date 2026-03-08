@@ -1,4 +1,4 @@
-﻿import { lazy, Suspense, useCallback, useEffect, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useState } from "react";
 import { CMC_TEMP_RANGE } from "./constants/reference/biomechanics";
 
 import { useHandPose } from "./hooks/useHandPose";
@@ -135,7 +135,7 @@ export default function HandSimulatorApp() {
             thumbGoniometry={poseState.thumbGoniometry}
             thumbClinical={poseState.thumbClinical}
             isExplorationMode={poseState.isExplorationMode}
-            explorationOppositionIntensity={poseState.explorationOppositionIntensity}
+            explorationKapandjiTarget={poseState.explorationKapandjiTarget}
             onThumbVal={poseActions.setThumbVal}
             onThumbCmcInput={poseActions.setThumbCmcInput}
             onEnterOppositionExploration={poseActions.enterOppositionExploration}
@@ -143,6 +143,7 @@ export default function HandSimulatorApp() {
             onRestoreUserInputData={poseActions.restoreUserInputData}
             onExitOppositionExploration={poseActions.exitOppositionExploration}
             onHighlight={setDebugKey}
+            onClearHighlight={() => setDebugKey("off")}
             onClearPreset={clearPreset}
           />
         </AccordionItem>
@@ -192,4 +193,3 @@ export default function HandSimulatorApp() {
     </div>
   );
 }
-

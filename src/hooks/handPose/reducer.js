@@ -1,11 +1,16 @@
-﻿import { RANGES, THUMB_CMC, THUMB_RANGE_KEY } from "../../constants/reference/biomechanics";
+import { RANGES, THUMB_RANGE_KEY } from "../../constants/reference/biomechanics";
 import { clamp } from "../../utils/math/core";
 import {
   buildCmcInputStateForAxis,
   createDefaultCmcInputState,
-  getKapandjiLevelFromCommand,
   syncCmcInputStateFromThumb,
-} from "../../domain/thumb";
+} from "../../domain/thumbCmcClinical";
+import {
+  buildClinicalOppositionEstimate,
+  clampKapandjiLevel,
+  getKapandjiLevelFromCommand,
+  resolveKapandjiOperationalPose,
+} from "../../domain/thumbKapandji";
 import {
   applyGlobalGripToPose,
   createNeutralPose,
@@ -70,7 +75,7 @@ function resetExplorationState(state) {
     ...state,
     isExplorationMode: false,
     exploreOverlayState: { ...ZERO_OVERLAY },
-    explorationOppositionIntensity: 0,
+    explorationKapandjiTarget: clampKapandjiLevel(state?.kapandjiEstimatedFromRig),
     userEditedThumb: {},
     explorationSnapshotThumb: {},
   };
@@ -131,20 +136,22 @@ export function createHandPoseInitialState() {
   );
   const cmcSeed = createDefaultCmcInputState();
   const { nextThumb, nextInput } = applyCmcClinicalTargets(functionalPose.thumb, cmcSeed);
+  const initialKapandji = getKapandjiLevelFromCommand(nextThumb.CMC_opp);
+
   return {
     fingers: functionalPose.fingers,
     thumb: nextThumb,
     thumbMeasured: { CMC_abd: 0, CMC_flex: 0 },
     cmcInput: nextInput,
-    kapandjiEstimatedFromRig: getKapandjiLevelFromCommand(nextThumb.CMC_opp),
+    kapandjiEstimatedFromRig: initialKapandji,
     thumbOppRig: {
-      level: getKapandjiLevelFromCommand(nextThumb.CMC_opp),
+      level: initialKapandji,
       rigDirection: nextThumb.CMC_opp >= 0 ? "oposicao" : "retroposicao",
       rigMagnitudeDeg: Math.abs(nextThumb.CMC_opp),
     },
     isExplorationMode: false,
     exploreOverlayState: { ...ZERO_OVERLAY },
-    explorationOppositionIntensity: 0,
+    explorationKapandjiTarget: initialKapandji,
     userEditedThumb: {},
     explorationSnapshotThumb: {},
     wrist: functionalPose.wrist,
@@ -263,19 +270,22 @@ export function poseReducer(state, action) {
         ...state,
         isExplorationMode: true,
         explorationSnapshotThumb: snapshot,
+        explorationKapandjiTarget: clampKapandjiLevel(state.kapandjiEstimatedFromRig),
       };
     }
     case "UPDATE_OPPOSITION_EXPLORATION": {
-      const intensity = Number(action.value?.intensity) || 0;
+      const kapandjiTarget = clampKapandjiLevel(action.value?.kapandjiTarget);
+      const { commandDeg: targetClinicalOppositionDeg } = resolveKapandjiOperationalPose(kapandjiTarget);
+      const { clinicalOppositionDeg: currentClinicalOppositionDeg } = buildClinicalOppositionEstimate(state.thumb);
+      const deltaOpp = targetClinicalOppositionDeg - currentClinicalOppositionDeg;
+
       return {
         ...state,
         isExplorationMode: true,
-        explorationOppositionIntensity: intensity,
+        explorationKapandjiTarget: kapandjiTarget,
         exploreOverlayState: {
           ...ZERO_OVERLAY,
-          CMC_opp: intensity,
-          CMC_abd: intensity * THUMB_CMC.CLINICAL_ABD_SIGN * THUMB_CMC.OPP_COUPLING.ABD_GAIN,
-          CMC_flex: intensity * THUMB_CMC.OPP_COUPLING.FLEX_GAIN,
+          CMC_opp: deltaOpp,
         },
       };
     }
@@ -289,7 +299,7 @@ export function poseReducer(state, action) {
         thumb: restoredThumb,
         isExplorationMode: false,
         exploreOverlayState: { ...ZERO_OVERLAY },
-        explorationOppositionIntensity: 0,
+        explorationKapandjiTarget: clampKapandjiLevel(state.kapandjiEstimatedFromRig),
       };
     }
     case "EXIT_OPPOSITION_EXPLORATION":
@@ -297,7 +307,7 @@ export function poseReducer(state, action) {
         ...state,
         isExplorationMode: false,
         exploreOverlayState: { ...ZERO_OVERLAY },
-        explorationOppositionIntensity: 0,
+        explorationKapandjiTarget: clampKapandjiLevel(state.kapandjiEstimatedFromRig),
       };
     case "APPLY_GRIP": {
       const nextPose = applyGlobalGripToPose(
@@ -408,5 +418,3 @@ export function poseReducer(state, action) {
       return state;
   }
 }
-
-

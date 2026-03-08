@@ -344,6 +344,12 @@ function computeOppositionLabelPosition(points, targetIndex) {
 }
 
 export function updateThumbOppositionOverlay(rig, debugKey, dims, thumbClinical, viewport, thumb) {
+  if (debugKey !== OPPOSITION_DEBUG_KEY) {
+    const pkg = rig?.dbgMap?.[OPPOSITION_DEBUG_KEY];
+    pkg?.setOppositionReference?.(null);
+    pkg?.setLabelPosition?.(null);
+    return Number(thumbClinical?.opp?.estimatedLevel) || 0;
+  }
   const points = buildOppositionReferencePoints(rig, thumb);
   const estimatedLevel = estimateKapandjiFromRig(rig, points);
 
@@ -540,5 +546,7 @@ export function applyDebugSelection(rig, debugKey, dims, thumbClinical, thumb, t
     }
   });
 }
+
+
 
 

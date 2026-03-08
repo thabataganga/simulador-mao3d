@@ -1,4 +1,4 @@
-export const KAPANDJI_RANGE = [0, 10];
+﻿export const KAPANDJI_RANGE = [0, 10];
 
 export const KAPANDJI_LEVEL_LABELS = Object.freeze({
   0: "Sem oposicao funcional",
@@ -28,3 +28,8 @@ export const KAPANDJI_TO_CMC_OPP_COMMAND = Object.freeze({
   10: 70,
 });
 
+// Clinical estimate coupling: CMC opposition is influenced by flexion and abduction input.
+export const CMC_OPP_CLINICAL_COUPLING = Object.freeze({
+  FLEX_GAIN: 0.2,
+  ABD_GAIN: 0.12,
+});

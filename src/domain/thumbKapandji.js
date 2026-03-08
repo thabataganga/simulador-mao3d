@@ -1,8 +1,22 @@
-﻿import { KAPANDJI_LEVEL_LABELS, KAPANDJI_RANGE, KAPANDJI_TO_CMC_OPP_COMMAND } from "../constants/reference/kapandji";
+﻿import {
+  CMC_OPP_CLINICAL_COUPLING,
+  KAPANDJI_LEVEL_LABELS,
+  KAPANDJI_RANGE,
+  KAPANDJI_TO_CMC_OPP_COMMAND,
+} from "../constants/reference/kapandji";
+import { RANGES } from "../constants/reference/biomechanics";
 import { clamp } from "../utils/math/core";
 
 function defaultOperationalResolver(level) {
   return KAPANDJI_TO_CMC_OPP_COMMAND[level] ?? KAPANDJI_TO_CMC_OPP_COMMAND[0];
+}
+
+function normalizeSignedZero(value) {
+  return Object.is(value, -0) ? 0 : value;
+}
+
+function toOppositionDirection(value) {
+  return value >= 0 ? "oposicao" : "retroposicao";
 }
 
 export function clampKapandjiLevel(level) {
@@ -36,36 +50,77 @@ export function getKapandjiLevelFromCommand(commandDeg, context = {}) {
   return bestLevel;
 }
 
-export function buildThumbOppositionClinicalModel({ thumb, kapandjiLevel, context = {} }) {
-  const commandDeg = Number(thumb?.CMC_opp) || 0;
-  const derivedLevel = getKapandjiLevelFromCommand(commandDeg, context);
-  const rigLevel = Number(context?.rigMeasurement?.level);
-  const estimatedLevel = clampKapandjiLevel(
-    Number.isFinite(rigLevel) ? rigLevel : (kapandjiLevel ?? derivedLevel),
-  );
-  const { commandDeg: operationalCommandDeg } = resolveKapandjiOperationalPose(estimatedLevel, context);
-  const label = KAPANDJI_LEVEL_LABELS[estimatedLevel] || KAPANDJI_LEVEL_LABELS[0];
-  const rigDirection = context?.rigMeasurement?.rigDirection || (commandDeg >= 0 ? "oposicao" : "retroposicao");
-  const rigMagnitudeDegRaw = Number(context?.rigMeasurement?.rigMagnitudeDeg);
-  const rigMagnitudeDeg = Number.isFinite(rigMagnitudeDegRaw) ? Math.abs(rigMagnitudeDegRaw) : Math.abs(commandDeg);
-  const rigSignedDeg = rigDirection === "retroposicao" ? -rigMagnitudeDeg : rigMagnitudeDeg;
+export function buildClinicalOppositionEstimate(thumb = {}, context = {}) {
+  const baseOppositionDeg = Number(thumb.CMC_opp) || 0;
+  const flexDeg = Number(thumb.CMC_flex) || 0;
+  const abdDeg = Number(thumb.CMC_abd) || 0;
+  const flexGain = Number(context.flexGain ?? CMC_OPP_CLINICAL_COUPLING.FLEX_GAIN) || 0;
+  const abdGain = Number(context.abdGain ?? CMC_OPP_CLINICAL_COUPLING.ABD_GAIN) || 0;
+
+  const clinicalOppositionDegRaw = baseOppositionDeg + flexDeg * flexGain + abdDeg * abdGain;
+  const clinicalOppositionDeg = normalizeSignedZero(Math.round(clamp(clinicalOppositionDegRaw, RANGES.CMC_OPP)));
+  const estimatedLevel = getKapandjiLevelFromCommand(clinicalOppositionDeg, context);
 
   return {
-    level: estimatedLevel,
+    clinicalOppositionDeg,
+    clinicalDirection: toOppositionDirection(clinicalOppositionDeg),
+    clinicalMagnitude: Math.abs(clinicalOppositionDeg),
     estimatedLevel,
-    estimatedLabel: label,
-    commandDeg,
-    clinicalTargetDeg: commandDeg,
-    rigMeasuredDeg: rigSignedDeg,
-    rigDirection,
-    rigMagnitudeDeg,
-    inputDirection: commandDeg >= 0 ? "oposicao" : "retroposicao",
-    inputMagnitudeDeg: Math.abs(commandDeg),
-    operationalCommandDeg,
-    label,
-    description: `Kapandji ${estimatedLevel}: ${label}`,
-    targetId: `kapandji-${estimatedLevel}`,
-    scaleLabel: `Kapandji ${estimatedLevel}`,
   };
 }
 
+export function buildThumbOppositionClinicalModel({ thumb, kapandjiLevel, context = {} }) {
+  const commandDeg = Number(thumb?.CMC_opp) || 0;
+
+  const clinicalEstimate = buildClinicalOppositionEstimate(thumb, context);
+  const clinicalLevelFromInput = Number.isFinite(Number(kapandjiLevel))
+    ? clampKapandjiLevel(kapandjiLevel)
+    : clinicalEstimate.estimatedLevel;
+
+  const rigLevelRaw = Number(context?.rigMeasurement?.level);
+  const rigEstimatedLevel = clampKapandjiLevel(Number.isFinite(rigLevelRaw) ? rigLevelRaw : clinicalLevelFromInput);
+
+  const rigDirection = context?.rigMeasurement?.rigDirection || toOppositionDirection(commandDeg);
+  const rigMagnitudeDegRaw = Number(context?.rigMeasurement?.rigMagnitudeDeg);
+  const rigMagnitudeDeg = Number.isFinite(rigMagnitudeDegRaw) ? Math.abs(rigMagnitudeDegRaw) : Math.abs(commandDeg);
+  const rigMeasuredDeg = rigDirection === "retroposicao" ? -rigMagnitudeDeg : rigMagnitudeDeg;
+
+  const clinicalLevel = clinicalEstimate.estimatedLevel;
+  const clinicalLabel = KAPANDJI_LEVEL_LABELS[clinicalLevel] || KAPANDJI_LEVEL_LABELS[0];
+  const { commandDeg: operationalCommandDeg } = resolveKapandjiOperationalPose(clinicalLevel, context);
+
+  return {
+    level: clinicalLevel,
+    estimatedLevel: clinicalLevel,
+    estimatedLabel: clinicalLabel,
+    commandDeg,
+    clinicalTargetDeg: clinicalEstimate.clinicalOppositionDeg,
+    inputDirection: toOppositionDirection(commandDeg),
+    inputMagnitudeDeg: Math.abs(commandDeg),
+    direction: clinicalEstimate.clinicalDirection,
+    magnitudeDeg: clinicalEstimate.clinicalMagnitude,
+    rigMeasuredDeg,
+    rigDirection,
+    rigMagnitudeDeg,
+    operationalCommandDeg,
+    label: clinicalLabel,
+    description: `Kapandji ${clinicalLevel}: ${clinicalLabel}`,
+    targetId: `kapandji-${clinicalLevel}`,
+    scaleLabel: `Kapandji ${clinicalLevel}`,
+    rigMeasurement: {
+      level: rigEstimatedLevel,
+      rigDirection,
+      rigMagnitudeDeg,
+      rigMeasuredDeg,
+      scaleLabel: `Kapandji ${rigEstimatedLevel}`,
+    },
+    clinicalEstimate: {
+      level: clinicalLevel,
+      clinicalOppositionDeg: clinicalEstimate.clinicalOppositionDeg,
+      clinicalDirection: clinicalEstimate.clinicalDirection,
+      clinicalMagnitude: clinicalEstimate.clinicalMagnitude,
+      estimatedLabel: clinicalLabel,
+      scaleLabel: `Kapandji ${clinicalLevel}`,
+    },
+  };
+}

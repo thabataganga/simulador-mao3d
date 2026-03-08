@@ -1,4 +1,4 @@
-﻿import { RANGES } from "../constants/reference/biomechanics";
+import { RANGES } from "../constants/reference/biomechanics";
 import { THUMB_SLIDER_CONFIG } from "../constants/reference/uiConfig";
 import { LabeledSlider } from "./LabeledSlider";
 
@@ -102,24 +102,38 @@ function DirectionMagnitudeSlider({
 }
 
 function OppInfoCard({ clinical, onHighlight }) {
+  const clinicalEstimate = clinical?.clinicalEstimate || {};
+  const rigMeasurement = clinical?.rigMeasurement || {};
+
+  const clinicalDirection = clinicalEstimate.clinicalDirection || clinical.direction || clinical.inputDirection;
+  const clinicalMagnitude = clinicalEstimate.clinicalMagnitude ?? clinical.magnitudeDeg ?? clinical.inputMagnitudeDeg;
+  const rigDirection = rigMeasurement.rigDirection || clinical.rigDirection || clinical.direction || clinical.inputDirection;
+  const rigMagnitude = rigMeasurement.rigMagnitudeDeg ?? clinical.rigMagnitudeDeg ?? clinical.magnitudeDeg ?? clinical.inputMagnitudeDeg;
+  const kapandjiScale = clinicalEstimate.scaleLabel || clinical.scaleLabel;
+  const kapandjiLabel = clinicalEstimate.estimatedLabel || clinical.estimatedLabel;
+
   return (
     <div
       className="mb-3 border border-gray-200 rounded-md p-2"
       role="button"
       tabIndex={0}
-      onMouseEnter={onHighlight}
-      onFocus={onHighlight}
       onClick={onHighlight}
       onKeyDown={event => {
-        if (event.key === "Enter" || event.key === " ") onHighlight?.();
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onHighlight?.();
+        }
       }}
     >
       <div className="text-sm font-medium mb-2">CMC Oposicao</div>
       <div className="mt-1 text-xs text-gray-600">
-        Medida do rig: <strong>{clinical.rigDirection || clinical.direction || clinical.inputDirection} {clinical.rigMagnitudeDeg ?? clinical.magnitudeDeg ?? clinical.inputMagnitudeDeg}deg</strong>
+        Estimativa clinica: <strong>{clinicalDirection} {clinicalMagnitude}deg</strong>
       </div>
       <div className="mt-1 text-xs text-gray-600">
-        Kapandji estimado: <strong>{clinical.scaleLabel}</strong> <span className="text-[11px] text-gray-500">{clinical.estimatedLabel}</span>
+        Medida do rig: <strong>{rigDirection} {rigMagnitude}deg</strong>
+      </div>
+      <div className="mt-1 text-xs text-gray-600">
+        Kapandji estimado: <strong>{kapandjiScale}</strong> <span className="text-[11px] text-gray-500">{kapandjiLabel}</span>
       </div>
     </div>
   );
@@ -127,14 +141,14 @@ function OppInfoCard({ clinical, onHighlight }) {
 
 function OppositionExplorationPanel({
   isExplorationMode,
-  intensity,
+  kapandjiTarget,
   onEnter,
   onUpdate,
   onRestore,
   onExit,
   onHighlight,
 }) {
-  const inputId = "opp-exploration-intensity";
+  const inputId = "opp-exploration-kapandji-target";
 
   return (
     <div className="mb-3 border border-dashed border-blue-300 rounded-md p-2 bg-blue-50/50">
@@ -157,21 +171,22 @@ function OppositionExplorationPanel({
       ) : (
         <>
           <div className="mb-2">
-            <label htmlFor={inputId} className="text-xs text-gray-700">Intensidade tecnica ({Math.round(intensity)} deg)</label>
+            <label htmlFor={inputId} className="text-xs text-gray-700">Kapandji alvo ({kapandjiTarget})</label>
             <input
               id={inputId}
               name={inputId}
               type="range"
-              min={-100}
-              max={100}
+              min={0}
+              max={10}
               step={1}
-              value={intensity}
+              value={kapandjiTarget}
               onChange={e => {
                 onUpdate(Number(e.target.value));
                 onHighlight?.();
               }}
               className="w-full"
             />
+            <p className="text-[11px] text-blue-700 mt-1">Simulacao: Kapandji {kapandjiTarget}</p>
           </div>
           <div className="flex gap-2">
             <button
@@ -200,7 +215,7 @@ export function ThumbPanel({
   thumbGoniometry,
   thumbClinical,
   isExplorationMode,
-  explorationOppositionIntensity,
+  explorationKapandjiTarget,
   onThumbVal,
   onThumbCmcInput,
   onEnterOppositionExploration,
@@ -208,6 +223,7 @@ export function ThumbPanel({
   onRestoreUserInputData,
   onExitOppositionExploration,
   onHighlight,
+  onClearHighlight,
   onClearPreset,
 }) {
   const panelOrder = ["CMC_flex", "CMC_abd", "CMC_opp", "MCP_flex", "IP"];
@@ -261,14 +277,20 @@ export function ThumbPanel({
 
     if (item.key === "CMC_opp") {
       return (
-        <div key={item.key}>
+        <div
+          key={item.key}
+          onMouseLeave={() => onClearHighlight?.()}
+          onBlur={event => {
+            if (!event.currentTarget.contains(event.relatedTarget)) onClearHighlight?.();
+          }}
+        >
           <OppInfoCard
             clinical={thumbClinical.opp}
             onHighlight={() => onHighlight(item.debugKey)}
           />
           <OppositionExplorationPanel
             isExplorationMode={isExplorationMode}
-            intensity={explorationOppositionIntensity}
+            kapandjiTarget={explorationKapandjiTarget}
             onEnter={() => {
               onEnterOppositionExploration();
               onClearPreset();
@@ -303,4 +325,3 @@ export function ThumbPanel({
     );
   });
 }
-

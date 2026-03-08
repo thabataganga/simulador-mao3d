@@ -1,4 +1,4 @@
-import * as THREE from "three";
+﻿import { AxesHelper, CanvasTexture, DoubleSide, LinearFilter, Mesh, MeshBasicMaterial, PlaneGeometry, SphereGeometry, Sprite, SpriteMaterial, Vector3 } from "three";
 import { Line2 } from "three/examples/jsm/lines/Line2.js";
 import { LineGeometry } from "three/examples/jsm/lines/LineGeometry.js";
 import { LineMaterial } from "three/examples/jsm/lines/LineMaterial.js";
@@ -28,9 +28,9 @@ export function makeLabel(text, scale = 3.5) {
   const fontPx = Math.round(44 * scale);
   const pad = 10;
   const { ctx, width, height } = drawLabelCanvas(canvas, text, fontPx, pad);
-  const tex = new THREE.CanvasTexture(canvas);
-  tex.minFilter = THREE.LinearFilter;
-  const spr = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false }));
+  const tex = new CanvasTexture(canvas);
+  tex.minFilter = LinearFilter;
+  const spr = new Sprite(new SpriteMaterial({ map: tex, transparent: true, depthTest: false }));
   const u = 0.02 * scale;
   spr.scale.set(width * u, height * u, 1);
   spr.renderOrder = 999;
@@ -52,8 +52,8 @@ export function setLabelText(spr, text) {
 
   if (resized) {
     const prevTexture = spr.userData.tex || spr.material?.map;
-    const nextTexture = new THREE.CanvasTexture(canvas);
-    nextTexture.minFilter = THREE.LinearFilter;
+    const nextTexture = new CanvasTexture(canvas);
+    nextTexture.minFilter = LinearFilter;
     spr.material.map = nextTexture;
     spr.material.needsUpdate = true;
     spr.userData.tex = nextTexture;
@@ -76,7 +76,7 @@ function signedAngleOnPlane(from, to, planeNormal) {
   const fromUnit = from.clone().multiplyScalar(1 / fromLen);
   const toUnit = to.clone().multiplyScalar(1 / toLen);
   const angle = fromUnit.angleTo(toUnit);
-  const cross = new THREE.Vector3().crossVectors(fromUnit, toUnit);
+  const cross = new Vector3().crossVectors(fromUnit, toUnit);
   const sign = Math.sign(cross.dot(planeNormal)) || 1;
   return angle * sign;
 }
@@ -168,12 +168,12 @@ function createGoniometerVisual(group, color) {
       return;
     }
 
-    setPoints(fixedRay, [new THREE.Vector3(0, 0, 0), fixed.clone().multiplyScalar(rayLength)]);
-    setPoints(movingRay, [new THREE.Vector3(0, 0, 0), moving.clone().multiplyScalar(rayLength)]);
+    setPoints(fixedRay, [new Vector3(0, 0, 0), fixed.clone().multiplyScalar(rayLength)]);
+    setPoints(movingRay, [new Vector3(0, 0, 0), moving.clone().multiplyScalar(rayLength)]);
 
     const angle = signedAngleOnPlane(fixed, moving, normal);
     const basisU = fixed.clone();
-    const basisV = new THREE.Vector3().crossVectors(normal, basisU).normalize();
+    const basisV = new Vector3().crossVectors(normal, basisU).normalize();
     if (basisV.lengthSq() < 1e-8) {
       angleArc.visible = false;
       return;
@@ -209,15 +209,15 @@ function createOppositionReferenceVisual(group, color) {
   trail.renderOrder = 1001;
   group.add(trail);
 
-  const markerMaterial = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.5, depthTest: false });
-  const targetMaterial = new THREE.MeshBasicMaterial({ color: 0xffcc66, transparent: true, opacity: 0.95, depthTest: false });
+  const markerMaterial = new MeshBasicMaterial({ color, transparent: true, opacity: 0.5, depthTest: false });
+  const targetMaterial = new MeshBasicMaterial({ color: 0xffcc66, transparent: true, opacity: 0.95, depthTest: false });
   const markers = Array.from({ length: 11 }, () => {
-    const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.6, 10, 10), markerMaterial.clone());
+    const mesh = new Mesh(new SphereGeometry(0.6, 10, 10), markerMaterial.clone());
     mesh.renderOrder = 1002;
     group.add(mesh);
     return mesh;
   });
-  const target = new THREE.Mesh(new THREE.SphereGeometry(0.95, 14, 14), targetMaterial);
+  const target = new Mesh(new SphereGeometry(0.95, 14, 14), targetMaterial);
   target.renderOrder = 1003;
   group.add(target);
 
@@ -293,7 +293,7 @@ function createLabelHandle(group, sy, labelText, withLabel) {
   if (!withLabel) return { label: null, setLabelPosition: () => {} };
 
   const label = makeLabel(labelText);
-  const defaultPos = new THREE.Vector3(0, sy * 0.72, 0);
+  const defaultPos = new Vector3(0, sy * 0.72, 0);
   label.position.copy(defaultPos);
   group.add(label);
 
@@ -320,16 +320,16 @@ export function makeDebugPkg(group, key, planeAxis, sx, sy, axSz, labelText, wit
   const goniometerColor = opts.goniometerColor ?? 0xff2b2b;
   const oppositionReferenceColor = opts.oppositionReferenceColor ?? 0xff2b2b;
 
-  const axes = new THREE.AxesHelper(axSz);
+  const axes = new AxesHelper(axSz);
   group.add(axes);
 
-  const plane = new THREE.Mesh(
-    new THREE.PlaneGeometry(sx, sy),
-    new THREE.MeshBasicMaterial({
+  const plane = new Mesh(
+    new PlaneGeometry(sx, sy),
+    new MeshBasicMaterial({
       color: 0x3bb7a2,
       transparent: true,
       opacity: 0.22,
-      side: THREE.DoubleSide,
+      side: DoubleSide,
       depthWrite: false,
     }),
   );
@@ -369,4 +369,5 @@ export function makeDebugPkg(group, key, planeAxis, sx, sy, axSz, labelText, wit
     setVisible,
   };
 }
+
 

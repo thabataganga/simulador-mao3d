@@ -135,11 +135,11 @@ describe("useHandPose reducer", () => {
 
     const updated = __testables.poseReducer(entered, {
       type: "UPDATE_OPPOSITION_EXPLORATION",
-      value: { intensity: 20 },
+      value: { kapandjiTarget: 20 },
     });
     expect(updated.isExplorationMode).toBe(true);
-    expect(updated.exploreOverlayState.CMC_opp).toBe(20);
-    expect(updated.explorationOppositionIntensity).toBe(20);
+    expect(updated.exploreOverlayState.CMC_opp).toBe(58);
+    expect(updated.explorationKapandjiTarget).toBe(10);
 
     const changedThumb = { ...updated, thumb: { ...updated.thumb, CMC_abd: 50, CMC_opp: -30 } };
     const restored = __testables.poseReducer(changedThumb, { type: "RESTORE_USER_INPUT_DATA" });
@@ -150,7 +150,7 @@ describe("useHandPose reducer", () => {
     const exited = __testables.poseReducer(updated, { type: "EXIT_OPPOSITION_EXPLORATION" });
     expect(exited.isExplorationMode).toBe(false);
     expect(exited.exploreOverlayState.CMC_opp).toBe(0);
-    expect(exited.explorationOppositionIntensity).toBe(0);
+    expect(exited.explorationKapandjiTarget).toBe(base.kapandjiEstimatedFromRig);
   });
 
   test("presets reset exploration and user-edit buffers", () => {
@@ -160,7 +160,7 @@ describe("useHandPose reducer", () => {
       anthropometry: { sex: "masculino", percentile: 50, age: 25 },
       isExplorationMode: true,
       exploreOverlayState: { CMC_abd: 2, CMC_flex: 1, CMC_opp: 5, MCP_flex: 0, IP: 0 },
-      explorationOppositionIntensity: 30,
+      explorationKapandjiTarget: 9,
       userEditedThumb: { CMC_abd: true },
       explorationSnapshotThumb: { CMC_abd: 20 },
     };
@@ -194,4 +194,6 @@ describe("useHandPose reducer", () => {
     expect(next.anthropometry).toEqual({ sex: "masculino", percentile: 95, age: 25 });
   });
 });
+
+
 

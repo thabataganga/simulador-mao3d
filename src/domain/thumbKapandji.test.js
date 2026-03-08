@@ -1,4 +1,5 @@
-import {
+﻿import {
+  buildClinicalOppositionEstimate,
   buildThumbOppositionClinicalModel,
   clampKapandjiLevel,
   getKapandjiLevelFromCommand,
@@ -22,23 +23,18 @@ describe("thumb Kapandji clinical model", () => {
     expect(getKapandjiLevelFromCommand(-18)).toBe(0);
   });
 
-  test("builds clinical opposition model without claiming angular equivalence", () => {
-    const model = buildThumbOppositionClinicalModel({
-      thumb: { CMC_opp: 45 },
-      kapandjiLevel: 7,
-    });
+  test("clinical opposition estimate reacts to flex/ext and abd/add", () => {
+    const neutral = buildClinicalOppositionEstimate({ CMC_opp: 16, CMC_flex: 0, CMC_abd: 0 });
+    const coupled = buildClinicalOppositionEstimate({ CMC_opp: 16, CMC_flex: 20, CMC_abd: 40 });
 
-    expect(model.level).toBe(7);
-    expect(model.commandDeg).toBe(45);
-    expect(model.operationalCommandDeg).toBe(45);
-    expect(model.description).toContain("Kapandji 7");
-    expect(model.targetId).toBe("kapandji-7");
+    expect(coupled.clinicalOppositionDeg).not.toBe(neutral.clinicalOppositionDeg);
+    expect(coupled.clinicalMagnitude).toBeGreaterThan(neutral.clinicalMagnitude);
   });
 
-  test("prefers rig measurement fields when provided in context", () => {
+  test("builds clinical opposition model with separate clinical and rig blocks", () => {
     const model = buildThumbOppositionClinicalModel({
-      thumb: { CMC_opp: 12 },
-      kapandjiLevel: 3,
+      thumb: { CMC_opp: 45, CMC_flex: 10, CMC_abd: 20 },
+      kapandjiLevel: 7,
       context: {
         rigMeasurement: {
           level: 8,
@@ -48,10 +44,11 @@ describe("thumb Kapandji clinical model", () => {
       },
     });
 
-    expect(model.estimatedLevel).toBe(8);
-    expect(model.scaleLabel).toBe("Kapandji 8");
+    expect(model.clinicalEstimate).toBeDefined();
+    expect(model.rigMeasurement).toBeDefined();
+    expect(model.clinicalEstimate.scaleLabel).toBe(model.scaleLabel);
+    expect(model.rigMeasurement.scaleLabel).toBe("Kapandji 8");
     expect(model.rigDirection).toBe("retroposicao");
     expect(model.rigMagnitudeDeg).toBe(56);
-    expect(model.rigMeasuredDeg).toBe(-56);
   });
 });

@@ -12,7 +12,7 @@ describe("pose to scene pipeline integration", () => {
     let state = createHandPoseFixture();
 
     state = poseReducer(state, { type: "SET_ANTHROPOMETRY", value: { sex: "feminino", percentile: 75, age: 30 } });
-        state = poseReducer(state, { type: "UPDATE_OPPOSITION_EXPLORATION", value: { intensity: 20 } });
+        state = poseReducer(state, { type: "UPDATE_OPPOSITION_EXPLORATION", value: { kapandjiTarget: 20 } });
 
     const profile = selectProfile(state.anthropometry);
     const dims = selectDims(profile);
@@ -27,4 +27,5 @@ describe("pose to scene pipeline integration", () => {
     expect(typeof sceneInput.thumb.CMC_opp).toBe("number");
   });
 });
+
 

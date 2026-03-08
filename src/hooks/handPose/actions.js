@@ -44,8 +44,8 @@ export function createPoseActions({ dispatch, track, dims, globalMode }) {
       dispatch({ type: "SET_THUMB_CMC_INPUT", value: { axis, direction, magnitudeDeg } });
     },
     enterOppositionExploration: () => dispatch({ type: "ENTER_OPPOSITION_EXPLORATION" }),
-    updateOppositionExploration: intensity => {
-      dispatch({ type: "UPDATE_OPPOSITION_EXPLORATION", value: { intensity } });
+    updateOppositionExploration: kapandjiTarget => {
+      dispatch({ type: "UPDATE_OPPOSITION_EXPLORATION", value: { kapandjiTarget } });
     },
     restoreUserInputData: () => dispatch({ type: "RESTORE_USER_INPUT_DATA" }),
     exitOppositionExploration: () => dispatch({ type: "EXIT_OPPOSITION_EXPLORATION" }),
@@ -67,4 +67,3 @@ export function createPoseActions({ dispatch, track, dims, globalMode }) {
     },
   };
 }
-

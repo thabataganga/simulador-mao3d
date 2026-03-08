@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+﻿import { useEffect, useMemo, useRef, useState } from "react";
 import {
   BoxGeometry,
   Color,
@@ -83,6 +83,7 @@ export function useThreeScene(mountRef, viewcubeRef) {
     let disposed = false;
     let controls = null;
 
+    // DevTools may warn about long rAF handlers in development; this is a performance hint, not a runtime error.
     const animate = () => {
       if (disposed) return;
       raf = requestAnimationFrame(animate);
@@ -150,3 +151,5 @@ export function useThreeScene(mountRef, viewcubeRef) {
 
   return { three, mini, orbitRef, controlsReady };
 }
+
+

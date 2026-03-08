@@ -18,7 +18,7 @@ function baseProps(overrides = {}) {
       },
     },
     isExplorationMode: true,
-    explorationOppositionIntensity: 10,
+    explorationKapandjiTarget: 10,
     onThumbVal: jest.fn(),
     onThumbCmcInput: jest.fn(),
     onEnterOppositionExploration: jest.fn(),
@@ -26,6 +26,7 @@ function baseProps(overrides = {}) {
     onRestoreUserInputData: jest.fn(),
     onExitOppositionExploration: jest.fn(),
     onHighlight: jest.fn(),
+    onClearHighlight: jest.fn(),
     onClearPreset: jest.fn(),
     ...overrides,
   };
@@ -42,10 +43,19 @@ describe("ThumbPanel structure and callbacks", () => {
     expect(elements[4].props.label).toContain("IP");
   });
 
+  test("does not auto-highlight opposition on mount", () => {
+    const onHighlight = jest.fn();
+
+    ThumbPanel(baseProps({ onHighlight }));
+
+    expect(onHighlight).not.toHaveBeenCalled();
+  });
+
   test("shows CMC opposition read-only card and keeps exploration controls", () => {
     const onUpdateOppositionExploration = jest.fn();
     const onClearPreset = jest.fn();
     const onHighlight = jest.fn();
+    const onClearHighlight = jest.fn();
 
     const elements = ThumbPanel(
       baseProps({
@@ -53,6 +63,7 @@ describe("ThumbPanel structure and callbacks", () => {
         onUpdateOppositionExploration,
         onClearPreset,
         onHighlight,
+        onClearHighlight,
       }),
     );
 
@@ -62,11 +73,14 @@ describe("ThumbPanel structure and callbacks", () => {
 
     expect(oppInfoCard.props.clinical.scaleLabel).toBe("Kapandji 4");
     oppInfoCard.props.onHighlight();
-    expect(onHighlight).toHaveBeenCalledTimes(1);
+    expect(onHighlight).toHaveBeenCalledWith("TH_CMC_OPP");
 
-    explorationPanel.props.onUpdate(15);
-    expect(onUpdateOppositionExploration).toHaveBeenCalledWith(15);
+    explorationPanel.props.onUpdate(8);
+    expect(onUpdateOppositionExploration).toHaveBeenCalledWith(8);
     expect(onClearPreset).toHaveBeenCalledTimes(1);
+
+    oppGroup.props.onMouseLeave();
+    expect(onClearHighlight).toHaveBeenCalledTimes(1);
   });
 
   test("non-CMC sliders clear preset and forward value", () => {
@@ -81,4 +95,5 @@ describe("ThumbPanel structure and callbacks", () => {
     expect(onClearPreset).toHaveBeenCalledTimes(1);
   });
 });
+
 

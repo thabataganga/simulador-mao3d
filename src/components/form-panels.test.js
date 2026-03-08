@@ -101,7 +101,7 @@ describe("ThumbPanel", () => {
         },
       },
       isExplorationMode: false,
-      explorationOppositionIntensity: 0,
+      explorationKapandjiTarget: 0,
       onThumbVal: jest.fn(),
       onThumbCmcInput: jest.fn(),
       onEnterOppositionExploration,
@@ -123,7 +123,7 @@ describe("ThumbPanel", () => {
     expect(onClearPreset).toHaveBeenCalledTimes(1);
   });
 
-  test("updates exploration intensity without direct CMC opposition editing", () => {
+  test("updates exploration target without direct CMC opposition editing", () => {
     const onUpdateOppositionExploration = jest.fn();
     const onRestoreUserInputData = jest.fn();
     const onExitOppositionExploration = jest.fn();
@@ -146,7 +146,7 @@ describe("ThumbPanel", () => {
         },
       },
       isExplorationMode: true,
-      explorationOppositionIntensity: 12,
+      explorationKapandjiTarget: 6,
       onThumbVal: jest.fn(),
       onThumbCmcInput: jest.fn(),
       onEnterOppositionExploration: jest.fn(),
@@ -169,3 +169,6 @@ describe("ThumbPanel", () => {
     expect(onClearPreset).toHaveBeenCalledTimes(1);
   });
 });
+
+
+
