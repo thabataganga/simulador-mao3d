@@ -6,6 +6,7 @@ import {
   OPPOSITION_DEBUG_KEY,
   applyDebugSelection,
   applyPoseToRig,
+  autoFrameCmcMeasurementView,
   didGoniometryChange,
   disposeRigResources,
   frameRigToView,
@@ -14,9 +15,17 @@ import {
   updateThumbOppositionOverlay,
 } from "../handRig";
 
+const CMC_AUTOFRAME_KEYS = new Set(["TH_CMC_ABD", "TH_CMC_FLEX"]);
+
+export function shouldUseInstantCmcAutoFrame(previousDebugKey, nextDebugKey) {
+  return CMC_AUTOFRAME_KEYS.has(nextDebugKey) && previousDebugKey !== nextDebugKey;
+}
+
 export const handRigTestables = {
   didGoniometryChange,
   applyDebugSelection,
+  autoFrameCmcMeasurementView,
+  shouldUseInstantCmcAutoFrame,
 };
 
 export function useHandRigRuntime({
@@ -39,6 +48,7 @@ export function useHandRigRuntime({
   const cmcBaselineRef = useRef({ CMC_abd: 0, CMC_flex: 0 });
   const lastEmittedGoniometryRef = useRef(null);
   const lastOppositionEstimateRef = useRef(null);
+  const lastDebugKeyRef = useRef(debugKey);
   const poseRef = useRef({ fingers, thumb, thumbClinical, thumbGoniometry, wrist });
 
   useEffect(() => {
@@ -94,6 +104,20 @@ export function useHandRigRuntime({
     frameRigToView(handRig.current?.root, orbitRef.current, three?.camera);
   }, [orbitRef, three]);
 
+  const autoFrameCmcView = useCallback(
+    ({ instant = false } = {}) => {
+      autoFrameCmcMeasurementView({
+        rig: handRig.current,
+        debugKey,
+        dims,
+        controls: orbitRef.current,
+        camera: three?.camera,
+        instant,
+      });
+    },
+    [debugKey, dims, orbitRef, three],
+  );
+
   useEffect(() => {
     if (!three?.scene) return;
 
@@ -128,6 +152,7 @@ export function useHandRigRuntime({
     );
     emitThumbGoniometry(measured);
     emitOppositionEstimate(measured);
+    if (controlsReady) autoFrameCmcView({ instant: true });
 
     const prevPalmLength = lastPalmLengthRef.current;
     const nextPalmLength = dims?.palm?.LENGTH || 0;
@@ -138,7 +163,7 @@ export function useHandRigRuntime({
 
     lastPalmLengthRef.current = nextPalmLength;
     if (controlsReady && shouldRefit) frameRig();
-  }, [controlsReady, debugKey, dims, emitThumbGoniometry, emitOppositionEstimate, frameRig, three]);
+  }, [controlsReady, debugKey, dims, emitThumbGoniometry, emitOppositionEstimate, frameRig, autoFrameCmcView, three]);
 
   useEffect(() => {
     if (!controlsReady || hasInitialFrameRef.current) return;
@@ -161,7 +186,26 @@ export function useHandRigRuntime({
     );
     emitThumbGoniometry(measured);
     emitOppositionEstimate(measured);
-  }, [debugKey, dims, emitThumbGoniometry, emitOppositionEstimate, fingers, three, thumb, thumbClinical, thumbGoniometry, wrist]);
+
+    if (controlsReady) {
+      const instant = shouldUseInstantCmcAutoFrame(lastDebugKeyRef.current, debugKey);
+      autoFrameCmcView({ instant });
+    }
+    lastDebugKeyRef.current = debugKey;
+  }, [
+    debugKey,
+    dims,
+    emitThumbGoniometry,
+    emitOppositionEstimate,
+    fingers,
+    controlsReady,
+    autoFrameCmcView,
+    three,
+    thumb,
+    thumbClinical,
+    thumbGoniometry,
+    wrist,
+  ]);
 
   useEffect(() => {
     applyDebugSelection(handRig.current, debugKey, dims, thumbClinical, thumb, three);

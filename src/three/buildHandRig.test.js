@@ -68,6 +68,29 @@ describe("buildHandRig debug anchors", () => {
     expect(rig.thumb.debug.cmcOpp.parent).toBe(rig.thumb.mount);
     expect(rig.thumb.debug.cmcOpp.parent).not.toBe(rig.thumb.cmcPronation);
   });
+
+  test("hides CMC measurement plane while keeping non-CMC planes visible", () => {
+    const dims = makeDims(buildProfile("masculino", 50, 25));
+    const rig = buildHandRig(dims);
+
+    rig.dbgMap.TH_CMC_ABD.setVisible(true);
+    rig.dbgMap.TH_CMC_FLEX.setVisible(true);
+    rig.dbgMap.TH_MCP.setVisible(true);
+
+    expect(rig.dbgMap.TH_CMC_ABD.plane.visible).toBe(false);
+    expect(rig.dbgMap.TH_CMC_FLEX.plane.visible).toBe(false);
+    expect(rig.dbgMap.TH_MCP.plane.visible).toBe(true);
+  });
+
+  test("limits CMC highlight targets to joint sphere and metacarpal", () => {
+    const dims = makeDims(buildProfile("masculino", 50, 25));
+    const rig = buildHandRig(dims);
+
+    const proximalMesh = rig.highlight.map.TH_MCP[0];
+    ["TH_CMC_ABD", "TH_CMC_FLEX", "TH_CMC_OPP"].forEach(key => {
+      const targets = rig.highlight.map[key];
+      expect(targets).toHaveLength(2);
+      expect(targets).not.toContain(proximalMesh);
+    });
+  });
 });
-
-

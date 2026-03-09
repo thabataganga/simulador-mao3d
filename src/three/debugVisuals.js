@@ -258,6 +258,7 @@ export function makeDebugPkg(group, key, planeAxis, sx, sy, axSz, labelText, wit
       ? withLabelOrOptions
       : { withLabel: withLabelOrOptions };
   const withLabel = opts.withLabel !== false;
+  const showPlane = opts.showPlane !== false;
   const withGoniometer = Boolean(opts.withGoniometer);
   const withOppositionReference = Boolean(opts.withOppositionReference);
   const goniometerColor = opts.goniometerColor ?? 0xff2b2b;
@@ -286,7 +287,7 @@ export function makeDebugPkg(group, key, planeAxis, sx, sy, axSz, labelText, wit
 
   const setVisible = v => {
     axes.visible = v;
-    plane.visible = v;
+    plane.visible = v && showPlane;
     if (labelHandle.label) labelHandle.label.visible = v;
     if (goniometer && !v) goniometer.hide();
     if (oppositionReference && !v) oppositionReference.hide();
@@ -312,3 +313,4 @@ export function makeDebugPkg(group, key, planeAxis, sx, sy, axSz, labelText, wit
     setVisible,
   };
 }
+
