@@ -4,9 +4,9 @@ export const RANGES = {
   MCP: [-45, 90],
   PIP: [0, 100],
   DIP: [-20, 80],
-  CMC_ABD: CMC_TEMP_RANGE,
+  CMC_ABD: [0, 70],
   CMC_OPP: CMC_TEMP_RANGE,
-  CMC_FLEX: CMC_TEMP_RANGE,
+  CMC_FLEX: [-70, 15],
   THUMB_MCP_FLEX: [0, 60],
   THUMB_IP: [-10, 80],
   WRIST_FLEX: [-70, 80],
@@ -14,8 +14,8 @@ export const RANGES = {
 };
 
 export const THUMB_RANGE_KEY = {
-  CMC_abd: "CMC_ABD",
-  CMC_flex: "CMC_FLEX",
+  CMC_abdAdd: "CMC_ABD",
+  CMC_flexExt: "CMC_FLEX",
   CMC_opp: "CMC_OPP",
   MCP_flex: "THUMB_MCP_FLEX",
   IP: "THUMB_IP",
@@ -40,4 +40,3 @@ export const THUMB_CMC = Object.freeze({
 export const THUMB_KINEMATICS = Object.freeze({
   MCP_ACCESSORY_GAIN: 0.08,
 });
-
