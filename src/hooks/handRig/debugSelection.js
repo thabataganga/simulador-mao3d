@@ -3,6 +3,12 @@ import { getViewportSize } from "./lifecycle";
 import { updateCmcGoniometerOverlay } from "./cmcOverlay";
 import { updateThumbOppositionOverlay } from "./oppositionOverlay";
 
+const CMC_DEBUG_KEYS = new Set(["TH_CMC_ABD", "TH_CMC_FLEX", "TH_CMC_OPP"]);
+const HIGHLIGHT_COLORS = Object.freeze({
+  default: Object.freeze({ color: 0xffcc66, emissive: 0x553300 }),
+  cmcJoint: Object.freeze({ color: 0x5ad7ff, emissive: 0x114455 }),
+});
+
 export function applyDebugSelection(rig, debugKey, dims, thumbClinical, thumb, three) {
   if (!rig) return;
 
@@ -53,10 +59,13 @@ export function applyDebugSelection(rig, debugKey, dims, thumbClinical, thumb, t
     ? ["D2", "D3", "D4", "D5"].flatMap(digit => highlight.map[`${digit}_${globalJoint}`] || [])
     : highlight.map[debugKey] || [];
 
+  const isCmcKey = CMC_DEBUG_KEYS.has(debugKey);
+
   targets.forEach(mesh => {
-    if (mesh.material) {
-      mesh.material.color.set(0xffcc66);
-      mesh.material.emissive?.set(0x553300);
-    }
+    if (!mesh.material) return;
+    const isCmcJoint = isCmcKey && mesh.userData?.highlightRole === "cmcJoint";
+    const palette = isCmcJoint ? HIGHLIGHT_COLORS.cmcJoint : HIGHLIGHT_COLORS.default;
+    mesh.material.color.set(palette.color);
+    mesh.material.emissive?.set(palette.emissive);
   });
 }

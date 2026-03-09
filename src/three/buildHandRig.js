@@ -1,4 +1,4 @@
-﻿import { Box3, BoxGeometry, CylinderGeometry, Group, Mesh, MeshStandardMaterial, SphereGeometry, Vector3 } from "three";
+import { Box3, BoxGeometry, CylinderGeometry, Group, Mesh, MeshStandardMaterial, SphereGeometry, Vector3 } from "three";
 import { THUMB_CMC_NEUTRAL } from "../domain/thumb";
 import { deg2rad } from "../utils/math/core";
 import { makeDebugPkg } from "./helpers";
@@ -234,9 +234,10 @@ function buildThumbSubsystem(f, palm, dbgMap, highlightMap, allMovers) {
   allMovers.push(tMeta.mesh, tProx.mesh, tDist.mesh);
   highlightMap.TH_MCP = [tProx.mesh];
   highlightMap.TH_IP = [tDist.mesh];
-  highlightMap.TH_CMC_ABD = [cmcJointSphere, tMeta.mesh, tProx.mesh];
-  highlightMap.TH_CMC_FLEX = [cmcJointSphere, tMeta.mesh, tProx.mesh];
-  highlightMap.TH_CMC_OPP = [cmcJointSphere, tMeta.mesh, tProx.mesh];
+  // CMC highlight should focus on the CMC complex only: joint + metacarpal.
+  highlightMap.TH_CMC_ABD = [cmcJointSphere, tMeta.mesh];
+  highlightMap.TH_CMC_FLEX = [cmcJointSphere, tMeta.mesh];
+  highlightMap.TH_CMC_OPP = [cmcJointSphere, tMeta.mesh];
 
   const mkThumbDebug = (node, key, axis, L, W, name, opts) => {
     const pkg = makeDebugPkg(node, key, axis, L, W * 2.2, W * 1.6, `${name}: 0 deg`, opts);
@@ -252,8 +253,8 @@ function buildThumbSubsystem(f, palm, dbgMap, highlightMap, allMovers) {
   thumbMount.add(cmcOppDebug);
 
   const thumbLabels = {
-    abd: mkThumbDebug(cmcAbdDebug, "TH_CMC_ABD", "XY", metacarpalLen, d.thumbWid[0], "CMC abd", { withGoniometer: true }),
-    flex: mkThumbDebug(cmcFlexDebug, "TH_CMC_FLEX", "ZX", metacarpalLen, d.thumbWid[0], "CMC flex", { withGoniometer: true }),
+    abd: mkThumbDebug(cmcAbdDebug, "TH_CMC_ABD", "XY", metacarpalLen, d.thumbWid[0], "CMC abd", { withGoniometer: true, showPlane: false }),
+    flex: mkThumbDebug(cmcFlexDebug, "TH_CMC_FLEX", "ZX", metacarpalLen, d.thumbWid[0], "CMC flex", { withGoniometer: true, showPlane: false }),
     opp: mkThumbDebug(cmcOppDebug, "TH_CMC_OPP", "YZ", metacarpalLen, d.thumbWid[0], "CMC opp", { withOppositionReference: true }),
     mcp: mkThumbDebug(tmcp, "TH_MCP", "XY", proximalLen, d.thumbWid[0], "MCP"),
     ip: mkThumbDebug(tipIp, "TH_IP", "XY", distalLen, d.thumbWid[1], "IP"),
@@ -329,6 +330,8 @@ export function buildHandRig(d) {
     highlight: { map: highlightMap, all: hlList },
   };
 }
+
+
 
 
 

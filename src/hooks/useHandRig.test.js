@@ -42,12 +42,38 @@ function createPkg() {
   };
 }
 
-function createMesh() {
+function createMesh(role = null) {
   return {
-    userData: { baseColor: { tag: "base" } },
+    userData: { baseColor: { tag: "base" }, ...(role ? { highlightRole: role } : {}) },
     material: {
       color: { copy: jest.fn(), set: jest.fn() },
       emissive: { set: jest.fn() },
+    },
+  };
+}
+
+function createRigWithTarget(debugKey, targets) {
+  return {
+    dbgMap: {
+      TH_CMC_FLEX: createPkg(),
+      TH_CMC_ABD: createPkg(),
+      TH_CMC_OPP: createPkg(),
+      TH_MCP: createPkg(),
+      D2_MCP: createPkg(),
+      D3_MCP: createPkg(),
+      D4_MCP: createPkg(),
+      D5_MCP: createPkg(),
+    },
+    highlight: {
+      all: Array.isArray(targets) ? targets : [targets],
+      map: {
+        TH_CMC_ABD: debugKey === "TH_CMC_ABD" ? targets : [],
+        TH_MCP: debugKey === "TH_MCP" ? targets : [],
+        D2_MCP: [],
+        D3_MCP: [],
+        D4_MCP: [],
+        D5_MCP: [],
+      },
     },
   };
 }
@@ -97,6 +123,49 @@ describe("useHandRig testables", () => {
     expect(pkgAbd.setGoniometer).toHaveBeenCalledWith(null);
     expect(pkgOpp.setOppositionReference).toHaveBeenCalledWith(null);
     expect(pkgOpp.setLabelPosition).toHaveBeenCalledWith(null);
+  });
+
+  test("applyDebugSelection colors CMC joint blue and metacarpal yellow", () => {
+    const jointMesh = createMesh("cmcJoint");
+    const segmentMesh = createMesh("cmcSegment");
+    const rig = createRigWithTarget("TH_CMC_ABD", [jointMesh, segmentMesh]);
+
+    __testables.applyDebugSelection(
+      rig,
+      "TH_CMC_ABD",
+      { palm: { LENGTH: 70, WIDTH: 55 } },
+      { opp: {} },
+      {},
+      { renderer: { domElement: { width: 1, height: 1 } } },
+    );
+
+    expect(jointMesh.material.color.set).toHaveBeenCalledWith(0x5ad7ff);
+    expect(jointMesh.material.emissive.set).toHaveBeenCalledWith(0x114455);
+    expect(segmentMesh.material.color.set).toHaveBeenCalledWith(0xffcc66);
+    expect(segmentMesh.material.emissive.set).toHaveBeenCalledWith(0x553300);
+  });
+
+  test("applyDebugSelection keeps default palette for non-CMC keys", () => {
+    const mesh = createMesh();
+    const rig = createRigWithTarget("TH_MCP", [mesh]);
+
+    __testables.applyDebugSelection(
+      rig,
+      "TH_MCP",
+      { palm: { LENGTH: 70, WIDTH: 55 } },
+      { opp: {} },
+      {},
+      { renderer: { domElement: { width: 1, height: 1 } } },
+    );
+
+    expect(mesh.material.color.set).toHaveBeenCalledWith(0xffcc66);
+    expect(mesh.material.emissive.set).toHaveBeenCalledWith(0x553300);
+  });
+  test("shouldUseInstantCmcAutoFrame is true only when entering CMC key", () => {
+    expect(__testables.shouldUseInstantCmcAutoFrame("off", "TH_CMC_ABD")).toBe(true);
+    expect(__testables.shouldUseInstantCmcAutoFrame("TH_CMC_ABD", "TH_CMC_ABD")).toBe(false);
+    expect(__testables.shouldUseInstantCmcAutoFrame("TH_CMC_ABD", "TH_CMC_FLEX")).toBe(true);
+    expect(__testables.shouldUseInstantCmcAutoFrame("TH_CMC_FLEX", "TH_MCP")).toBe(false);
   });
 });
 
