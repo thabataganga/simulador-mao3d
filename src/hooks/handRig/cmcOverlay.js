@@ -32,7 +32,7 @@ function computeCmcLabelPosition({
   if (lateral.lengthSq() < 1e-6) lateral = new Vector3(0, 1, 0);
   lateral.normalize();
 
-  const sideSign = key === "TH_CMC_FLEX" ? 1 : -1;
+  const sideSign = key === "TH_CMC_ABD_ADD" ? 1 : -1;
   const radialDistance = arcRadius + 13 + arcRadius * 0.45 + openness * 12;
   const lateralDistance = arcRadius * (1.05 + openness * 0.35);
   const normalLift = 2 + openness * 1.8;
@@ -77,13 +77,13 @@ function getPalmLongitudinalWorld(rig) {
 
 function computeCmcGoniometerVectors(rig) {
   const anchor = rig?.thumb?.mount;
-  const cmcAbdNode = rig?.thumb?.cmcAbd;
-  const cmcFlexNode = rig?.thumb?.cmcFlex;
-  if (!anchor || !cmcAbdNode || !cmcFlexNode) return null;
+  const cmcFlexExtNode = rig?.thumb?.cmcFlexExt;
+  const cmcAbdAddNode = rig?.thumb?.cmcAbdAdd;
+  if (!anchor || !cmcFlexExtNode || !cmcAbdAddNode) return null;
 
   const fixedWorld = getPalmLongitudinalWorld(rig);
-  const abdAngle = Number(cmcAbdNode.rotation?.z) || 0;
-  const flexAngle = Number(cmcFlexNode.rotation?.y) || 0;
+  const abdAngle = Number(cmcFlexExtNode.rotation?.z) || 0;
+  const flexAngle = Number(cmcAbdAddNode.rotation?.y) || 0;
 
   const abdNormalLocal = new Vector3(0, 0, 1);
   const flexNormalLocal = new Vector3(0, 1, 0);
@@ -96,12 +96,12 @@ function computeCmcGoniometerVectors(rig) {
   const movingFlexLocal = rotateAroundAxis(fixedFlexLocal, flexNormalLocal, flexAngle);
 
   return {
-    TH_CMC_FLEX: {
+    TH_CMC_ABD_ADD: {
       fixedLocal: fixedFlexLocal,
       movingLocal: movingFlexLocal,
       normalLocal: flexNormalLocal,
     },
-    TH_CMC_ABD: {
+    TH_CMC_FLEX_EXT: {
       fixedLocal: fixedAbdLocal,
       movingLocal: movingAbdLocal,
       normalLocal: abdNormalLocal,
@@ -112,18 +112,18 @@ function computeCmcGoniometerVectors(rig) {
 export function updateCmcGoniometerOverlay(rig, debugKey, dims, viewport) {
   if (!rig) return;
 
-  const cmcFlexPkg = rig.dbgMap?.TH_CMC_FLEX;
-  const cmcAbdPkg = rig.dbgMap?.TH_CMC_ABD;
-  if (!cmcFlexPkg && !cmcAbdPkg) return;
+  const cmcAbdAddPkg = rig.dbgMap?.TH_CMC_ABD_ADD;
+  const cmcFlexExtPkg = rig.dbgMap?.TH_CMC_FLEX_EXT;
+  if (!cmcAbdAddPkg && !cmcFlexExtPkg) return;
 
   const vectors = computeCmcGoniometerVectors(rig);
   if (!vectors) {
-    cmcFlexPkg?.setGoniometer(null);
-    cmcAbdPkg?.setGoniometer(null);
+    cmcAbdAddPkg?.setGoniometer(null);
+    cmcFlexExtPkg?.setGoniometer(null);
     return;
   }
 
-  ["TH_CMC_FLEX", "TH_CMC_ABD"].forEach(key => {
+  ["TH_CMC_ABD_ADD", "TH_CMC_FLEX_EXT"].forEach(key => {
     const pkg = rig.dbgMap?.[key];
     if (!pkg?.setGoniometer) return;
 

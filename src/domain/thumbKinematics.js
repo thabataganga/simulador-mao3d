@@ -5,8 +5,8 @@ import { clampClinicalCmc, mapClinicalCmcToRigAngles } from "./thumbCmcMapping";
 function clampClinicalThumb(thumb) {
   const cmc = clampClinicalCmc(thumb);
   return {
-    CMC_abd: cmc.CMC_abd,
-    CMC_flex: cmc.CMC_flex,
+    CMC_flexExt: cmc.CMC_flexExt,
+    CMC_abdAdd: cmc.CMC_abdAdd,
     CMC_opp: cmc.CMC_opp,
     MCP_flex: clamp(thumb.MCP_flex, RANGES.THUMB_MCP_FLEX),
     IP: clamp(thumb.IP, RANGES.THUMB_IP),
@@ -20,8 +20,8 @@ export function mapClinicalThumbToRigAngles(thumb) {
 
   return {
     clinical: t,
-    cmcAbd: cmc.cmcAbd,
-    cmcFlex: cmc.cmcFlex,
+    cmcFlexExt: cmc.cmcFlexExt,
+    cmcAbdAdd: cmc.cmcAbdAdd,
     cmcPronation: cmc.cmcPronation,
     mcpFlex: t.MCP_flex,
     mcpAccessory,
@@ -34,8 +34,8 @@ export function mapClinicalThumbToRigRadians(thumb) {
   return {
     ...a,
     radians: {
-      cmcAbd: deg2rad(a.cmcAbd),
-      cmcFlex: deg2rad(a.cmcFlex),
+      cmcFlexExt: deg2rad(a.cmcFlexExt),
+      cmcAbdAdd: deg2rad(a.cmcAbdAdd),
       cmcPronation: deg2rad(a.cmcPronation),
       mcpFlex: deg2rad(a.mcpFlex),
       mcpAccessory: deg2rad(a.mcpAccessory),

@@ -17,7 +17,7 @@ function basePose(overrides = {}) {
       { MCP: 0, PIP: 0, DIP: 0 },
       { MCP: 0, PIP: 0, DIP: 0 },
     ],
-    thumb: { CMC_abd: 0, CMC_opp: 0, CMC_flex: 0, MCP_flex: 0, IP: 0 },
+    thumb: { CMC_flexExt: 0, CMC_opp: 0, CMC_abdAdd: 0, MCP_flex: 0, IP: 0 },
     wrist: { flex: 0, dev: 0 },
     grip: 0,
     globalMode: "functional",
@@ -64,14 +64,14 @@ describe("pose domain", () => {
 
   test("applyGlobalGripToPose functional mid keeps CMC flex/ext in extensao", () => {
     const next = applyGlobalGripToPose(basePose(), 50, "functional");
-    expect(next.thumb.CMC_flex).toBe(-12);
-    expect(next.thumb.CMC_abd).toBe(45);
+    expect(next.thumb.CMC_abdAdd).toBe(-12);
+    expect(next.thumb.CMC_flexExt).toBe(45);
   });
 
   test("applyGlobalGripToPose functional closed keeps requested thumb target", () => {
     const next = applyGlobalGripToPose(basePose(), 100, "functional");
-    expect(next.thumb.CMC_flex).toBe(-20);
-    expect(next.thumb.CMC_abd).toBe(35);
+    expect(next.thumb.CMC_abdAdd).toBe(-20);
+    expect(next.thumb.CMC_flexExt).toBe(35);
     expect(next.thumb.CMC_opp).toBe(70);
     expect(next.thumb.MCP_flex).toBe(0);
     expect(next.thumb.IP).toBe(40);
@@ -86,9 +86,9 @@ describe("pose domain", () => {
     expect(next.fingers[1]).toEqual({ MCP: 90, PIP: 65, DIP: 48 });
     expect(next.fingers[2]).toEqual({ MCP: 90, PIP: 65, DIP: 48 });
     expect(next.fingers[3]).toEqual({ MCP: 90, PIP: 65, DIP: 48 });
-    expect(next.thumb.CMC_abd).toBe(60);
+    expect(next.thumb.CMC_flexExt).toBe(60);
     expect(next.thumb.CMC_opp).toBe(40);
-    expect(next.thumb.CMC_flex).toBe(0);
+    expect(next.thumb.CMC_abdAdd).toBe(0);
     expect(next.wrist).toEqual({ flex: 0, dev: 0 });
   });
 
@@ -100,8 +100,8 @@ describe("pose domain", () => {
     expect(next.fingers[2]).toEqual({ MCP: 90, PIP: 65, DIP: 48 });
     expect(next.fingers[3]).toEqual({ MCP: 90, PIP: 65, DIP: 48 });
 
-    expect(next.thumb.CMC_flex).toBe(0);
-    expect(next.thumb.CMC_abd).toBe(65);
+    expect(next.thumb.CMC_abdAdd).toBe(0);
+    expect(next.thumb.CMC_flexExt).toBe(65);
     expect(next.thumb.CMC_opp).toBe(70);
     expect(next.thumb.MCP_flex).toBe(0);
     expect(next.thumb.IP).toBe(40);
@@ -125,7 +125,7 @@ describe("pose domain", () => {
       { MCP: 0, PIP: 0, DIP: 0 },
       { MCP: 0, PIP: 0, DIP: 0 },
     ]);
-    expect(zero.thumb).toEqual({ CMC_abd: 0, CMC_opp: 0, CMC_flex: 0, MCP_flex: 0, IP: 0 });
+    expect(zero.thumb).toEqual({ CMC_flexExt: 0, CMC_opp: 0, CMC_abdAdd: 0, MCP_flex: 0, IP: 0 });
     expect(zero.wrist).toEqual({ flex: 0, dev: 0 });
     expect(zero.activePreset).toBe("zero");
   });
@@ -134,7 +134,7 @@ describe("pose domain", () => {
     const state = basePose({
       dims: { palm: { LENGTH: 70 } },
       fingers: [{ MCP: 1, PIP: 2, DIP: 3 }, { MCP: 4, PIP: 5, DIP: 6 }, { MCP: 7, PIP: 8, DIP: 9 }, { MCP: 10, PIP: 11, DIP: 12 }],
-      thumb: { CMC_abd: 1, CMC_opp: 2, CMC_flex: 3, MCP_flex: 4, IP: 5 },
+      thumb: { CMC_flexExt: 1, CMC_opp: 2, CMC_abdAdd: 3, MCP_flex: 4, IP: 5 },
       wrist: { flex: -10, dev: 5 },
     });
 

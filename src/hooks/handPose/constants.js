@@ -5,13 +5,13 @@ export const INITIAL_ANTHROPOMETRY = {
 };
 
 export const CMC_AXIS_DIRECTIONS = {
-  CMC_abd: { positive: "abducao", negative: "aducao" },
-  CMC_flex: { positive: "flexao", negative: "extensao" },
+  CMC_flexExt: { positive: "flexao", negative: "extensao" },
+  CMC_abdAdd: { positive: "abducao", negative: "aducao" },
 };
 
 export const ZERO_OVERLAY = {
-  CMC_abd: 0,
-  CMC_flex: 0,
+  CMC_flexExt: 0,
+  CMC_abdAdd: 0,
   CMC_opp: 0,
   MCP_flex: 0,
   IP: 0,

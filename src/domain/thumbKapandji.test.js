@@ -24,8 +24,8 @@ describe("thumb Kapandji clinical model", () => {
   });
 
   test("clinical opposition estimate reacts to flex/ext and abd/add", () => {
-    const neutral = buildClinicalOppositionEstimate({ CMC_opp: 16, CMC_flex: 0, CMC_abd: 0 });
-    const coupled = buildClinicalOppositionEstimate({ CMC_opp: 16, CMC_flex: 20, CMC_abd: 40 });
+    const neutral = buildClinicalOppositionEstimate({ CMC_opp: 16, CMC_abdAdd: 0, CMC_flexExt: 0 });
+    const coupled = buildClinicalOppositionEstimate({ CMC_opp: 16, CMC_abdAdd: 20, CMC_flexExt: 40 });
 
     expect(coupled.clinicalOppositionDeg).not.toBe(neutral.clinicalOppositionDeg);
     expect(coupled.clinicalMagnitude).toBeGreaterThan(neutral.clinicalMagnitude);
@@ -33,7 +33,7 @@ describe("thumb Kapandji clinical model", () => {
 
   test("builds clinical opposition model with separate clinical and rig blocks", () => {
     const model = buildThumbOppositionClinicalModel({
-      thumb: { CMC_opp: 45, CMC_flex: 10, CMC_abd: 20 },
+      thumb: { CMC_opp: 45, CMC_abdAdd: 10, CMC_flexExt: 20 },
       kapandjiLevel: 7,
       context: {
         rigMeasurement: {
@@ -55,7 +55,7 @@ describe("thumb Kapandji clinical model", () => {
 
   test("includes exploration measurement when provided", () => {
     const model = buildThumbOppositionClinicalModel({
-      thumb: { CMC_opp: 12, CMC_flex: -12, CMC_abd: 45 },
+      thumb: { CMC_opp: 12, CMC_abdAdd: -12, CMC_flexExt: 45 },
       kapandjiLevel: 4,
       context: {
         rigMeasurement: {

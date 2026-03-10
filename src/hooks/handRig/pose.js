@@ -27,13 +27,13 @@ export function applyMainLabels(rig, fingers, thumb, thumbClinical, thumbGoniome
   const thumbLabels = rig.thumbLabels;
   if (!thumbLabels) return;
 
-  const clinicalAbd = Number(thumbGoniometry?.abd?.clinicalTargetDeg ?? thumb.CMC_abd) || 0;
-  const clinicalFlex = Number(thumbGoniometry?.flex?.clinicalTargetDeg ?? thumb.CMC_flex) || 0;
+  const clinicalFlexExt = Number(thumbGoniometry?.flexExt?.clinicalTargetDeg ?? thumb.CMC_flexExt) || 0;
+  const clinicalAbdAdd = Number(thumbGoniometry?.abdAdd?.clinicalTargetDeg ?? thumb.CMC_abdAdd) || 0;
   const clinicalOpp = Number(thumbClinical?.opp?.clinicalTargetDeg ?? thumb.CMC_opp) || 0;
   const kapandjiScale = thumbClinical?.opp?.clinicalEstimate?.scaleLabel || thumbClinical?.opp?.scaleLabel || null;
 
-  setLabelText(thumbLabels.abd, `CMC: ${formatDirectional("abducao", "aducao", clinicalAbd)}`);
-  setLabelText(thumbLabels.flex, `CMC: ${formatDirectional("flexao", "extensao", clinicalFlex)}`);
+  setLabelText(thumbLabels.flexExt, `CMC: ${formatDirectional("flexao", "extensao", clinicalFlexExt)}`);
+  setLabelText(thumbLabels.abdAdd, `CMC: ${formatDirectional("abducao", "aducao", clinicalAbdAdd)}`);
   setLabelText(
     thumbLabels.opp,
     kapandjiScale ? `CMC: ${kapandjiScale}` : `CMC: ${formatDirectional("oposicao", "retroposicao", clinicalOpp)}`,
@@ -46,12 +46,12 @@ export function didGoniometryChange(previous, next, epsilon = GONIOMETRY_EMIT_EP
   if (!next) return false;
   if (!previous) return true;
 
-  const prevAbd = Number(previous.CMC_abd) || 0;
-  const prevFlex = Number(previous.CMC_flex) || 0;
-  const nextAbd = Number(next.CMC_abd) || 0;
-  const nextFlex = Number(next.CMC_flex) || 0;
+  const prevFlexExt = Number(previous.CMC_flexExt) || 0;
+  const prevAbdAdd = Number(previous.CMC_abdAdd) || 0;
+  const nextFlexExt = Number(next.CMC_flexExt) || 0;
+  const nextAbdAdd = Number(next.CMC_abdAdd) || 0;
 
-  return Math.abs(nextAbd - prevAbd) > epsilon || Math.abs(nextFlex - prevFlex) > epsilon;
+  return Math.abs(nextFlexExt - prevFlexExt) > epsilon || Math.abs(nextAbdAdd - prevAbdAdd) > epsilon;
 }
 
 export function applyPoseToRig(rig, fingers, thumb, thumbClinical, thumbGoniometry, wrist, debugKey, dims, viewport, cmcBaseline) {
@@ -70,8 +70,8 @@ export function applyPoseToRig(rig, fingers, thumb, thumbClinical, thumbGoniomet
   const thumbRig = rig.thumb;
   const thumbMapped = mapClinicalThumbToRigRadians(thumb);
 
-  thumbRig.cmcAbd.rotation.z = thumbMapped.radians.cmcAbd;
-  thumbRig.cmcFlex.rotation.y = thumbMapped.radians.cmcFlex;
+  thumbRig.cmcFlexExt.rotation.z = thumbMapped.radians.cmcFlexExt;
+  thumbRig.cmcAbdAdd.rotation.y = thumbMapped.radians.cmcAbdAdd;
   thumbRig.cmcPronation.rotation.x = thumbMapped.radians.cmcPronation;
   thumbRig.mcp.rotation.z = -thumbMapped.radians.mcpFlex;
   thumbRig.mcpAccessory.rotation.x = thumbMapped.radians.mcpAccessory;
@@ -79,7 +79,7 @@ export function applyPoseToRig(rig, fingers, thumb, thumbClinical, thumbGoniomet
 
   rig.root.updateMatrixWorld(true);
   const cmcMeasured = measureThumbCmcGoniometryFromRig(rig, { thumb, baseline: cmcBaseline });
-  const safeCmcMeasured = cmcMeasured || { CMC_abd: 0, CMC_flex: 0 };
+  const safeCmcMeasured = cmcMeasured || { CMC_flexExt: 0, CMC_abdAdd: 0 };
   const kapandjiEstimatedLevel = updateThumbOppositionOverlay(rig, debugKey, dims, thumbClinical, viewport, thumb);
   const oppositionOperational = resolveKapandjiOperationalPose(kapandjiEstimatedLevel);
   const oppositionSignedDeg = Number(oppositionOperational.commandDeg) || 0;
@@ -96,4 +96,3 @@ export function applyPoseToRig(rig, fingers, thumb, thumbClinical, thumbGoniomet
     oppositionMetric,
   };
 }
-

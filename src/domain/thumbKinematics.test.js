@@ -17,12 +17,12 @@ function makeCmcModel() {
   thumbMount.rotation.x = THUMB_CMC_NEUTRAL.cmcNeutralMountDeg.x * DEG;
   thumbBase.add(thumbMount);
 
-  const cmcAbd = new THREE.Group();
-  thumbMount.add(cmcAbd);
-  const cmcFlex = new THREE.Group();
-  cmcAbd.add(cmcFlex);
+  const cmcFlexExt = new THREE.Group();
+  thumbMount.add(cmcFlexExt);
+  const cmcAbdAdd = new THREE.Group();
+  cmcFlexExt.add(cmcAbdAdd);
   const cmcPronation = new THREE.Group();
-  cmcFlex.add(cmcPronation);
+  cmcAbdAdd.add(cmcPronation);
 
   const metacarpalLen = 20;
   const proximalLen = 16;
@@ -40,20 +40,20 @@ function makeCmcModel() {
   tip.position.x = distalLen;
   ip.add(tip);
 
-  return { palm, joints: { cmcAbd, cmcFlex, cmcPronation }, tip };
+  return { palm, joints: { cmcFlexExt, cmcAbdAdd, cmcPronation }, tip };
 }
 
 function poseCmc(clinical) {
   const model = makeCmcModel();
-  const mapped = mapClinicalCmcToRigRadians({ CMC_abd: 0, CMC_flex: 0, CMC_opp: 0, ...clinical });
+  const mapped = mapClinicalCmcToRigRadians({ CMC_flexExt: 0, CMC_abdAdd: 0, CMC_opp: 0, ...clinical });
 
-  model.joints.cmcAbd.rotation.z = mapped.radians.cmcAbd;
-  model.joints.cmcFlex.rotation.y = mapped.radians.cmcFlex;
+  model.joints.cmcFlexExt.rotation.z = mapped.radians.cmcFlexExt;
+  model.joints.cmcAbdAdd.rotation.y = mapped.radians.cmcAbdAdd;
   model.joints.cmcPronation.rotation.x = mapped.radians.cmcPronation;
 
   model.palm.updateMatrixWorld(true);
   const tipW = model.tip.getWorldPosition(new THREE.Vector3());
-  const baseW = model.joints.cmcAbd.getWorldPosition(new THREE.Vector3());
+  const baseW = model.joints.cmcFlexExt.getWorldPosition(new THREE.Vector3());
 
   return {
     mapped,
@@ -68,42 +68,42 @@ describe("CMC-first mapping", () => {
     expect(THUMB_CMC_NEUTRAL.cmcNeutralBaseOffset).toEqual({ dx: 0, dy: 0, dz: 0 });
   });
 
-  test("keeps direct clinical CMC_abd sign while CMC_opp is zero", () => {
-    const add = mapClinicalCmcToRigAngles({ CMC_abd: -10, CMC_flex: 0, CMC_opp: 0 });
-    const abd = mapClinicalCmcToRigAngles({ CMC_abd: 60, CMC_flex: 0, CMC_opp: 0 });
+  test("keeps direct clinical CMC_flexExt sign while CMC_opp is zero", () => {
+    const add = mapClinicalCmcToRigAngles({ CMC_flexExt: -10, CMC_abdAdd: 0, CMC_opp: 0 });
+    const abd = mapClinicalCmcToRigAngles({ CMC_flexExt: 60, CMC_abdAdd: 0, CMC_opp: 0 });
 
-    expect(add.cmcAbd).toBe(-10);
-    expect(abd.cmcAbd).toBe(60);
+    expect(add.cmcFlexExt).toBe(-10);
+    expect(abd.cmcFlexExt).toBe(60);
   });
 
   test("all zeros produce a non-max-open state", () => {
-    const zero = poseCmc({ CMC_abd: 0, CMC_flex: 0, CMC_opp: 0 });
-    const abdMax = poseCmc({ CMC_abd: 60, CMC_flex: 0, CMC_opp: 0 });
+    const zero = poseCmc({ CMC_flexExt: 0, CMC_abdAdd: 0, CMC_opp: 0 });
+    const abdMax = poseCmc({ CMC_flexExt: 60, CMC_abdAdd: 0, CMC_opp: 0 });
     expect(zero.tipPalm.y).toBeLessThan(abdMax.tipPalm.y);
   });
 
   test("CMC abd/add visible direction: + opens, - closes", () => {
-    const add = poseCmc({ CMC_abd: -10 });
-    const abd = poseCmc({ CMC_abd: 60 });
+    const add = poseCmc({ CMC_flexExt: -10 });
+    const abd = poseCmc({ CMC_flexExt: 60 });
     expect(abd.tipPalm.y).toBeGreaterThan(add.tipPalm.y);
   });
 
   test("CMC flex/ext around neutral changes across-palm direction", () => {
-    const ext = poseCmc({ CMC_flex: -20 });
-    const flex = poseCmc({ CMC_flex: 30 });
+    const ext = poseCmc({ CMC_abdAdd: -20 });
+    const flex = poseCmc({ CMC_abdAdd: 30 });
     expect(flex.tipPalm.z).toBeLessThan(ext.tipPalm.z);
   });
 
   test("CMC opposition remains composite (not pure axial)", () => {
-    const retro = mapClinicalCmcToRigAngles({ CMC_abd: 0, CMC_flex: 0, CMC_opp: -40 });
-    const opp = mapClinicalCmcToRigAngles({ CMC_abd: 0, CMC_flex: 0, CMC_opp: 70 });
+    const retro = mapClinicalCmcToRigAngles({ CMC_flexExt: 0, CMC_abdAdd: 0, CMC_opp: -40 });
+    const opp = mapClinicalCmcToRigAngles({ CMC_flexExt: 0, CMC_abdAdd: 0, CMC_opp: 70 });
 
-    expect(Math.abs(retro.cmcAbd)).toBeGreaterThan(0);
-    expect(Math.abs(retro.cmcFlex)).toBeGreaterThan(0);
+    expect(Math.abs(retro.cmcFlexExt)).toBeGreaterThan(0);
+    expect(Math.abs(retro.cmcAbdAdd)).toBeGreaterThan(0);
     expect(Math.abs(retro.cmcPronation)).toBeLessThan(40);
 
-    expect(Math.abs(opp.cmcAbd)).toBeGreaterThan(0);
-    expect(Math.abs(opp.cmcFlex)).toBeGreaterThan(0);
+    expect(Math.abs(opp.cmcFlexExt)).toBeGreaterThan(0);
+    expect(Math.abs(opp.cmcAbdAdd)).toBeGreaterThan(0);
     expect(Math.abs(opp.cmcPronation)).toBeLessThan(70);
   });
 });

@@ -2,8 +2,8 @@ import { selectThumbClinical } from "./selectors";
 
 describe("handPose selectors opposition clinical estimate", () => {
   test("recomputes clinical opposition when flex/abd change with fixed CMC_opp", () => {
-    const baseThumb = { CMC_opp: 16, CMC_flex: 0, CMC_abd: 0, MCP_flex: 0, IP: 0 };
-    const variedThumb = { ...baseThumb, CMC_flex: 20, CMC_abd: 30 };
+    const baseThumb = { CMC_opp: 16, CMC_abdAdd: 0, CMC_flexExt: 0, MCP_flex: 0, IP: 0 };
+    const variedThumb = { ...baseThumb, CMC_abdAdd: 20, CMC_flexExt: 30 };
 
     const baseClinical = selectThumbClinical(baseThumb, 4, {
       level: 4,
@@ -24,7 +24,7 @@ describe("handPose selectors opposition clinical estimate", () => {
   });
 
   test("keeps rig real frozen and computes simulated measurement in exploration", () => {
-    const thumb = { CMC_opp: 12, CMC_flex: -12, CMC_abd: 45, MCP_flex: 0, IP: 0 };
+    const thumb = { CMC_opp: 12, CMC_abdAdd: -12, CMC_flexExt: 45, MCP_flex: 0, IP: 0 };
 
     const clinical = selectThumbClinical(
       thumb,

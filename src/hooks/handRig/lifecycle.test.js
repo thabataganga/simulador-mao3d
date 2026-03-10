@@ -3,18 +3,18 @@ import { autoFrameCmcMeasurementView } from "./lifecycle";
 
 function makeCmcRig() {
   const root = new Group();
-  const cmcAbd = new Group();
-  root.add(cmcAbd);
+  const cmcFlexExt = new Group();
+  root.add(cmcFlexExt);
 
   const plane = new Mesh(new PlaneGeometry(10, 8));
-  cmcAbd.add(plane);
+  cmcFlexExt.add(plane);
 
   return {
     root,
-    thumb: { cmcAbd },
+    thumb: { cmcFlexExt },
     dbgMap: {
-      TH_CMC_ABD: { plane },
-      TH_CMC_FLEX: { plane },
+      TH_CMC_FLEX_EXT: { plane },
+      TH_CMC_ABD_ADD: { plane },
     },
   };
 }
@@ -40,7 +40,7 @@ describe("autoFrameCmcMeasurementView", () => {
   test("supports instant mode by copying target and position without interpolation", () => {
     const rig = makeCmcRig();
     rig.root.updateMatrixWorld(true);
-    const cmcTarget = rig.thumb.cmcAbd.getWorldPosition(new Vector3());
+    const cmcTarget = rig.thumb.cmcFlexExt.getWorldPosition(new Vector3());
 
     const controls = { target: new Vector3(8, 5, -8), update: jest.fn() };
     const camera = new PerspectiveCamera(45, 1, 0.1, 1000);
@@ -48,7 +48,7 @@ describe("autoFrameCmcMeasurementView", () => {
 
     const moved = autoFrameCmcMeasurementView({
       rig,
-      debugKey: "TH_CMC_ABD",
+      debugKey: "TH_CMC_FLEX_EXT",
       dims: { palm: { LENGTH: 70, WIDTH: 55 } },
       controls,
       camera,
@@ -69,7 +69,7 @@ describe("autoFrameCmcMeasurementView", () => {
 
     autoFrameCmcMeasurementView({
       rig,
-      debugKey: "TH_CMC_ABD",
+      debugKey: "TH_CMC_FLEX_EXT",
       dims: { palm: { LENGTH: 70, WIDTH: 55 } },
       controls: controlsAbd,
       camera: cameraAbd,
@@ -82,7 +82,7 @@ describe("autoFrameCmcMeasurementView", () => {
 
     autoFrameCmcMeasurementView({
       rig,
-      debugKey: "TH_CMC_FLEX",
+      debugKey: "TH_CMC_ABD_ADD",
       dims: { palm: { LENGTH: 70, WIDTH: 55 } },
       controls: controlsFlex,
       camera: cameraFlex,
@@ -100,7 +100,7 @@ describe("autoFrameCmcMeasurementView", () => {
   test("skips micro-updates when already aligned within epsilon", () => {
     const rig = makeCmcRig();
     rig.root.updateMatrixWorld(true);
-    const target = rig.thumb.cmcAbd.getWorldPosition(new Vector3());
+    const target = rig.thumb.cmcFlexExt.getWorldPosition(new Vector3());
 
     const controls = { target: target.clone(), update: jest.fn() };
     const camera = new PerspectiveCamera(45, 1, 0.1, 1000);
@@ -108,7 +108,7 @@ describe("autoFrameCmcMeasurementView", () => {
 
     const moved = autoFrameCmcMeasurementView({
       rig,
-      debugKey: "TH_CMC_ABD",
+      debugKey: "TH_CMC_FLEX_EXT",
       dims: { palm: { LENGTH: 70, WIDTH: 55 } },
       controls,
       camera,

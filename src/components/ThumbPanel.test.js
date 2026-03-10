@@ -2,10 +2,10 @@ import { ThumbPanel } from "./ThumbPanel";
 
 function baseProps(overrides = {}) {
   return {
-    thumb: { CMC_abd: 0, CMC_opp: 10, CMC_flex: 0, MCP_flex: 5, IP: 2 },
+    thumb: { CMC_flexExt: 0, CMC_opp: 10, CMC_abdAdd: 0, MCP_flex: 5, IP: 2 },
     thumbGoniometry: {
-      abd: { inputDirection: "abducao", inputMagnitudeDeg: 0, direction: "abducao", magnitudeDeg: 0 },
-      flex: { inputDirection: "extensao", inputMagnitudeDeg: 0, direction: "extensao", magnitudeDeg: 0 },
+      flexExt: { inputDirection: "extensao", inputMagnitudeDeg: 0, direction: "extensao", magnitudeDeg: 0 },
+      abdAdd: { inputDirection: "abducao", inputMagnitudeDeg: 0, direction: "abducao", magnitudeDeg: 0 },
     },
     thumbClinical: {
       opp: {
@@ -38,8 +38,8 @@ describe("ThumbPanel structure and callbacks", () => {
     const elements = ThumbPanel(baseProps());
     expect(elements).toHaveLength(5);
 
-    expect(elements[0].props.axis).toBe("CMC_flex");
-    expect(elements[1].props.axis).toBe("CMC_abd");
+    expect(elements[0].props.axis).toBe("CMC_abdAdd");
+    expect(elements[1].props.axis).toBe("CMC_flexExt");
     expect(elements[3].props.label).toContain("MCP");
     expect(elements[4].props.label).toContain("IP");
   });

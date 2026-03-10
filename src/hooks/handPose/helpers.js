@@ -51,8 +51,8 @@ export function composeThumbWithOverlay(clinicalThumb, overlayState, enabled) {
 
   return {
     ...clinicalThumb,
-    CMC_abd: clampThumbAxis("CMC_abd", (Number(clinicalThumb.CMC_abd) || 0) + (Number(overlayState?.CMC_abd) || 0)),
-    CMC_flex: clampThumbAxis("CMC_flex", (Number(clinicalThumb.CMC_flex) || 0) + (Number(overlayState?.CMC_flex) || 0)),
+    CMC_flexExt: clampThumbAxis("CMC_flexExt", (Number(clinicalThumb.CMC_flexExt) || 0) + (Number(overlayState?.CMC_flexExt) || 0)),
+    CMC_abdAdd: clampThumbAxis("CMC_abdAdd", (Number(clinicalThumb.CMC_abdAdd) || 0) + (Number(overlayState?.CMC_abdAdd) || 0)),
     CMC_opp: clampThumbAxis("CMC_opp", (Number(clinicalThumb.CMC_opp) || 0) + (Number(overlayState?.CMC_opp) || 0)),
     MCP_flex: clampThumbAxis("MCP_flex", (Number(clinicalThumb.MCP_flex) || 0) + (Number(overlayState?.MCP_flex) || 0)),
     IP: clampThumbAxis("IP", (Number(clinicalThumb.IP) || 0) + (Number(overlayState?.IP) || 0)),
@@ -63,7 +63,7 @@ export function applyCmcClinicalTargets(thumb, prevInput) {
   let nextThumb = { ...thumb };
   const nextInput = { ...prevInput };
 
-  ["CMC_flex", "CMC_abd"].forEach(axis => {
+  ["CMC_abdAdd", "CMC_flexExt"].forEach(axis => {
     const target = Number(thumb?.[axis]) || 0;
     const prevAxis = prevInput?.[axis];
     const direction = getDirectionForTarget(axis, target, prevAxis?.direction);

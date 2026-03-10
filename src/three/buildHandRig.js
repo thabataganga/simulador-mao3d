@@ -182,12 +182,12 @@ function buildThumbSubsystem(f, palm, dbgMap, highlightMap, allMovers) {
   thumbMount.rotation.x = deg2rad(THUMB_CMC_NEUTRAL.cmcNeutralMountDeg.x);
   thumbBase.add(thumbMount);
 
-  const cmcAbd = new Group();
-  thumbMount.add(cmcAbd);
-  const cmcFlex = new Group();
-  cmcAbd.add(cmcFlex);
+  const cmcFlexExt = new Group();
+  thumbMount.add(cmcFlexExt);
+  const cmcAbdAdd = new Group();
+  cmcFlexExt.add(cmcAbdAdd);
   const cmcPronation = new Group();
-  cmcFlex.add(cmcPronation);
+  cmcAbdAdd.add(cmcPronation);
 
   const metacarpalLen = d.thumbLen[0] * 0.55;
   const proximalLen = d.thumbLen[0] * 0.45;
@@ -235,8 +235,8 @@ function buildThumbSubsystem(f, palm, dbgMap, highlightMap, allMovers) {
   highlightMap.TH_MCP = [tProx.mesh];
   highlightMap.TH_IP = [tDist.mesh];
   // CMC highlight should focus on the CMC complex only: joint + metacarpal.
-  highlightMap.TH_CMC_ABD = [cmcJointSphere, tMeta.mesh];
-  highlightMap.TH_CMC_FLEX = [cmcJointSphere, tMeta.mesh];
+  highlightMap.TH_CMC_FLEX_EXT = [cmcJointSphere, tMeta.mesh];
+  highlightMap.TH_CMC_ABD_ADD = [cmcJointSphere, tMeta.mesh];
   highlightMap.TH_CMC_OPP = [cmcJointSphere, tMeta.mesh];
 
   const mkThumbDebug = (node, key, axis, L, W, name, opts) => {
@@ -245,16 +245,16 @@ function buildThumbSubsystem(f, palm, dbgMap, highlightMap, allMovers) {
     return pkg.label;
   };
 
-  const cmcAbdDebug = new Group();
-  thumbMount.add(cmcAbdDebug);
-  const cmcFlexDebug = new Group();
-  thumbMount.add(cmcFlexDebug);
+  const cmcFlexExtDebug = new Group();
+  thumbMount.add(cmcFlexExtDebug);
+  const cmcAbdAddDebug = new Group();
+  thumbMount.add(cmcAbdAddDebug);
   const cmcOppDebug = new Group();
   thumbMount.add(cmcOppDebug);
 
   const thumbLabels = {
-    abd: mkThumbDebug(cmcAbdDebug, "TH_CMC_ABD", "XY", metacarpalLen, d.thumbWid[0], "CMC abd", { withGoniometer: true, showPlane: false }),
-    flex: mkThumbDebug(cmcFlexDebug, "TH_CMC_FLEX", "ZX", metacarpalLen, d.thumbWid[0], "CMC flex", { withGoniometer: true, showPlane: false }),
+    flexExt: mkThumbDebug(cmcFlexExtDebug, "TH_CMC_FLEX_EXT", "XY", metacarpalLen, d.thumbWid[0], "CMC flex/ext", { withGoniometer: true, showPlane: false }),
+    abdAdd: mkThumbDebug(cmcAbdAddDebug, "TH_CMC_ABD_ADD", "ZX", metacarpalLen, d.thumbWid[0], "CMC abd/add", { withGoniometer: true, showPlane: false }),
     opp: mkThumbDebug(cmcOppDebug, "TH_CMC_OPP", "YZ", metacarpalLen, d.thumbWid[0], "CMC opp", { withOppositionReference: true }),
     mcp: mkThumbDebug(tmcp, "TH_MCP", "XY", proximalLen, d.thumbWid[0], "MCP"),
     ip: mkThumbDebug(tipIp, "TH_IP", "XY", distalLen, d.thumbWid[1], "IP"),
@@ -264,10 +264,10 @@ function buildThumbSubsystem(f, palm, dbgMap, highlightMap, allMovers) {
     thumb: {
       base: thumbBase,
       mount: thumbMount,
-      cmcAbd,
-      cmcFlex,
+      cmcFlexExt,
+      cmcAbdAdd,
       cmcPronation,
-      debug: { cmcAbd: cmcAbdDebug, cmcFlex: cmcFlexDebug, cmcOpp: cmcOppDebug },
+      debug: { cmcFlexExt: cmcFlexExtDebug, cmcAbdAdd: cmcAbdAddDebug, cmcOpp: cmcOppDebug },
       mcp: tmcp,
       mcpAccessory: tmcpAccessory,
       ip: tipIp,

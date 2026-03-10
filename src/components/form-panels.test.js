@@ -85,10 +85,10 @@ describe("ThumbPanel", () => {
     const onHighlight = jest.fn();
 
     const elements = ThumbPanel({
-      thumb: { CMC_abd: 0, CMC_opp: 34, CMC_flex: 0, MCP_flex: 0, IP: 0 },
+      thumb: { CMC_flexExt: 0, CMC_opp: 34, CMC_abdAdd: 0, MCP_flex: 0, IP: 0 },
       thumbGoniometry: {
-        abd: { inputDirection: "abducao", inputMagnitudeDeg: 0, direction: "abducao", magnitudeDeg: 0, saturated: false },
-        flex: { inputDirection: "extensao", inputMagnitudeDeg: 0, direction: "extensao", magnitudeDeg: 0, saturated: false },
+        flexExt: { inputDirection: "extensao", inputMagnitudeDeg: 0, direction: "extensao", magnitudeDeg: 0, saturated: false },
+        abdAdd: { inputDirection: "abducao", inputMagnitudeDeg: 0, direction: "abducao", magnitudeDeg: 0, saturated: false },
       },
       thumbClinical: {
         opp: {
@@ -130,10 +130,10 @@ describe("ThumbPanel", () => {
     const onClearPreset = jest.fn();
 
     const elements = ThumbPanel({
-      thumb: { CMC_abd: 0, CMC_opp: 34, CMC_flex: 0, MCP_flex: 0, IP: 0 },
+      thumb: { CMC_flexExt: 0, CMC_opp: 34, CMC_abdAdd: 0, MCP_flex: 0, IP: 0 },
       thumbGoniometry: {
-        abd: { inputDirection: "abducao", inputMagnitudeDeg: 0 },
-        flex: { inputDirection: "extensao", inputMagnitudeDeg: 0 },
+        flexExt: { inputDirection: "extensao", inputMagnitudeDeg: 0 },
+        abdAdd: { inputDirection: "abducao", inputMagnitudeDeg: 0 },
       },
       thumbClinical: {
         opp: {

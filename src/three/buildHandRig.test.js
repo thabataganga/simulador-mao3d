@@ -73,12 +73,12 @@ describe("buildHandRig debug anchors", () => {
     const dims = makeDims(buildProfile("masculino", 50, 25));
     const rig = buildHandRig(dims);
 
-    rig.dbgMap.TH_CMC_ABD.setVisible(true);
-    rig.dbgMap.TH_CMC_FLEX.setVisible(true);
+    rig.dbgMap.TH_CMC_FLEX_EXT.setVisible(true);
+    rig.dbgMap.TH_CMC_ABD_ADD.setVisible(true);
     rig.dbgMap.TH_MCP.setVisible(true);
 
-    expect(rig.dbgMap.TH_CMC_ABD.plane.visible).toBe(false);
-    expect(rig.dbgMap.TH_CMC_FLEX.plane.visible).toBe(false);
+    expect(rig.dbgMap.TH_CMC_FLEX_EXT.plane.visible).toBe(false);
+    expect(rig.dbgMap.TH_CMC_ABD_ADD.plane.visible).toBe(false);
     expect(rig.dbgMap.TH_MCP.plane.visible).toBe(true);
   });
 
@@ -87,7 +87,7 @@ describe("buildHandRig debug anchors", () => {
     const rig = buildHandRig(dims);
 
     const proximalMesh = rig.highlight.map.TH_MCP[0];
-    ["TH_CMC_ABD", "TH_CMC_FLEX", "TH_CMC_OPP"].forEach(key => {
+    ["TH_CMC_FLEX_EXT", "TH_CMC_ABD_ADD", "TH_CMC_OPP"].forEach(key => {
       const targets = rig.highlight.map[key];
       expect(targets).toHaveLength(2);
       expect(targets).not.toContain(proximalMesh);

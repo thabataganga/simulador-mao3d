@@ -15,7 +15,7 @@ import {
   updateThumbOppositionOverlay,
 } from "../handRig";
 
-const CMC_AUTOFRAME_KEYS = new Set(["TH_CMC_ABD", "TH_CMC_FLEX"]);
+const CMC_AUTOFRAME_KEYS = new Set(["TH_CMC_FLEX_EXT", "TH_CMC_ABD_ADD"]);
 
 export function shouldUseInstantCmcAutoFrame(previousDebugKey, nextDebugKey) {
   return CMC_AUTOFRAME_KEYS.has(nextDebugKey) && previousDebugKey !== nextDebugKey;
@@ -45,7 +45,7 @@ export function useHandRigRuntime({
   const handRig = useRef(null);
   const hasInitialFrameRef = useRef(false);
   const lastPalmLengthRef = useRef(null);
-  const cmcBaselineRef = useRef({ CMC_abd: 0, CMC_flex: 0 });
+  const cmcBaselineRef = useRef({ CMC_flexExt: 0, CMC_abdAdd: 0 });
   const lastEmittedGoniometryRef = useRef(null);
   const lastOppositionEstimateRef = useRef(null);
   const lastDebugKeyRef = useRef(debugKey);
@@ -92,8 +92,8 @@ export function useHandRigRuntime({
     measured => {
       if (!onThumbGoniometry || !didGoniometryChange(lastEmittedGoniometryRef.current, measured)) return;
       lastEmittedGoniometryRef.current = {
-        CMC_abd: Number(measured.CMC_abd) || 0,
-        CMC_flex: Number(measured.CMC_flex) || 0,
+        CMC_flexExt: Number(measured.CMC_flexExt) || 0,
+        CMC_abdAdd: Number(measured.CMC_abdAdd) || 0,
       };
       onThumbGoniometry(lastEmittedGoniometryRef.current);
     },
@@ -130,11 +130,11 @@ export function useHandRigRuntime({
     three.scene.add(handRig.current.root);
 
     const neutralMeasurement = measureThumbCmcGoniometryFromRig(handRig.current, {
-      thumb: { CMC_abd: 0, CMC_flex: 0, CMC_opp: 0 },
+      thumb: { CMC_flexExt: 0, CMC_abdAdd: 0, CMC_opp: 0 },
     });
     cmcBaselineRef.current = {
-      CMC_abd: neutralMeasurement?.isolated?.CMC_abd || 0,
-      CMC_flex: neutralMeasurement?.isolated?.CMC_flex || 0,
+      CMC_flexExt: neutralMeasurement?.isolated?.CMC_flexExt || 0,
+      CMC_abdAdd: neutralMeasurement?.isolated?.CMC_abdAdd || 0,
     };
 
     const currentPose = poseRef.current;
@@ -217,8 +217,8 @@ export function useHandRigRuntime({
       if (!rig) return;
       const viewport = getViewportSize(three);
       if (ANGULAR_CMC_DEBUG_KEYS.has(debugKey)) {
-        rig.dbgMap?.TH_CMC_FLEX?.setGoniometerResolution(viewport);
-        rig.dbgMap?.TH_CMC_ABD?.setGoniometerResolution(viewport);
+        rig.dbgMap?.TH_CMC_ABD_ADD?.setGoniometerResolution(viewport);
+        rig.dbgMap?.TH_CMC_FLEX_EXT?.setGoniometerResolution(viewport);
         updateCmcGoniometerOverlay(rig, debugKey, dims, viewport);
       }
       if (debugKey === OPPOSITION_DEBUG_KEY) {

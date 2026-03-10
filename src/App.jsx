@@ -36,8 +36,8 @@ export default function HandSimulatorApp() {
     }
 
     const map = {
-      CMC_abd: "cmc_abd",
-      CMC_flex: "cmc_flex",
+      CMC_flexExt: "cmc_flex_ext",
+      CMC_abdAdd: "cmc_abd_add",
       CMC_opp: "cmc_opp",
       MCP_flex: "mcp_flex",
       IP: "ip",

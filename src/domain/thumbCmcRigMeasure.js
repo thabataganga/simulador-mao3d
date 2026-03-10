@@ -35,16 +35,16 @@ function toRoundedNumber(value) {
 }
 
 function readComposedFromRig(rig) {
-  const abdRad = rig?.thumb?.cmcAbd?.rotation?.z;
-  const flexRad = rig?.thumb?.cmcFlex?.rotation?.y;
-  if (typeof abdRad === "number" && typeof flexRad === "number") {
+  const flexExtRad = rig?.thumb?.cmcFlexExt?.rotation?.z;
+  const abdAddRad = rig?.thumb?.cmcAbdAdd?.rotation?.y;
+  if (typeof flexExtRad === "number" && typeof abdAddRad === "number") {
     return {
-      CMC_abd: toRoundedDeg(abdRad),
-      CMC_flex: toRoundedDeg(flexRad),
+      CMC_flexExt: toRoundedDeg(flexExtRad),
+      CMC_abdAdd: toRoundedDeg(abdAddRad),
     };
   }
 
-  const cmcOrigin = rig?.thumb?.cmcAbd?.getWorldPosition?.(new Vector3());
+  const cmcOrigin = rig?.thumb?.cmcFlexExt?.getWorldPosition?.(new Vector3());
   const thumbMcp = rig?.thumb?.mcp?.getWorldPosition?.(new Vector3());
   const d2Mcp = rig?.fingers?.[0]?.mcp?.getWorldPosition?.(new Vector3());
   const d2Pip = rig?.fingers?.[0]?.pip?.getWorldPosition?.(new Vector3());
@@ -61,15 +61,15 @@ function readComposedFromRig(rig) {
 
   const fixedAbdPlane = projectOnPlane(fixedPalm, palmNormal);
   const mobileAbdPlane = projectOnPlane(mobilePalm, palmNormal);
-  const abdMeasured = -signedAngleOnPlane(fixedAbdPlane, mobileAbdPlane, palmNormal);
+  const abdAddMeasured = -signedAngleOnPlane(fixedAbdPlane, mobileAbdPlane, palmNormal);
 
   const fixedFlexPlane = projectOnPlane(fixedPalm, palmTransverse);
   const mobileFlexPlane = projectOnPlane(mobilePalm, palmTransverse);
-  const flexMeasured = signedAngleOnPlane(fixedFlexPlane, mobileFlexPlane, palmTransverse);
+  const flexExtMeasured = signedAngleOnPlane(fixedFlexPlane, mobileFlexPlane, palmTransverse);
 
   return {
-    CMC_abd: normalizeSignedZero(Math.round(flexMeasured)),
-    CMC_flex: normalizeSignedZero(Math.round(abdMeasured)),
+    CMC_flexExt: normalizeSignedZero(Math.round(flexExtMeasured)),
+    CMC_abdAdd: normalizeSignedZero(Math.round(abdAddMeasured)),
   };
 }
 
@@ -78,12 +78,12 @@ function deriveIsolatedFromComposed(composed, thumb) {
   if (!thumb) return { ...composed };
 
   const opp = Number(thumb.CMC_opp) || 0;
-  const abdCoupling = THUMB_CMC.CLINICAL_ABD_SIGN * THUMB_CMC.OPP_COUPLING.ABD_GAIN * opp;
-  const flexCoupling = THUMB_CMC.OPP_COUPLING.FLEX_GAIN * opp;
+  const flexExtCoupling = THUMB_CMC.CLINICAL_FLEX_EXT_SIGN * THUMB_CMC.OPP_COUPLING.FLEX_EXT_GAIN * opp;
+  const abdAddCoupling = THUMB_CMC.OPP_COUPLING.ABD_ADD_GAIN * opp;
 
   return {
-    CMC_abd: toRoundedNumber(composed.CMC_abd - abdCoupling),
-    CMC_flex: toRoundedNumber(composed.CMC_flex - flexCoupling),
+    CMC_flexExt: toRoundedNumber(composed.CMC_flexExt - flexExtCoupling),
+    CMC_abdAdd: toRoundedNumber(composed.CMC_abdAdd - abdAddCoupling),
   };
 }
 
@@ -92,16 +92,16 @@ export function measureThumbCmcGoniometryFromRig(rig, options = {}) {
   if (!composed) return null;
 
   const isolatedRaw = deriveIsolatedFromComposed(composed, options.thumb);
-  const baseline = options.baseline || { CMC_abd: 0, CMC_flex: 0 };
+  const baseline = options.baseline || { CMC_flexExt: 0, CMC_abdAdd: 0 };
 
   const isolated = {
-    CMC_abd: toRoundedNumber((isolatedRaw?.CMC_abd ?? composed.CMC_abd) - (Number(baseline.CMC_abd) || 0)),
-    CMC_flex: toRoundedNumber((isolatedRaw?.CMC_flex ?? composed.CMC_flex) - (Number(baseline.CMC_flex) || 0)),
+    CMC_flexExt: toRoundedNumber((isolatedRaw?.CMC_flexExt ?? composed.CMC_flexExt) - (Number(baseline.CMC_flexExt) || 0)),
+    CMC_abdAdd: toRoundedNumber((isolatedRaw?.CMC_abdAdd ?? composed.CMC_abdAdd) - (Number(baseline.CMC_abdAdd) || 0)),
   };
 
   return {
-    CMC_abd: isolated.CMC_abd,
-    CMC_flex: isolated.CMC_flex,
+    CMC_flexExt: isolated.CMC_flexExt,
+    CMC_abdAdd: isolated.CMC_abdAdd,
     isolated,
     composed,
   };

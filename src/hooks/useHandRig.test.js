@@ -55,8 +55,8 @@ function createMesh(role = null) {
 function createRigWithTarget(debugKey, targets) {
   return {
     dbgMap: {
-      TH_CMC_FLEX: createPkg(),
-      TH_CMC_ABD: createPkg(),
+      TH_CMC_ABD_ADD: createPkg(),
+      TH_CMC_FLEX_EXT: createPkg(),
       TH_CMC_OPP: createPkg(),
       TH_MCP: createPkg(),
       D2_MCP: createPkg(),
@@ -67,7 +67,7 @@ function createRigWithTarget(debugKey, targets) {
     highlight: {
       all: Array.isArray(targets) ? targets : [targets],
       map: {
-        TH_CMC_ABD: debugKey === "TH_CMC_ABD" ? targets : [],
+        TH_CMC_FLEX_EXT: debugKey === "TH_CMC_FLEX_EXT" ? targets : [],
         TH_MCP: debugKey === "TH_MCP" ? targets : [],
         D2_MCP: [],
         D3_MCP: [],
@@ -80,9 +80,9 @@ function createRigWithTarget(debugKey, targets) {
 
 describe("useHandRig testables", () => {
   test("didGoniometryChange avoids re-emitting equal values", () => {
-    expect(__testables.didGoniometryChange(null, { CMC_abd: 1, CMC_flex: 2 })).toBe(true);
-    expect(__testables.didGoniometryChange({ CMC_abd: 1, CMC_flex: 2 }, { CMC_abd: 1, CMC_flex: 2 })).toBe(false);
-    expect(__testables.didGoniometryChange({ CMC_abd: 1, CMC_flex: 2 }, { CMC_abd: 1.02, CMC_flex: 2 })).toBe(true);
+    expect(__testables.didGoniometryChange(null, { CMC_flexExt: 1, CMC_abdAdd: 2 })).toBe(true);
+    expect(__testables.didGoniometryChange({ CMC_flexExt: 1, CMC_abdAdd: 2 }, { CMC_flexExt: 1, CMC_abdAdd: 2 })).toBe(false);
+    expect(__testables.didGoniometryChange({ CMC_flexExt: 1, CMC_abdAdd: 2 }, { CMC_flexExt: 1.02, CMC_abdAdd: 2 })).toBe(true);
   });
 
   test("applyDebugSelection clears overlays when debug key is off", () => {
@@ -91,8 +91,8 @@ describe("useHandRig testables", () => {
     const pkgOpp = createPkg();
     const rig = {
       dbgMap: {
-        TH_CMC_FLEX: pkgFlex,
-        TH_CMC_ABD: pkgAbd,
+        TH_CMC_ABD_ADD: pkgFlex,
+        TH_CMC_FLEX_EXT: pkgAbd,
         TH_CMC_OPP: pkgOpp,
         D2_MCP: createPkg(),
         D3_MCP: createPkg(),
@@ -128,11 +128,11 @@ describe("useHandRig testables", () => {
   test("applyDebugSelection colors CMC joint blue and metacarpal yellow", () => {
     const jointMesh = createMesh("cmcJoint");
     const segmentMesh = createMesh("cmcSegment");
-    const rig = createRigWithTarget("TH_CMC_ABD", [jointMesh, segmentMesh]);
+    const rig = createRigWithTarget("TH_CMC_FLEX_EXT", [jointMesh, segmentMesh]);
 
     __testables.applyDebugSelection(
       rig,
-      "TH_CMC_ABD",
+      "TH_CMC_FLEX_EXT",
       { palm: { LENGTH: 70, WIDTH: 55 } },
       { opp: {} },
       {},
@@ -162,10 +162,10 @@ describe("useHandRig testables", () => {
     expect(mesh.material.emissive.set).toHaveBeenCalledWith(0x553300);
   });
   test("shouldUseInstantCmcAutoFrame is true only when entering CMC key", () => {
-    expect(__testables.shouldUseInstantCmcAutoFrame("off", "TH_CMC_ABD")).toBe(true);
-    expect(__testables.shouldUseInstantCmcAutoFrame("TH_CMC_ABD", "TH_CMC_ABD")).toBe(false);
-    expect(__testables.shouldUseInstantCmcAutoFrame("TH_CMC_ABD", "TH_CMC_FLEX")).toBe(true);
-    expect(__testables.shouldUseInstantCmcAutoFrame("TH_CMC_FLEX", "TH_MCP")).toBe(false);
+    expect(__testables.shouldUseInstantCmcAutoFrame("off", "TH_CMC_FLEX_EXT")).toBe(true);
+    expect(__testables.shouldUseInstantCmcAutoFrame("TH_CMC_FLEX_EXT", "TH_CMC_FLEX_EXT")).toBe(false);
+    expect(__testables.shouldUseInstantCmcAutoFrame("TH_CMC_FLEX_EXT", "TH_CMC_ABD_ADD")).toBe(true);
+    expect(__testables.shouldUseInstantCmcAutoFrame("TH_CMC_ABD_ADD", "TH_MCP")).toBe(false);
   });
 });
 

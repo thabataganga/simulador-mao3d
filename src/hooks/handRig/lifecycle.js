@@ -1,6 +1,6 @@
 import { Box3, Quaternion, Vector3 } from "three";
 
-const CMC_AUTOFRAME_KEYS = new Set(["TH_CMC_ABD", "TH_CMC_FLEX"]);
+const CMC_AUTOFRAME_KEYS = new Set(["TH_CMC_FLEX_EXT", "TH_CMC_ABD_ADD"]);
 
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
@@ -52,7 +52,7 @@ export function autoFrameCmcMeasurementView({
 
   const debugPkg = rig.dbgMap?.[debugKey];
   const plane = debugPkg?.plane;
-  const cmcAnchor = rig.thumb?.cmcAbd;
+  const cmcAnchor = rig.thumb?.cmcFlexExt;
   if (!plane || !cmcAnchor?.getWorldPosition) return false;
 
   rig.root.updateMatrixWorld(true);
@@ -65,7 +65,7 @@ export function autoFrameCmcMeasurementView({
   const baseDistance = clamp(Math.max(palmLength, palmWidth) * 1.25, 55, 170);
 
   // Flex needs the palmar side, opposite to the default plane normal.
-  const facingNormal = debugKey === "TH_CMC_FLEX" ? normal.clone().multiplyScalar(-1) : normal;
+  const facingNormal = debugKey === "TH_CMC_ABD_ADD" ? normal.clone().multiplyScalar(-1) : normal;
   const worldUp = new Vector3(0, 1, 0);
   const elevatedNormal = facingNormal.clone().add(worldUp.multiplyScalar(0.08)).normalize();
   const desiredPosition = target.clone().add(elevatedNormal.multiplyScalar(baseDistance));

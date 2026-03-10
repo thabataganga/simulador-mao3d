@@ -61,8 +61,8 @@ export function getKapandjiLevelFromCommand(commandDeg, context = {}) {
 
 export function buildClinicalOppositionEstimate(thumb = {}, context = {}) {
   const baseOppositionDeg = Number(thumb.CMC_opp) || 0;
-  const flexDeg = Number(thumb.CMC_flex) || 0;
-  const abdDeg = Number(thumb.CMC_abd) || 0;
+  const flexDeg = Number(thumb.CMC_abdAdd) || 0;
+  const abdDeg = Number(thumb.CMC_flexExt) || 0;
   const flexGain = Number(context.flexGain ?? CMC_OPP_CLINICAL_COUPLING.FLEX_GAIN) || 0;
   const abdGain = Number(context.abdGain ?? CMC_OPP_CLINICAL_COUPLING.ABD_GAIN) || 0;
 

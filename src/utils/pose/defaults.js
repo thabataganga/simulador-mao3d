@@ -3,9 +3,9 @@ import { deg2rad } from "../math/core";
 export const defaultFinger = () => ({ MCP: 0, PIP: 0, DIP: 0 });
 
 export const defaultThumb = () => ({
-  CMC_abd: 0,
+  CMC_flexExt: 0,
   CMC_opp: 0,
-  CMC_flex: 0,
+  CMC_abdAdd: 0,
   MCP_flex: 0,
   IP: 0,
 });
@@ -25,8 +25,8 @@ export function restFromDims(d) {
     DIP: Math.round((0.6 * nf.pip * 180) / Math.PI),
   }));
   const t = {
-    CMC_abd: Math.round((d.neutralThumb.abd * 180) / Math.PI),
-    CMC_flex: Math.round((d.neutralThumb.flex * 180) / Math.PI),
+    CMC_flexExt: Math.round((d.neutralThumb.abd * 180) / Math.PI),
+    CMC_abdAdd: Math.round((d.neutralThumb.flex * 180) / Math.PI),
     CMC_opp: Math.round((d.neutralThumb.opp * 180) / Math.PI),
     MCP_flex: 0,
     IP: 0,

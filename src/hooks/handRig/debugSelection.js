@@ -3,7 +3,7 @@ import { getViewportSize } from "./lifecycle";
 import { updateCmcGoniometerOverlay } from "./cmcOverlay";
 import { updateThumbOppositionOverlay } from "./oppositionOverlay";
 
-const CMC_DEBUG_KEYS = new Set(["TH_CMC_ABD", "TH_CMC_FLEX", "TH_CMC_OPP"]);
+const CMC_DEBUG_KEYS = new Set(["TH_CMC_FLEX_EXT", "TH_CMC_ABD_ADD", "TH_CMC_OPP"]);
 const HIGHLIGHT_COLORS = Object.freeze({
   default: Object.freeze({ color: 0xffcc66, emissive: 0x553300 }),
   cmcJoint: Object.freeze({ color: 0x5ad7ff, emissive: 0x114455 }),
@@ -24,16 +24,16 @@ export function applyDebugSelection(rig, debugKey, dims, thumbClinical, thumb, t
   }
 
   if (!ANGULAR_CMC_DEBUG_KEYS.has(debugKey)) {
-    map.TH_CMC_FLEX?.setGoniometer(null);
-    map.TH_CMC_ABD?.setGoniometer(null);
-    map.TH_CMC_FLEX?.setLabelPosition(null);
-    map.TH_CMC_ABD?.setLabelPosition(null);
+    map.TH_CMC_ABD_ADD?.setGoniometer(null);
+    map.TH_CMC_FLEX_EXT?.setGoniometer(null);
+    map.TH_CMC_ABD_ADD?.setLabelPosition(null);
+    map.TH_CMC_FLEX_EXT?.setLabelPosition(null);
   } else {
-    if (map.TH_CMC_FLEX?.axes) map.TH_CMC_FLEX.axes.visible = false;
-    if (map.TH_CMC_ABD?.axes) map.TH_CMC_ABD.axes.visible = false;
+    if (map.TH_CMC_ABD_ADD?.axes) map.TH_CMC_ABD_ADD.axes.visible = false;
+    if (map.TH_CMC_FLEX_EXT?.axes) map.TH_CMC_FLEX_EXT.axes.visible = false;
     const viewport = getViewportSize(three);
-    map.TH_CMC_FLEX?.setGoniometerResolution(viewport);
-    map.TH_CMC_ABD?.setGoniometerResolution(viewport);
+    map.TH_CMC_ABD_ADD?.setGoniometerResolution(viewport);
+    map.TH_CMC_FLEX_EXT?.setGoniometerResolution(viewport);
     updateCmcGoniometerOverlay(rig, debugKey, dims, viewport);
   }
 

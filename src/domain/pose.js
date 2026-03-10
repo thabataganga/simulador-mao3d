@@ -4,7 +4,7 @@ import { computeGrip } from "../utils/grip/computeGrip";
 import { defaultFinger, defaultThumb, restFromDims } from "../utils/pose/defaults";
 
 /** @typedef {{ MCP: number, PIP: number, DIP: number }} FingerPose */
-/** @typedef {{ CMC_abd: number, CMC_opp: number, CMC_flex: number, MCP_flex: number, IP: number }} ThumbPose */
+/** @typedef {{ CMC_flexExt: number, CMC_opp: number, CMC_abdAdd: number, MCP_flex: number, IP: number }} ThumbPose */
 /** @typedef {{ flex: number, dev: number }} WristPose */
 /** @typedef {{ fingers: FingerPose[], thumb: ThumbPose, wrist: WristPose, grip: number, globalMode: string, activePreset: string, profile: object, dims: object, globalD2D5: { MCP: number, PIP: number, DIP: number }, sex: string, percentile: number, age: number }} PoseState */
 

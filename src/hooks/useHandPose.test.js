@@ -30,11 +30,11 @@ describe("useHandPose reducer", () => {
       "pinch",
     );
 
-    const flexTarget = pinchPose.thumb.CMC_flex;
-    const abdTarget = pinchPose.thumb.CMC_abd;
+    const flexTarget = pinchPose.thumb.CMC_flexExt;
+    const abdTarget = pinchPose.thumb.CMC_abdAdd;
 
     const flexSolve = buildCmcInputStateForAxis({
-      axis: "CMC_flex",
+      axis: "CMC_flexExt",
       direction: flexTarget >= 0 ? "flexao" : "extensao",
       magnitudeDeg: Math.abs(flexTarget),
       thumbContext: pinchPose.thumb,
@@ -42,25 +42,25 @@ describe("useHandPose reducer", () => {
     });
 
     const abdSolve = buildCmcInputStateForAxis({
-      axis: "CMC_abd",
+      axis: "CMC_abdAdd",
       direction: abdTarget >= 0 ? "abducao" : "aducao",
       magnitudeDeg: Math.abs(abdTarget),
       thumbContext: {
         ...pinchPose.thumb,
-        CMC_flex: flexSolve.solved.commandDeg,
+        CMC_flexExt: flexSolve.solved.commandDeg,
       },
       prevState: {
         ...state.cmcInput,
-        CMC_flex: flexSolve.nextInputAxisState,
+        CMC_flexExt: flexSolve.nextInputAxisState,
       },
     });
 
-    expect(next.thumb.CMC_flex).toBe(flexSolve.solved.commandDeg);
-    expect(next.thumb.CMC_abd).toBe(abdSolve.solved.commandDeg);
-    expect(next.cmcInput.CMC_flex.targetMeasuredDeg).toBeCloseTo(flexTarget, 6);
-    expect(next.cmcInput.CMC_abd.targetMeasuredDeg).toBeCloseTo(abdTarget, 6);
-    expect(next.cmcInput.CMC_flex.direction).toBe("extensao");
-    expect(next.cmcInput.CMC_abd.direction).toBe("abducao");
+    expect(next.thumb.CMC_flexExt).toBe(flexSolve.solved.commandDeg);
+    expect(next.thumb.CMC_abdAdd).toBe(abdSolve.solved.commandDeg);
+    expect(next.cmcInput.CMC_flexExt.targetMeasuredDeg).toBeCloseTo(flexTarget, 6);
+    expect(next.cmcInput.CMC_abdAdd.targetMeasuredDeg).toBeCloseTo(abdTarget, 6);
+    expect(next.cmcInput.CMC_flexExt.direction).toBe(flexTarget >= 0 ? "flexao" : "extensao");
+    expect(next.cmcInput.CMC_abdAdd.direction).toBe("aducao");
   });
 
   test("SET_THUMB_GONIOMETRY ignores Kapandji feedback values", () => {
@@ -72,12 +72,12 @@ describe("useHandPose reducer", () => {
 
     const next = __testables.poseReducer(state, {
       type: "SET_THUMB_GONIOMETRY",
-      value: { CMC_abd: 12.5, CMC_flex: -8.25, KAPANDJI_level: 9 },
+      value: { CMC_flexExt: 12.5, CMC_abdAdd: -8.25, KAPANDJI_level: 9 },
     });
 
     expect(next.kapandjiEstimatedFromRig).toBe(4);
-    expect(next.thumbMeasured.CMC_abd).toBeCloseTo(12.5, 6);
-    expect(next.thumbMeasured.CMC_flex).toBeCloseTo(-8.25, 6);
+    expect(next.thumbMeasured.CMC_flexExt).toBeCloseTo(12.5, 6);
+    expect(next.thumbMeasured.CMC_abdAdd).toBeCloseTo(-8.25, 6);
   });
 
   test("SET_OPPOSITION_ESTIMATE supports structured rig payload and legacy number", () => {
@@ -126,13 +126,13 @@ describe("useHandPose reducer", () => {
     const state = {
       ...__testables.createInitialState(),
       anthropometry: { sex: "masculino", percentile: 50, age: 25 },
-      thumbMeasured: { CMC_abd: 12.5, CMC_flex: -8.25 },
+      thumbMeasured: { CMC_flexExt: 12.5, CMC_abdAdd: -8.25 },
       kapandjiEstimatedFromRig: 6,
     };
 
     const next = __testables.poseReducer(state, {
       type: "SET_THUMB_GONIOMETRY",
-      value: { CMC_abd: 12.5, CMC_flex: -8.25, KAPANDJI_level: 6 },
+      value: { CMC_flexExt: 12.5, CMC_abdAdd: -8.25, KAPANDJI_level: 6 },
     });
 
     expect(next).toBe(state);
@@ -142,14 +142,14 @@ describe("useHandPose reducer", () => {
     const base = {
       ...__testables.createInitialState(),
       anthropometry: { sex: "masculino", percentile: 50, age: 25 },
-      thumb: { CMC_abd: 10, CMC_flex: -8, CMC_opp: 12, MCP_flex: 4, IP: 2 },
+      thumb: { CMC_flexExt: 10, CMC_abdAdd: -8, CMC_opp: 12, MCP_flex: 4, IP: 2 },
       thumbOppRig: { level: 4, rigDirection: "oposicao", rigMagnitudeDeg: 16 },
-      userEditedThumb: { CMC_abd: true, CMC_opp: true },
+      userEditedThumb: { CMC_flexExt: true, CMC_opp: true },
     };
 
     const entered = __testables.poseReducer(base, { type: "ENTER_OPPOSITION_EXPLORATION" });
     expect(entered.isExplorationMode).toBe(true);
-    expect(entered.explorationSnapshotThumb).toEqual({ CMC_abd: 10, CMC_opp: 12 });
+    expect(entered.explorationSnapshotThumb).toEqual({ CMC_flexExt: 10, CMC_opp: 12 });
     expect(entered.explorationRigBaseline).toEqual({ level: 4, rigDirection: "oposicao", rigMagnitudeDeg: 16 });
 
     const updated = __testables.poseReducer(entered, {
@@ -160,9 +160,9 @@ describe("useHandPose reducer", () => {
     expect(updated.exploreOverlayState.CMC_opp).toBe(58);
     expect(updated.explorationKapandjiTarget).toBe(10);
 
-    const changedThumb = { ...updated, thumb: { ...updated.thumb, CMC_abd: 50, CMC_opp: -30 } };
+    const changedThumb = { ...updated, thumb: { ...updated.thumb, CMC_flexExt: 50, CMC_opp: -30 } };
     const restored = __testables.poseReducer(changedThumb, { type: "RESTORE_USER_INPUT_DATA" });
-    expect(restored.thumb.CMC_abd).toBe(10);
+    expect(restored.thumb.CMC_flexExt).toBe(10);
     expect(restored.thumb.CMC_opp).toBe(12);
     expect(restored.isExplorationMode).toBe(false);
     expect(restored.explorationRigBaseline).toBeNull();
@@ -180,11 +180,11 @@ describe("useHandPose reducer", () => {
       ...__testables.createInitialState(),
       anthropometry: { sex: "masculino", percentile: 50, age: 25 },
       isExplorationMode: true,
-      exploreOverlayState: { CMC_abd: 2, CMC_flex: 1, CMC_opp: 5, MCP_flex: 0, IP: 0 },
+      exploreOverlayState: { CMC_flexExt: 2, CMC_abdAdd: 1, CMC_opp: 5, MCP_flex: 0, IP: 0 },
       explorationKapandjiTarget: 9,
       explorationRigBaseline: { level: 4, rigDirection: "oposicao", rigMagnitudeDeg: 16 },
-      userEditedThumb: { CMC_abd: true },
-      explorationSnapshotThumb: { CMC_abd: 20 },
+      userEditedThumb: { CMC_flexExt: true },
+      explorationSnapshotThumb: { CMC_flexExt: 20 },
     };
 
     const neutral = __testables.poseReducer(base, {

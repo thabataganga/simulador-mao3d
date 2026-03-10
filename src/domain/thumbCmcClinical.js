@@ -5,17 +5,17 @@ const TOLERANCE_DEG = 1;
 const CMC_ZERO_EPSILON = 0.5;
 
 const AXIS_CONFIG = {
-  CMC_abd: {
-    positiveDirection: "abducao",
-    negativeDirection: "aducao",
-    range: RANGES.CMC_ABD,
-    modelKey: "cmcAbd",
-  },
-  CMC_flex: {
+  CMC_flexExt: {
     positiveDirection: "flexao",
     negativeDirection: "extensao",
-    range: RANGES.CMC_FLEX,
-    modelKey: "cmcFlex",
+    range: RANGES.CMC_FLEX_EXT,
+    modelKey: "cmcFlexExt",
+  },
+  CMC_abdAdd: {
+    positiveDirection: "abducao",
+    negativeDirection: "aducao",
+    range: RANGES.CMC_ABD_ADD,
+    modelKey: "cmcAbdAdd",
   },
 };
 
@@ -32,14 +32,14 @@ function toSignedFromDirection(direction, magnitude, positiveDirection) {
 
 export function createDefaultCmcInputState() {
   return {
-    CMC_abd: {
-      direction: AXIS_CONFIG.CMC_abd.positiveDirection,
+    CMC_flexExt: {
+      direction: AXIS_CONFIG.CMC_flexExt.positiveDirection,
       magnitudeDeg: 0,
       targetMeasuredDeg: 0,
       saturated: false,
     },
-    CMC_flex: {
-      direction: AXIS_CONFIG.CMC_flex.negativeDirection,
+    CMC_abdAdd: {
+      direction: AXIS_CONFIG.CMC_abdAdd.negativeDirection,
       magnitudeDeg: 0,
       targetMeasuredDeg: 0,
       saturated: false,
@@ -161,8 +161,8 @@ function buildAxisClinicalModel({ axis, thumb, measured, inputState }) {
 export function buildThumbCmcClinicalModel({ thumb, measured, inputState }) {
   const state = inputState || createDefaultCmcInputState();
   return {
-    abd: buildAxisClinicalModel({ axis: "CMC_abd", thumb, measured, inputState: state.CMC_abd }),
-    flex: buildAxisClinicalModel({ axis: "CMC_flex", thumb, measured, inputState: state.CMC_flex }),
+    flexExt: buildAxisClinicalModel({ axis: "CMC_flexExt", thumb, measured, inputState: state.CMC_flexExt }),
+    abdAdd: buildAxisClinicalModel({ axis: "CMC_abdAdd", thumb, measured, inputState: state.CMC_abdAdd }),
   };
 }
 

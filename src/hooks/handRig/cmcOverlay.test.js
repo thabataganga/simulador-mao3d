@@ -29,17 +29,17 @@ describe("cmcOverlay", () => {
       palm,
       thumb: {
         mount,
-        cmcAbd: { rotation: { z: 0 } },
-        cmcFlex: { rotation: { y: 0 } },
+        cmcFlexExt: { rotation: { z: 0 } },
+        cmcAbdAdd: { rotation: { y: 0 } },
       },
       dbgMap: {
-        TH_CMC_FLEX: flexPkg,
-        TH_CMC_ABD: abdPkg,
+        TH_CMC_ABD_ADD: flexPkg,
+        TH_CMC_FLEX_EXT: abdPkg,
       },
     };
 
     expect(() =>
-      updateCmcGoniometerOverlay(rig, "TH_CMC_FLEX", { palm: { LENGTH: 70, WIDTH: 55 } }, { width: 200, height: 150 }),
+      updateCmcGoniometerOverlay(rig, "TH_CMC_ABD_ADD", { palm: { LENGTH: 70, WIDTH: 55 } }, { width: 200, height: 150 }),
     ).not.toThrow();
 
     expect(palm.getWorldQuaternion).toHaveBeenCalledWith(expect.any(Quaternion));
@@ -54,17 +54,17 @@ describe("cmcOverlay", () => {
     const rig = {
       thumb: {
         mount,
-        cmcAbd: { rotation: { z: 0 } },
-        cmcFlex: { rotation: { y: 0 } },
+        cmcFlexExt: { rotation: { z: 0 } },
+        cmcAbdAdd: { rotation: { y: 0 } },
       },
       dbgMap: {
-        TH_CMC_FLEX: flexPkg,
-        TH_CMC_ABD: abdPkg,
+        TH_CMC_ABD_ADD: flexPkg,
+        TH_CMC_FLEX_EXT: abdPkg,
       },
     };
 
     expect(() =>
-      updateCmcGoniometerOverlay(rig, "TH_CMC_ABD", { palm: { LENGTH: 70, WIDTH: 55 } }, { width: 200, height: 150 }),
+      updateCmcGoniometerOverlay(rig, "TH_CMC_FLEX_EXT", { palm: { LENGTH: 70, WIDTH: 55 } }, { width: 200, height: 150 }),
     ).not.toThrow();
 
     expect(abdPkg.setGoniometer).toHaveBeenCalled();

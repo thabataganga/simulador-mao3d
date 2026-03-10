@@ -77,8 +77,8 @@ describe("feature contracts", () => {
     const element = OrderedAccordions({
       openPanel: "none",
       onTogglePanel: jest.fn(),
-      thumb: { CMC_abd: 0, CMC_opp: 0, CMC_flex: 0, MCP_flex: 0, IP: 0 },
-      thumbGoniometry: { abd: { inputDirection: "abducao", inputMagnitudeDeg: 0 }, flex: { inputDirection: "extensao", inputMagnitudeDeg: 0 } },
+      thumb: { CMC_flexExt: 0, CMC_opp: 0, CMC_abdAdd: 0, MCP_flex: 0, IP: 0 },
+      thumbGoniometry: { flexExt: { inputDirection: "extensao", inputMagnitudeDeg: 0 }, abdAdd: { inputDirection: "abducao", inputMagnitudeDeg: 0 } },
       thumbClinical: { opp: { inputDirection: "oposicao", inputMagnitudeDeg: 0 } },
       isExplorationMode: false,
       explorationKapandjiTarget: 0,
@@ -117,8 +117,8 @@ describe("feature contracts", () => {
     const thumbSection = ThumbFeatureSection({
       openPanel: "thumb",
       onTogglePanel: jest.fn(),
-      thumb: { CMC_abd: 0, CMC_opp: 0, CMC_flex: 0, MCP_flex: 0, IP: 0 },
-      thumbGoniometry: { abd: { inputDirection: "abducao", inputMagnitudeDeg: 0 }, flex: { inputDirection: "extensao", inputMagnitudeDeg: 0 } },
+      thumb: { CMC_flexExt: 0, CMC_opp: 0, CMC_abdAdd: 0, MCP_flex: 0, IP: 0 },
+      thumbGoniometry: { flexExt: { inputDirection: "extensao", inputMagnitudeDeg: 0 }, abdAdd: { inputDirection: "abducao", inputMagnitudeDeg: 0 } },
       thumbClinical: { opp: { inputDirection: "oposicao", inputMagnitudeDeg: 0 } },
       isExplorationMode: false,
       explorationKapandjiTarget: 0,

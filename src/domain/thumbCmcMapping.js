@@ -5,17 +5,17 @@ export function getCmcCommandRange(axis) {
   const oppMin = RANGES.CMC_OPP[0];
   const oppMax = RANGES.CMC_OPP[1];
 
-  if (axis === "CMC_abd") {
-    const gain = THUMB_CMC.CLINICAL_ABD_SIGN * THUMB_CMC.OPP_COUPLING.ABD_GAIN;
-    const min = Math.floor(Math.min(RANGES.CMC_ABD[0] - gain * oppMin, RANGES.CMC_ABD[0] - gain * oppMax));
-    const max = Math.ceil(Math.max(RANGES.CMC_ABD[1] - gain * oppMin, RANGES.CMC_ABD[1] - gain * oppMax));
+  if (axis === "CMC_flexExt") {
+    const gain = THUMB_CMC.CLINICAL_FLEX_EXT_SIGN * THUMB_CMC.OPP_COUPLING.FLEX_EXT_GAIN;
+    const min = Math.floor(Math.min(RANGES.CMC_FLEX_EXT[0] - gain * oppMin, RANGES.CMC_FLEX_EXT[0] - gain * oppMax));
+    const max = Math.ceil(Math.max(RANGES.CMC_FLEX_EXT[1] - gain * oppMin, RANGES.CMC_FLEX_EXT[1] - gain * oppMax));
     return [min, max];
   }
 
-  if (axis === "CMC_flex") {
-    const gain = THUMB_CMC.OPP_COUPLING.FLEX_GAIN;
-    const min = Math.floor(Math.min(RANGES.CMC_FLEX[0] - gain * oppMin, RANGES.CMC_FLEX[0] - gain * oppMax));
-    const max = Math.ceil(Math.max(RANGES.CMC_FLEX[1] - gain * oppMin, RANGES.CMC_FLEX[1] - gain * oppMax));
+  if (axis === "CMC_abdAdd") {
+    const gain = THUMB_CMC.OPP_COUPLING.ABD_ADD_GAIN;
+    const min = Math.floor(Math.min(RANGES.CMC_ABD_ADD[0] - gain * oppMin, RANGES.CMC_ABD_ADD[0] - gain * oppMax));
+    const max = Math.ceil(Math.max(RANGES.CMC_ABD_ADD[1] - gain * oppMin, RANGES.CMC_ABD_ADD[1] - gain * oppMax));
     return [min, max];
   }
 
@@ -23,29 +23,29 @@ export function getCmcCommandRange(axis) {
 }
 
 export function clampClinicalCmc(thumb) {
-  const [abdMin, abdMax] = getCmcCommandRange("CMC_abd");
-  const [flexMin, flexMax] = getCmcCommandRange("CMC_flex");
+  const [flexExtMin, flexExtMax] = getCmcCommandRange("CMC_flexExt");
+  const [abdAddMin, abdAddMax] = getCmcCommandRange("CMC_abdAdd");
 
   return {
-    CMC_abd: clamp(thumb.CMC_abd, [abdMin, abdMax]),
-    CMC_flex: clamp(thumb.CMC_flex, [flexMin, flexMax]),
+    CMC_flexExt: clamp(thumb.CMC_flexExt, [flexExtMin, flexExtMax]),
+    CMC_abdAdd: clamp(thumb.CMC_abdAdd, [abdAddMin, abdAddMax]),
     CMC_opp: clamp(thumb.CMC_opp, RANGES.CMC_OPP),
   };
 }
 
 export function mapClinicalCmcToRigAngles(thumb) {
   const t = clampClinicalCmc(thumb);
-  const flexClinical = t.CMC_flex;
+  const abdAddClinical = t.CMC_abdAdd;
 
-  // Keep clinical convention from UI: +abduction, -adduction.
-  const cmcAbd = THUMB_CMC.CLINICAL_ABD_SIGN * t.CMC_abd + t.CMC_opp * THUMB_CMC.OPP_COUPLING.ABD_GAIN;
-  const cmcFlex = flexClinical + t.CMC_opp * THUMB_CMC.OPP_COUPLING.FLEX_GAIN;
+  // Keep clinical conventions from UI per renamed axis keys.
+  const cmcFlexExt = THUMB_CMC.CLINICAL_FLEX_EXT_SIGN * t.CMC_flexExt + t.CMC_opp * THUMB_CMC.OPP_COUPLING.FLEX_EXT_GAIN;
+  const cmcAbdAdd = abdAddClinical + t.CMC_opp * THUMB_CMC.OPP_COUPLING.ABD_ADD_GAIN;
   const cmcPronation = t.CMC_opp * THUMB_CMC.OPP_COUPLING.PRONATION_GAIN;
 
   return {
     clinical: t,
-    cmcAbd,
-    cmcFlex,
+    cmcFlexExt,
+    cmcAbdAdd,
     cmcPronation,
   };
 }
@@ -55,8 +55,8 @@ export function mapClinicalCmcToRigRadians(thumb) {
   return {
     ...a,
     radians: {
-      cmcAbd: deg2rad(a.cmcAbd),
-      cmcFlex: deg2rad(a.cmcFlex),
+      cmcFlexExt: deg2rad(a.cmcFlexExt),
+      cmcAbdAdd: deg2rad(a.cmcAbdAdd),
       cmcPronation: deg2rad(a.cmcPronation),
     },
   };

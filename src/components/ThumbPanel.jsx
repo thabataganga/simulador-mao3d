@@ -21,7 +21,7 @@ export function ThumbPanel({
   onClearHighlight,
   onClearPreset,
 }) {
-  const panelOrder = ["CMC_flex", "CMC_abd", "CMC_opp", "MCP_flex", "IP"];
+  const panelOrder = ["CMC_abdAdd", "CMC_flexExt", "CMC_opp", "MCP_flex", "IP"];
   const orderedItems = panelOrder
     .map(key => THUMB_SLIDER_CONFIG.find(item => item.key === key))
     .filter(Boolean);
@@ -29,15 +29,15 @@ export function ThumbPanel({
   return orderedItems.map(item => {
     const [min, max] = RANGES[item.rangeKey];
 
-    if (item.key === "CMC_abd") {
+    if (item.key === "CMC_flexExt") {
       return (
         <DirectionMagnitudeSlider
           key={item.key}
-          axis="CMC_abd"
-          label="CMC Abd/Aducao"
-          clinical={thumbGoniometry.abd}
-          positiveDirection="abducao"
-          negativeDirection="aducao"
+          axis="CMC_flexExt"
+          label="CMC Flexao/Extensao"
+          clinical={thumbGoniometry.flexExt}
+          positiveDirection="flexao"
+          negativeDirection="extensao"
           min={min}
           max={max}
           onApply={(axis, direction, magnitude) => {
@@ -49,15 +49,15 @@ export function ThumbPanel({
       );
     }
 
-    if (item.key === "CMC_flex") {
+    if (item.key === "CMC_abdAdd") {
       return (
         <DirectionMagnitudeSlider
           key={item.key}
-          axis="CMC_flex"
-          label="CMC Flexao/Extensao"
-          clinical={thumbGoniometry.flex}
-          positiveDirection="flexao"
-          negativeDirection="extensao"
+          axis="CMC_abdAdd"
+          label="CMC Abd/Aducao"
+          clinical={thumbGoniometry.abdAdd}
+          positiveDirection="abducao"
+          negativeDirection="aducao"
           min={min}
           max={max}
           onApply={(axis, direction, magnitude) => {

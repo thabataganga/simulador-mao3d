@@ -17,6 +17,6 @@ UI -> features/* -> poseActions -> poseReducer -> poseState/selectors -> sceneIn
 
 - `sceneInput` deve conter apenas: `dims`, `fingers`, `thumb`, `wrist`.
 - Evento de metrica: `handsim:metric` com `{ eventName, payload, at }`.
-- Medicao CMC emitida para UI: `{ CMC_abd, CMC_flex }` com debounce por epsilon.
+- Medicao CMC emitida para UI: `{ CMC_flexExt, CMC_abdAdd }` com debounce por epsilon.
 - Componentes compartilhados entram em `features/*` apenas quando parte do contrato publico da feature.
 

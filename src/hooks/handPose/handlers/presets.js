@@ -62,8 +62,8 @@ export function handleApplyPresetNeutral(state, action) {
     ...neutralPose,
     thumb: {
       ...neutralPose.thumb,
-      CMC_abd: 45,
-      CMC_flex: -12,
+      CMC_flexExt: 45,
+      CMC_abdAdd: -12,
       CMC_opp: 12,
     },
   };

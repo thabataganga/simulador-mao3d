@@ -16,18 +16,18 @@ export function handleSetThumb(state, action) {
 }
 
 export function handleSetThumbGoniometry(state, action) {
-  const nextAbd = Number.isFinite(action.value?.CMC_abd) ? Number(action.value.CMC_abd) : state.thumbMeasured.CMC_abd;
-  const nextFlex = Number.isFinite(action.value?.CMC_flex) ? Number(action.value.CMC_flex) : state.thumbMeasured.CMC_flex;
-  const abdUnchanged = Math.abs(nextAbd - state.thumbMeasured.CMC_abd) <= GONIOMETRY_STATE_EPSILON;
-  const flexUnchanged = Math.abs(nextFlex - state.thumbMeasured.CMC_flex) <= GONIOMETRY_STATE_EPSILON;
+  const nextAbd = Number.isFinite(action.value?.CMC_flexExt) ? Number(action.value.CMC_flexExt) : state.thumbMeasured.CMC_flexExt;
+  const nextFlex = Number.isFinite(action.value?.CMC_abdAdd) ? Number(action.value.CMC_abdAdd) : state.thumbMeasured.CMC_abdAdd;
+  const abdUnchanged = Math.abs(nextAbd - state.thumbMeasured.CMC_flexExt) <= GONIOMETRY_STATE_EPSILON;
+  const flexUnchanged = Math.abs(nextFlex - state.thumbMeasured.CMC_abdAdd) <= GONIOMETRY_STATE_EPSILON;
   if (abdUnchanged && flexUnchanged) return state;
 
   return {
     ...state,
     thumbMeasured: {
       ...state.thumbMeasured,
-      CMC_abd: nextAbd,
-      CMC_flex: nextFlex,
+      CMC_flexExt: nextAbd,
+      CMC_abdAdd: nextFlex,
     },
   };
 }
@@ -74,7 +74,7 @@ export function handleSetGlobalFingerAngle(state, action) {
 
 export function handleSetThumbAngle(state, action) {
   const nextThumb = setThumbAngle(state.thumb, action.key, action.value);
-  if (action.key !== "CMC_abd" && action.key !== "CMC_flex") {
+  if (action.key !== "CMC_flexExt" && action.key !== "CMC_abdAdd") {
     return {
       ...state,
       thumb: nextThumb,

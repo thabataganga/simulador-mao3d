@@ -43,8 +43,8 @@ onde:
 
 onde:
 
-- \(\theta_{abd}\): rotacao aplicada em `thumb.cmcAbd.rotation.z`
-- \(\theta_{flex}\): rotacao aplicada em `thumb.cmcFlex.rotation.y`
+- \(\theta_{abd}\): rotacao aplicada em `thumb.cmcFlexExt.rotation.z`
+- \(\theta_{flex}\): rotacao aplicada em `thumb.cmcAbdAdd.rotation.y`
 - \(\theta_{pro}\): rotacao aplicada em `thumb.cmcPronation.rotation.x`
 
 ### 2.3 Convencao de sinal clinico
@@ -58,9 +58,9 @@ Implementacao em: `src/domain/thumbCmcClinical.js` (`AXIS_CONFIG`) e `src/compon
 
 Da constante `THUMB_CMC`:
 
-- \(s_{abd} = 1\) (`CLINICAL_ABD_SIGN`)
-- \(g_{abd} = 0.18\) (`OPP_COUPLING.ABD_GAIN`)
-- \(g_{flex} = 0.22\) (`OPP_COUPLING.FLEX_GAIN`)
+- \(s_{abd} = 1\) (`CLINICAL_FLEX_EXT_SIGN`)
+- \(g_{abd} = 0.18\) (`OPP_COUPLING.FLEX_EXT_GAIN`)
+- \(g_{flex} = 0.22\) (`OPP_COUPLING.ABD_ADD_GAIN`)
 - \(g_{pro} = 0.38\) (`OPP_COUPLING.PRONATION_GAIN`)
 
 Implementacao em: `src/constants/biomechanics.js`.
@@ -106,7 +106,7 @@ Implementacao em:
   - `mapClinicalCmcToRigAngles`
   - `mapClinicalCmcToRigRadians`
 - `src/hooks/handRig/pose.js`
-  - `applyPoseToRig` (aplica nos nos `cmcAbd`, `cmcFlex`, `cmcPronation`)
+  - `applyPoseToRig` (aplica nos nos `cmcFlexExt`, `cmcAbdAdd`, `cmcPronation`)
 
 ## 4) Restricoes, intervalos e clamp
 

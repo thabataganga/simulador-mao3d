@@ -10,8 +10,8 @@ function buildOppositionReferencePoints(rig, thumb) {
   if (!tipNode || !localFrame || !thumbRig || !thumb) return null;
 
   const original = {
-    cmcAbd: thumbRig.cmcAbd.rotation.z,
-    cmcFlex: thumbRig.cmcFlex.rotation.y,
+    cmcFlexExt: thumbRig.cmcFlexExt.rotation.z,
+    cmcAbdAdd: thumbRig.cmcAbdAdd.rotation.y,
     cmcPronation: thumbRig.cmcPronation.rotation.x,
     mcp: thumbRig.mcp.rotation.z,
     mcpAccessory: thumbRig.mcpAccessory.rotation.x,
@@ -28,8 +28,8 @@ function buildOppositionReferencePoints(rig, thumb) {
     };
     const mapped = mapClinicalThumbToRigRadians(sampleThumb);
 
-    thumbRig.cmcAbd.rotation.z = mapped.radians.cmcAbd;
-    thumbRig.cmcFlex.rotation.y = mapped.radians.cmcFlex;
+    thumbRig.cmcFlexExt.rotation.z = mapped.radians.cmcFlexExt;
+    thumbRig.cmcAbdAdd.rotation.y = mapped.radians.cmcAbdAdd;
     thumbRig.cmcPronation.rotation.x = mapped.radians.cmcPronation;
     thumbRig.mcp.rotation.z = -mapped.radians.mcpFlex;
     thumbRig.mcpAccessory.rotation.x = mapped.radians.mcpAccessory;
@@ -40,8 +40,8 @@ function buildOppositionReferencePoints(rig, thumb) {
     points.push(tipLocal.clone());
   }
 
-  thumbRig.cmcAbd.rotation.z = original.cmcAbd;
-  thumbRig.cmcFlex.rotation.y = original.cmcFlex;
+  thumbRig.cmcFlexExt.rotation.z = original.cmcFlexExt;
+  thumbRig.cmcAbdAdd.rotation.y = original.cmcAbdAdd;
   thumbRig.cmcPronation.rotation.x = original.cmcPronation;
   thumbRig.mcp.rotation.z = original.mcp;
   thumbRig.mcpAccessory.rotation.x = original.mcpAccessory;

@@ -1,22 +1,22 @@
 import { RANGES } from "./biomechanics";
-import { TH_CMC_ABD_DEBUG_KEY, TH_CMC_FLEX_DEBUG_KEY, OPPOSITION_DEBUG_KEY } from "./debugKeys";
+import { TH_CMC_FLEX_EXT_DEBUG_KEY, TH_CMC_ABD_ADD_DEBUG_KEY, OPPOSITION_DEBUG_KEY } from "./debugKeys";
 
 export const THUMB_SLIDER_CONFIG = [
   {
-    key: "CMC_abd",
-    label: "CMC Abd/Aducao",
-    rangeKey: "CMC_ABD",
-    leftHint: "Aducao (-)",
-    rightHint: "Abducao (+)",
-    debugKey: TH_CMC_ABD_DEBUG_KEY,
-  },
-  {
-    key: "CMC_flex",
-    label: "CMC Flexao",
-    rangeKey: "CMC_FLEX",
+    key: "CMC_flexExt",
+    label: "CMC Flexao/Extensao",
+    rangeKey: "CMC_FLEX_EXT",
     leftHint: "Extensao (-)",
     rightHint: "Flexao (+)",
-    debugKey: TH_CMC_FLEX_DEBUG_KEY,
+    debugKey: TH_CMC_FLEX_EXT_DEBUG_KEY,
+  },
+  {
+    key: "CMC_abdAdd",
+    label: "CMC Abd/Aducao",
+    rangeKey: "CMC_ABD_ADD",
+    leftHint: "Aducao (-)",
+    rightHint: "Abducao (+)",
+    debugKey: TH_CMC_ABD_ADD_DEBUG_KEY,
   },
   {
     key: "CMC_opp",

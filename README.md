@@ -41,7 +41,7 @@ O CMC do polegar (flexao/extensao e abducao/aducao) esta configurado para uso cl
 
 ### Visualizacao 3D do CMC
 
-Ao focar `TH_CMC_FLEX` ou `TH_CMC_ABD`:
+Ao focar `TH_CMC_ABD_ADD` ou `TH_CMC_FLEX_EXT`:
 
 - Plano anatomico CMC.
 - Duas hastes do goniometro (fixa e movel).

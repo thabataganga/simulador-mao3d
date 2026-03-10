@@ -24,7 +24,7 @@ export function createHandPoseInitialState() {
   return {
     fingers: functionalPose.fingers,
     thumb: nextThumb,
-    thumbMeasured: { CMC_abd: 0, CMC_flex: 0 },
+    thumbMeasured: { CMC_flexExt: 0, CMC_abdAdd: 0 },
     cmcInput: nextInput,
     kapandjiEstimatedFromRig: initialKapandji,
     thumbOppRig: {
