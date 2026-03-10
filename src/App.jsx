@@ -1,5 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useState } from "react";
-import { CMC_TEMP_RANGE } from "./constants/biomechanics";
+import { RANGES } from "./constants/biomechanics";
 
 import { useHandPose } from "./hooks/useHandPose";
 
@@ -153,8 +153,7 @@ export default function HandSimulatorApp() {
           <div className="mt-2 space-y-1">
             <p>MCP D2-D5: -45 deg a +90 deg | PIP: 0-100 deg | DIP: -20 deg a +80 deg</p>
             <p>
-              CMC Polegar: Abd {CMC_TEMP_RANGE[0]}..+{CMC_TEMP_RANGE[1]} deg | Flex/Ext {CMC_TEMP_RANGE[0]}..+
-              {CMC_TEMP_RANGE[1]} deg | Oposicao: {CMC_TEMP_RANGE[0]}..+{CMC_TEMP_RANGE[1]} deg | Kapandji estimado 0..10
+              CMC Polegar: Abd {RANGES.CMC_ABD[0]}..+{RANGES.CMC_ABD[1]} deg | Flex/Ext {RANGES.CMC_FLEX[0]}..+{RANGES.CMC_FLEX[1]} deg | Oposicao: {RANGES.CMC_OPP[0]}..+{RANGES.CMC_OPP[1]} deg | Kapandji estimado 0..10
             </p>
             <p>MCP Polegar: 0-60 deg | IP: -10 deg a +80 deg</p>
           </div>
@@ -174,3 +173,4 @@ export default function HandSimulatorApp() {
     </div>
   );
 }
+

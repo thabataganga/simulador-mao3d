@@ -1,5 +1,3 @@
-import { deg2rad } from "../math/core";
-
 export const defaultFinger = () => ({ MCP: 0, PIP: 0, DIP: 0 });
 
 export const defaultThumb = () => ({
@@ -33,14 +31,5 @@ export function restFromDims(d) {
   };
 
   return { f, t, w: { flex: -25, dev: -12 } };
-}
-
-export function buildNeutralFingerAngles() {
-  return [
-    { mcp: deg2rad(15), pip: deg2rad(20), dip: deg2rad(10) },
-    { mcp: deg2rad(20), pip: deg2rad(25), dip: deg2rad(10) },
-    { mcp: deg2rad(25), pip: deg2rad(30), dip: deg2rad(15) },
-    { mcp: deg2rad(30), pip: deg2rad(35), dip: deg2rad(15) },
-  ];
 }
 

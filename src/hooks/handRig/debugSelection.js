@@ -1,7 +1,4 @@
-import { ANGULAR_CMC_DEBUG_KEYS, GLOBAL_DEBUG_KEY_TO_JOINT, OPPOSITION_DEBUG_KEY } from "./constants";
-import { getViewportSize } from "./lifecycle";
-import { updateCmcGoniometerOverlay } from "./cmcOverlay";
-import { updateThumbOppositionOverlay } from "./oppositionOverlay";
+import { GLOBAL_DEBUG_KEY_TO_JOINT } from "./constants";
 
 const CMC_DEBUG_KEYS = new Set(["TH_CMC_ABD", "TH_CMC_FLEX", "TH_CMC_OPP"]);
 const HIGHLIGHT_COLORS = Object.freeze({
@@ -9,7 +6,7 @@ const HIGHLIGHT_COLORS = Object.freeze({
   cmcJoint: Object.freeze({ color: 0x5ad7ff, emissive: 0x114455 }),
 });
 
-export function applyDebugSelection(rig, debugKey, dims, thumbClinical, thumb, three) {
+export function applyDebugSelection(rig, debugKey) {
   if (!rig) return;
 
   const map = rig.dbgMap;
@@ -23,29 +20,9 @@ export function applyDebugSelection(rig, debugKey, dims, thumbClinical, thumb, t
     map[debugKey].setVisible(true);
   }
 
-  if (!ANGULAR_CMC_DEBUG_KEYS.has(debugKey)) {
-    map.TH_CMC_FLEX?.setGoniometer(null);
-    map.TH_CMC_ABD?.setGoniometer(null);
-    map.TH_CMC_FLEX?.setLabelPosition(null);
-    map.TH_CMC_ABD?.setLabelPosition(null);
-  } else {
-    if (map.TH_CMC_FLEX?.axes) map.TH_CMC_FLEX.axes.visible = false;
-    if (map.TH_CMC_ABD?.axes) map.TH_CMC_ABD.axes.visible = false;
-    const viewport = getViewportSize(three);
-    map.TH_CMC_FLEX?.setGoniometerResolution(viewport);
-    map.TH_CMC_ABD?.setGoniometerResolution(viewport);
-    updateCmcGoniometerOverlay(rig, debugKey, dims, viewport);
-  }
-
-  if (debugKey !== OPPOSITION_DEBUG_KEY) {
-    map.TH_CMC_OPP?.setOppositionReference(null);
-    map.TH_CMC_OPP?.setLabelPosition(null);
-  } else {
-    if (map.TH_CMC_OPP?.axes) map.TH_CMC_OPP.axes.visible = false;
-    const viewport = getViewportSize(three);
-    map.TH_CMC_OPP?.setOppositionReferenceResolution(viewport);
-    updateThumbOppositionOverlay(rig, debugKey, dims, thumbClinical, viewport, thumb);
-  }
+  if (map.TH_CMC_FLEX?.axes) map.TH_CMC_FLEX.axes.visible = false;
+  if (map.TH_CMC_ABD?.axes) map.TH_CMC_ABD.axes.visible = false;
+  if (map.TH_CMC_OPP?.axes) map.TH_CMC_OPP.axes.visible = false;
 
   const highlight = rig.highlight;
   highlight.all.forEach(mesh => {
@@ -69,3 +46,4 @@ export function applyDebugSelection(rig, debugKey, dims, thumbClinical, thumb, t
     mesh.material.emissive?.set(palette.emissive);
   });
 }
+

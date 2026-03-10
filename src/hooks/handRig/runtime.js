@@ -2,23 +2,25 @@ import { useCallback, useEffect, useRef } from "react";
 import { buildHandRig } from "../../three/buildHandRig";
 import { measureThumbCmcGoniometryFromRig } from "../../domain/thumb";
 import {
-  ANGULAR_CMC_DEBUG_KEYS,
-  OPPOSITION_DEBUG_KEY,
+  CMC_AUTOFRAME_KEYS,
   applyDebugSelection,
   applyPoseToRig,
   autoFrameCmcMeasurementView,
+  buildOppositionMetricFromLevel,
   didGoniometryChange,
   disposeRigResources,
   frameRigToView,
   getViewportSize,
-  updateCmcGoniometerOverlay,
-  updateThumbOppositionOverlay,
+  syncHandRigOverlays,
 } from "../handRig";
-
-const CMC_AUTOFRAME_KEYS = new Set(["TH_CMC_ABD", "TH_CMC_FLEX"]);
 
 export function shouldUseInstantCmcAutoFrame(previousDebugKey, nextDebugKey) {
   return CMC_AUTOFRAME_KEYS.has(nextDebugKey) && previousDebugKey !== nextDebugKey;
+}
+
+export function shouldRebuildRigInputs(previous, next) {
+  if (!previous) return true;
+  return previous.scene !== next.scene || previous.dims !== next.dims;
 }
 
 export const handRigTestables = {
@@ -26,6 +28,8 @@ export const handRigTestables = {
   applyDebugSelection,
   autoFrameCmcMeasurementView,
   shouldUseInstantCmcAutoFrame,
+  shouldRebuildRigInputs,
+  syncHandRigOverlays,
 };
 
 export function useHandRigRuntime({
@@ -43,17 +47,13 @@ export function useHandRigRuntime({
   onOppositionEstimate,
 }) {
   const handRig = useRef(null);
+  const mountedSceneRef = useRef(null);
   const hasInitialFrameRef = useRef(false);
-  const lastPalmLengthRef = useRef(null);
   const cmcBaselineRef = useRef({ CMC_abd: 0, CMC_flex: 0 });
   const lastEmittedGoniometryRef = useRef(null);
   const lastOppositionEstimateRef = useRef(null);
   const lastDebugKeyRef = useRef(debugKey);
-  const poseRef = useRef({ fingers, thumb, thumbClinical, thumbGoniometry, wrist });
-
-  useEffect(() => {
-    poseRef.current = { fingers, thumb, thumbClinical, thumbGoniometry, wrist };
-  }, [fingers, thumb, thumbClinical, thumbGoniometry, wrist]);
+  const lastRigBuildInputsRef = useRef(null);
 
   const emitOppositionEstimate = useCallback(
     measured => {
@@ -119,113 +119,139 @@ export function useHandRigRuntime({
   );
 
   useEffect(() => {
-    if (!three?.scene) return;
+    const scene = three?.scene;
+    if (!scene) return;
 
-    if (handRig.current) {
-      three.scene.remove(handRig.current.root);
-      disposeRigResources(handRig.current);
+    const nextBuildInputs = { scene, dims };
+    if (!shouldRebuildRigInputs(lastRigBuildInputsRef.current, nextBuildInputs)) return;
+    lastRigBuildInputsRef.current = nextBuildInputs;
+
+    const previousRig = handRig.current;
+    const previousScene = mountedSceneRef.current;
+    if (previousRig && previousScene) {
+      previousScene.remove(previousRig.root);
+      disposeRigResources(previousRig);
+      handRig.current = null;
     }
 
-    handRig.current = buildHandRig(dims);
-    three.scene.add(handRig.current.root);
+    const rig = buildHandRig(dims);
+    handRig.current = rig;
+    mountedSceneRef.current = scene;
+    scene.add(rig.root);
+    hasInitialFrameRef.current = false;
 
-    const neutralMeasurement = measureThumbCmcGoniometryFromRig(handRig.current, {
+    const neutralMeasurement = measureThumbCmcGoniometryFromRig(rig, {
       thumb: { CMC_abd: 0, CMC_flex: 0, CMC_opp: 0 },
     });
     cmcBaselineRef.current = {
       CMC_abd: neutralMeasurement?.isolated?.CMC_abd || 0,
       CMC_flex: neutralMeasurement?.isolated?.CMC_flex || 0,
     };
+  }, [dims, three?.scene]);
 
-    const currentPose = poseRef.current;
-    const measured = applyPoseToRig(
-      handRig.current,
-      currentPose.fingers,
-      currentPose.thumb,
-      currentPose.thumbClinical,
-      currentPose.thumbGoniometry,
-      currentPose.wrist,
-      debugKey,
-      dims,
-      getViewportSize(three),
-      cmcBaselineRef.current,
-    );
-    emitThumbGoniometry(measured);
-    emitOppositionEstimate(measured);
-    if (controlsReady) autoFrameCmcView({ instant: true });
-
-    const prevPalmLength = lastPalmLengthRef.current;
-    const nextPalmLength = dims?.palm?.LENGTH || 0;
-    const shouldRefit =
-      prevPalmLength == null ||
-      prevPalmLength <= 0 ||
-      Math.abs(nextPalmLength - prevPalmLength) / prevPalmLength > 0.08;
-
-    lastPalmLengthRef.current = nextPalmLength;
-    if (controlsReady && shouldRefit) frameRig();
-  }, [controlsReady, debugKey, dims, emitThumbGoniometry, emitOppositionEstimate, frameRig, autoFrameCmcView, three]);
+  useEffect(
+    () => () => {
+      const scene = mountedSceneRef.current;
+      const rig = handRig.current;
+      if (scene && rig) {
+        scene.remove(rig.root);
+        disposeRigResources(rig);
+      }
+      handRig.current = null;
+      mountedSceneRef.current = null;
+      lastRigBuildInputsRef.current = null;
+    },
+    [],
+  );
 
   useEffect(() => {
     if (!controlsReady || hasInitialFrameRef.current) return;
     frameRig();
     hasInitialFrameRef.current = true;
-  }, [controlsReady, frameRig]);
+  }, [controlsReady, frameRig, dims, three?.scene]);
 
   useEffect(() => {
+    const rig = handRig.current;
+    if (!rig) return;
+
+    const viewport = getViewportSize(three);
     const measured = applyPoseToRig(
-      handRig.current,
+      rig,
       fingers,
       thumb,
       thumbClinical,
       thumbGoniometry,
       wrist,
-      debugKey,
-      dims,
-      getViewportSize(three),
       cmcBaselineRef.current,
     );
-    emitThumbGoniometry(measured);
-    emitOppositionEstimate(measured);
+
+    const kapandjiEstimatedLevel = syncHandRigOverlays({
+      rig,
+      debugKey,
+      dims,
+      thumbClinical,
+      viewport,
+      thumb,
+    });
+
+    if (handRig.current !== rig) return;
+
+    const measuredWithOpposition = {
+      ...measured,
+      kapandjiEstimatedLevel,
+      oppositionMetric: buildOppositionMetricFromLevel(kapandjiEstimatedLevel),
+    };
+
+    emitThumbGoniometry(measuredWithOpposition);
+    emitOppositionEstimate(measuredWithOpposition);
+  }, [
+    dims,
+    emitThumbGoniometry,
+    emitOppositionEstimate,
+    fingers,
+    three,
+    thumb,
+    thumbClinical,
+    thumbGoniometry,
+    wrist,
+    debugKey,
+  ]);
+
+  useEffect(() => {
+    const rig = handRig.current;
+    if (!rig) return;
+
+    applyDebugSelection(rig, debugKey);
+    syncHandRigOverlays({
+      rig,
+      debugKey,
+      dims,
+      thumbClinical,
+      viewport: getViewportSize(three),
+      thumb,
+    });
 
     if (controlsReady) {
       const instant = shouldUseInstantCmcAutoFrame(lastDebugKeyRef.current, debugKey);
       autoFrameCmcView({ instant });
     }
     lastDebugKeyRef.current = debugKey;
-  }, [
-    debugKey,
-    dims,
-    emitThumbGoniometry,
-    emitOppositionEstimate,
-    fingers,
-    controlsReady,
-    autoFrameCmcView,
-    three,
-    thumb,
-    thumbClinical,
-    thumbGoniometry,
-    wrist,
-  ]);
-
-  useEffect(() => {
-    applyDebugSelection(handRig.current, debugKey, dims, thumbClinical, thumb, three);
-  }, [debugKey, dims, thumb, thumbClinical, three]);
+  }, [autoFrameCmcView, controlsReady, debugKey, dims, thumb, thumbClinical, three]);
 
   useEffect(() => {
     const onResize = () => {
       const rig = handRig.current;
       if (!rig) return;
-      const viewport = getViewportSize(three);
-      if (ANGULAR_CMC_DEBUG_KEYS.has(debugKey)) {
-        rig.dbgMap?.TH_CMC_FLEX?.setGoniometerResolution(viewport);
-        rig.dbgMap?.TH_CMC_ABD?.setGoniometerResolution(viewport);
-        updateCmcGoniometerOverlay(rig, debugKey, dims, viewport);
-      }
-      if (debugKey === OPPOSITION_DEBUG_KEY) {
-        rig.dbgMap?.TH_CMC_OPP?.setOppositionReferenceResolution(viewport);
-        updateThumbOppositionOverlay(rig, debugKey, dims, thumbClinical, viewport, thumb);
-      }
+      syncHandRigOverlays({
+        rig,
+        debugKey,
+        dims,
+        thumbClinical,
+        viewport: getViewportSize(three),
+        thumb,
+      });
     };
+
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
   }, [debugKey, dims, thumb, thumbClinical, three]);

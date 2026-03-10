@@ -7,7 +7,6 @@ import {
   resolveKapandjiOperationalPose,
 } from "../../domain/thumb";
 import { GONIOMETRY_EMIT_EPSILON } from "./constants";
-import { updateCmcGoniometerOverlay, updateThumbOppositionOverlay } from "./overlays";
 
 const formatDegree = value => String(Math.round(value)) + String.fromCharCode(176);
 
@@ -54,8 +53,18 @@ export function didGoniometryChange(previous, next, epsilon = GONIOMETRY_EMIT_EP
   return Math.abs(nextAbd - prevAbd) > epsilon || Math.abs(nextFlex - prevFlex) > epsilon;
 }
 
-export function applyPoseToRig(rig, fingers, thumb, thumbClinical, thumbGoniometry, wrist, debugKey, dims, viewport, cmcBaseline) {
-  if (!rig) return;
+export function buildOppositionMetricFromLevel(kapandjiEstimatedLevel) {
+  const oppositionOperational = resolveKapandjiOperationalPose(kapandjiEstimatedLevel);
+  const oppositionSignedDeg = Number(oppositionOperational.commandDeg) || 0;
+  return {
+    level: kapandjiEstimatedLevel,
+    rigDirection: oppositionSignedDeg >= 0 ? "oposicao" : "retroposicao",
+    rigMagnitudeDeg: Math.abs(oppositionSignedDeg),
+  };
+}
+
+export function applyPoseToRig(rig, fingers, thumb, thumbClinical, thumbGoniometry, wrist, cmcBaseline) {
+  if (!rig) return null;
 
   fingers.forEach((fingerState, index) => {
     const finger = rig.fingers[index];
@@ -80,20 +89,8 @@ export function applyPoseToRig(rig, fingers, thumb, thumbClinical, thumbGoniomet
   rig.root.updateMatrixWorld(true);
   const cmcMeasured = measureThumbCmcGoniometryFromRig(rig, { thumb, baseline: cmcBaseline });
   const safeCmcMeasured = cmcMeasured || { CMC_abd: 0, CMC_flex: 0 };
-  const kapandjiEstimatedLevel = updateThumbOppositionOverlay(rig, debugKey, dims, thumbClinical, viewport, thumb);
-  const oppositionOperational = resolveKapandjiOperationalPose(kapandjiEstimatedLevel);
-  const oppositionSignedDeg = Number(oppositionOperational.commandDeg) || 0;
-  const oppositionMetric = {
-    level: kapandjiEstimatedLevel,
-    rigDirection: oppositionSignedDeg >= 0 ? "oposicao" : "retroposicao",
-    rigMagnitudeDeg: Math.abs(oppositionSignedDeg),
-  };
+
   applyMainLabels(rig, fingers, thumb, thumbClinical, thumbGoniometry, wrist);
-  updateCmcGoniometerOverlay(rig, debugKey, dims, viewport);
-  return {
-    ...safeCmcMeasured,
-    kapandjiEstimatedLevel,
-    oppositionMetric,
-  };
+  return safeCmcMeasured;
 }
 

@@ -2,7 +2,7 @@ import { buildProfile, makeDims } from "../../utils/anthropometry/profile";
 import { buildThumbCmcClinicalModel } from "../../domain/thumbCmcClinical";
 import { buildThumbOppositionClinicalModel, resolveKapandjiOperationalPose } from "../../domain/thumbKapandji";
 import { calculateGlobalD2D5, createSceneInput } from "../../domain/pose";
-import { composeThumbWithOverlay } from "./reducer";
+import { composeThumbWithOverlay } from "./helpers";
 
 /**
  * @typedef {{ dims: object, fingers: object[], thumb: object, wrist: object }} SceneInput
@@ -83,3 +83,4 @@ export function selectPoseState(state, derived) {
 export function selectSceneInput(dims, fingers, renderedThumb, wrist) {
   return createSceneInput({ dims, fingers, thumb: renderedThumb, wrist });
 }
+

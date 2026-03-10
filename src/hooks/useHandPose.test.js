@@ -1,4 +1,4 @@
-import { applyGlobalGripToPose } from "../domain/pose";
+import { applyGlobalGripToPose, createNeutralPose } from "../domain/pose";
 import { buildProfile, makeDims } from "../utils/anthropometry/profile";
 import { buildCmcInputStateForAxis, createDefaultCmcInputState } from "../domain/thumb";
 import { __testables } from "./useHandPose";
@@ -196,6 +196,7 @@ describe("useHandPose reducer", () => {
     expect(neutral.userEditedThumb).toEqual({});
     expect(neutral.explorationSnapshotThumb).toEqual({});
     expect(neutral.explorationRigBaseline).toBeNull();
+    expect(neutral.thumb.CMC_opp).toBe(createNeutralPose(dims).thumb.CMC_opp);
 
     const zero = __testables.poseReducer(base, { type: "APPLY_PRESET_ZERO" });
     expect(zero.activePreset).toBe("zero");
@@ -218,3 +219,4 @@ describe("useHandPose reducer", () => {
     expect(next.anthropometry).toEqual({ sex: "masculino", percentile: 95, age: 25 });
   });
 });
+
