@@ -27,6 +27,30 @@ function createFactories(d, hlList) {
   return { d, mkCyl, mkBox, mkSphere, mkPhal, addHL };
 }
 
+function createFingerDebugFactory(dbgMap) {
+  return (node, key, axis, length, width) => {
+    const pkg = makeDebugPkg(node, key, axis, length * 1.1, width * 2.2, width * 1.6, "", false);
+    dbgMap[pkg.key] = pkg;
+    return pkg;
+  };
+}
+
+function createThumbDebugFactory(dbgMap) {
+  return (node, key, axis, length, width, name, opts) => {
+    const pkg = makeDebugPkg(node, key, axis, length, width * 2.2, width * 1.6, `${name}: 0 deg`, opts);
+    dbgMap[pkg.key] = pkg;
+    return pkg;
+  };
+}
+
+function createWristDebugFactory(dbgMap) {
+  return (node, key, axis, length, width, thickness, label) => {
+    const pkg = makeDebugPkg(node, key, axis, length, width, thickness, label);
+    dbgMap[pkg.key] = pkg;
+    return pkg;
+  };
+}
+
 function buildWristSubsystem(f) {
   const root = new Group();
   const { d, mkCyl, mkBox, addHL } = f;
@@ -70,6 +94,7 @@ function buildWristSubsystem(f) {
 
 function buildFingersSubsystem(f, palm, dbgMap, highlightMap, allMovers) {
   const { d, mkSphere, mkPhal, addHL } = f;
+  const createFingerDebug = createFingerDebugFactory(dbgMap);
   const fingersRig = [];
   const tips = [];
   const tipOffsets = [];
@@ -119,15 +144,10 @@ function buildFingersSubsystem(f, palm, dbgMap, highlightMap, allMovers) {
       tipOff += padLen;
     }
 
-    const makeFingerDebug = (node, key, axis, L, W) => {
-      const pkg = makeDebugPkg(node, key, axis, L * 1.1, W * 2.2, W * 1.6, "", false);
-      dbgMap[pkg.key] = pkg;
-    };
-
     const digit = `D${i + 2}`;
-    makeFingerDebug(mcp, `${digit}_MCP`, "XY", Lp, Wp);
-    makeFingerDebug(pip, `${digit}_PIP`, "XY", Lm, Wm);
-    makeFingerDebug(dip, `${digit}_DIP`, "XY", Ld, Wd);
+    createFingerDebug(mcp, `${digit}_MCP`, "XY", Lp, Wp);
+    createFingerDebug(pip, `${digit}_PIP`, "XY", Lm, Wm);
+    createFingerDebug(dip, `${digit}_DIP`, "XY", Ld, Wd);
 
     fingersRig.push({ base, mcp, prox: prox.group, pip, mid: mid.group, dip });
     tips.push(tip);
@@ -166,6 +186,7 @@ function buildGlobalFingerDebug(fingersRig, dims, dbgMap) {
 
 function buildThumbSubsystem(f, palm, dbgMap, highlightMap, allMovers) {
   const { d, mkSphere, mkPhal, addHL } = f;
+  const createThumbDebug = createThumbDebugFactory(dbgMap);
 
   const thumbBase = new Group();
   thumbBase.position.set(
@@ -234,16 +255,9 @@ function buildThumbSubsystem(f, palm, dbgMap, highlightMap, allMovers) {
   allMovers.push(tMeta.mesh, tProx.mesh, tDist.mesh);
   highlightMap.TH_MCP = [tProx.mesh];
   highlightMap.TH_IP = [tDist.mesh];
-  // CMC highlight should focus on the CMC complex only: joint + metacarpal.
   highlightMap.TH_CMC_ABD = [cmcJointSphere, tMeta.mesh];
   highlightMap.TH_CMC_FLEX = [cmcJointSphere, tMeta.mesh];
   highlightMap.TH_CMC_OPP = [cmcJointSphere, tMeta.mesh];
-
-  const mkThumbDebug = (node, key, axis, L, W, name, opts) => {
-    const pkg = makeDebugPkg(node, key, axis, L, W * 2.2, W * 1.6, `${name}: 0 deg`, opts);
-    dbgMap[pkg.key] = pkg;
-    return pkg.label;
-  };
 
   const cmcAbdDebug = new Group();
   thumbMount.add(cmcAbdDebug);
@@ -253,11 +267,19 @@ function buildThumbSubsystem(f, palm, dbgMap, highlightMap, allMovers) {
   thumbMount.add(cmcOppDebug);
 
   const thumbLabels = {
-    abd: mkThumbDebug(cmcAbdDebug, "TH_CMC_ABD", "XY", metacarpalLen, d.thumbWid[0], "CMC abd", { withGoniometer: true, showPlane: false }),
-    flex: mkThumbDebug(cmcFlexDebug, "TH_CMC_FLEX", "ZX", metacarpalLen, d.thumbWid[0], "CMC flex", { withGoniometer: true, showPlane: false }),
-    opp: mkThumbDebug(cmcOppDebug, "TH_CMC_OPP", "YZ", metacarpalLen, d.thumbWid[0], "CMC opp", { withOppositionReference: true }),
-    mcp: mkThumbDebug(tmcp, "TH_MCP", "XY", proximalLen, d.thumbWid[0], "MCP"),
-    ip: mkThumbDebug(tipIp, "TH_IP", "XY", distalLen, d.thumbWid[1], "IP"),
+    abd: createThumbDebug(cmcAbdDebug, "TH_CMC_ABD", "XY", metacarpalLen, d.thumbWid[0], "CMC abd", {
+      withGoniometer: true,
+      showPlane: false,
+    }).label,
+    flex: createThumbDebug(cmcFlexDebug, "TH_CMC_FLEX", "ZX", metacarpalLen, d.thumbWid[0], "CMC flex", {
+      withGoniometer: true,
+      showPlane: false,
+    }).label,
+    opp: createThumbDebug(cmcOppDebug, "TH_CMC_OPP", "YZ", metacarpalLen, d.thumbWid[0], "CMC opp", {
+      withOppositionReference: true,
+    }).label,
+    mcp: createThumbDebug(tmcp, "TH_MCP", "XY", proximalLen, d.thumbWid[0], "MCP").label,
+    ip: createThumbDebug(tipIp, "TH_IP", "XY", distalLen, d.thumbWid[1], "IP").label,
   };
 
   return {
@@ -279,7 +301,9 @@ function buildThumbSubsystem(f, palm, dbgMap, highlightMap, allMovers) {
 }
 
 function buildWristDebug(dims, wristDev, wristFlex, dbgMap) {
-  dbgMap.WR_DEV = makeDebugPkg(
+  const createWristDebug = createWristDebugFactory(dbgMap);
+
+  createWristDebug(
     wristDev,
     "WR_DEV",
     "YZ",
@@ -288,7 +312,8 @@ function buildWristDebug(dims, wristDev, wristFlex, dbgMap) {
     dims.palm.THICKNESS * 1.6,
     "Desvio: 0 deg",
   );
-  dbgMap.WR_FLEX = makeDebugPkg(
+
+  createWristDebug(
     wristFlex,
     "WR_FLEX",
     "XY",
@@ -330,8 +355,4 @@ export function buildHandRig(d) {
     highlight: { map: highlightMap, all: hlList },
   };
 }
-
-
-
-
 
