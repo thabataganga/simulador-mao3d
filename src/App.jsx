@@ -3,8 +3,14 @@ import { RANGES } from "./constants/biomechanics";
 
 import { useHandPose } from "./hooks/useHandPose";
 
-import { PoseSetupControls } from "./features/pose-controls";
-import { OrderedAccordions } from "./features/control-panel";
+import { buildPoseSetupProps, PoseSetupControls } from "./features/pose-controls";
+import {
+  buildOrderedAccordionsProps,
+  clearDebug,
+  nextOpenPanel,
+  OrderedAccordions,
+  shouldClearDebugForPanel,
+} from "./features/control-panel";
 
 const HandScene3D = lazy(() => import("./features/scene3d"));
 
@@ -56,33 +62,51 @@ export default function HandSimulatorApp() {
     setOpenPanel("thumb");
   }, [setActivePreset, setThumbVal]);
 
-  const togglePanel = id => {
-    setOpenPanel(prev => {
-      const next = prev === id ? "none" : id;
-      if (next === "global") setDebugKey("off");
-      return next;
-    });
-  };
+  const onClearDebugKey = useCallback(() => clearDebug(setDebugKey), []);
 
-  const clearPreset = useCallback(() => poseActions.setActivePreset("none"), [poseActions]);
+  const onTogglePanel = useCallback(
+    panelId => {
+      setOpenPanel(previous => {
+        const next = nextOpenPanel(previous, panelId);
+        if (shouldClearDebugForPanel(next)) onClearDebugKey();
+        return next;
+      });
+    },
+    [onClearDebugKey],
+  );
 
-  const handleGrip = useCallback(
+  const onClearPreset = useCallback(() => poseActions.setActivePreset("none"), [poseActions]);
+
+  const onGrip = useCallback(
     value => {
-      setDebugKey("off");
+      onClearDebugKey();
       poseActions.setGrip(value);
       poseActions.applyGlobalGrip(value);
     },
-    [poseActions],
+    [onClearDebugKey, poseActions],
   );
 
-  const handleGlobalMode = useCallback(
+  const onGlobalMode = useCallback(
     mode => {
-      setDebugKey("off");
+      onClearDebugKey();
       poseActions.setGlobalMode(mode);
       poseActions.applyGlobalGrip(poseState.grip, mode);
     },
-    [poseActions, poseState.grip],
+    [onClearDebugKey, poseActions, poseState.grip],
   );
+
+  const poseSetupProps = buildPoseSetupProps({ poseState, poseActions });
+  const orderedAccordionsProps = buildOrderedAccordionsProps({
+    poseState,
+    poseActions,
+    openPanel,
+    onTogglePanel,
+    onGlobalMode,
+    onGrip,
+    onClearPreset,
+    onSetDebugKey: setDebugKey,
+    onClearDebugKey,
+  });
 
   return (
     <div
@@ -103,57 +127,17 @@ export default function HandSimulatorApp() {
         </h1>
         <p className="text-xs text-gray-500 mb-4">Positivo = flexao/abducao | Negativo = extensao/aducao</p>
 
-        <PoseSetupControls
-          sex={poseState.sex}
-          percentile={poseState.percentile}
-          age={poseState.age}
-          activePreset={poseState.activePreset}
-          onSex={poseActions.setSex}
-          onPercentile={poseActions.setPercentile}
-          onAge={poseActions.setAge}
-          onPresetFunctional={poseActions.presetFunctional}
-          onPresetNeutral={poseActions.presetNeutral}
-          onPresetZero={poseActions.presetZero}
-        />
+        <PoseSetupControls {...poseSetupProps} />
 
-        <OrderedAccordions
-          openPanel={openPanel}
-          onTogglePanel={togglePanel}
-          thumb={poseState.thumb}
-          thumbGoniometry={poseState.thumbGoniometry}
-          thumbClinical={poseState.thumbClinical}
-          isExplorationMode={poseState.isExplorationMode}
-          explorationKapandjiTarget={poseState.explorationKapandjiTarget}
-          onThumbVal={poseActions.setThumbVal}
-          onThumbCmcInput={poseActions.setThumbCmcInput}
-          onEnterOppositionExploration={poseActions.enterOppositionExploration}
-          onUpdateOppositionExploration={poseActions.updateOppositionExploration}
-          onRestoreUserInputData={poseActions.restoreUserInputData}
-          onExitOppositionExploration={poseActions.exitOppositionExploration}
-          onThumbHighlight={setDebugKey}
-          onThumbClearHighlight={() => setDebugKey("off")}
-          onThumbClearPreset={clearPreset}
-          globalD2D5={poseState.globalD2D5}
-          onUpdateGlobalD2D5={poseActions.updateGlobalD2D5}
-          onGlobalHighlight={setDebugKey}
-          onGlobalClearPreset={clearPreset}
-          wrist={poseState.wrist}
-          onWrist={poseActions.setWrist}
-          onWristHighlight={setDebugKey}
-          onWristClearPreset={clearPreset}
-          grip={poseState.grip}
-          globalMode={poseState.globalMode}
-          onGlobalMode={handleGlobalMode}
-          onGrip={handleGrip}
-          onGlobalClearHighlight={() => setDebugKey("off")}
-        />
+        <OrderedAccordions {...orderedAccordionsProps} />
 
         <details className="mt-4 text-xs text-gray-500">
           <summary className="cursor-pointer font-medium">Tabela tecnica - Limites</summary>
           <div className="mt-2 space-y-1">
             <p>MCP D2-D5: -45 deg a +90 deg | PIP: 0-100 deg | DIP: -20 deg a +80 deg</p>
             <p>
-              CMC Polegar: Abd {RANGES.CMC_ABD[0]}..+{RANGES.CMC_ABD[1]} deg | Flex/Ext {RANGES.CMC_FLEX[0]}..+{RANGES.CMC_FLEX[1]} deg | Oposicao: {RANGES.CMC_OPP[0]}..+{RANGES.CMC_OPP[1]} deg | Kapandji estimado 0..10
+              CMC Polegar: Abd {RANGES.CMC_ABD[0]}..+{RANGES.CMC_ABD[1]} deg | Flex/Ext {RANGES.CMC_FLEX[0]}..+
+              {RANGES.CMC_FLEX[1]} deg | Oposicao: {RANGES.CMC_OPP[0]}..+{RANGES.CMC_OPP[1]} deg | Kapandji estimado 0..10
             </p>
             <p>MCP Polegar: 0-60 deg | IP: -10 deg a +80 deg</p>
           </div>
@@ -173,4 +157,3 @@ export default function HandSimulatorApp() {
     </div>
   );
 }
-

@@ -1,6 +1,7 @@
 import { PoseSetupControls, GlobalClosureSection } from "./pose-controls";
 import { D2D5FeatureSection } from "./d2d5";
-import { OrderedAccordions } from "./control-panel";
+import { OrderedAccordions, buildOrderedAccordionsProps, nextOpenPanel, shouldClearDebugForPanel } from "./control-panel";
+import { buildPoseSetupProps } from "./pose-controls";
 import { ThumbFeatureSection } from "./thumb";
 import { WristFeatureSection } from "./wrist";
 import Scene3DViewport from "./scene3d/Scene3DViewport";
@@ -16,16 +17,20 @@ describe("feature contracts", () => {
     const onPresetFunctional = jest.fn();
 
     const element = PoseSetupControls({
-      sex: "masculino",
-      percentile: 50,
-      age: 30,
-      activePreset: "none",
-      onSex,
-      onPercentile: jest.fn(),
-      onAge: jest.fn(),
-      onPresetFunctional,
-      onPresetNeutral: jest.fn(),
-      onPresetZero: jest.fn(),
+      state: {
+        sex: "masculino",
+        percentile: 50,
+        age: 30,
+        activePreset: "none",
+      },
+      actions: {
+        onSex,
+        onPercentile: jest.fn(),
+        onAge: jest.fn(),
+        onPresetFunctional,
+        onPresetNeutral: jest.fn(),
+        onPresetZero: jest.fn(),
+      },
     });
 
     const [anthropometryForm, presetButtons] = element.props.children;
@@ -34,6 +39,65 @@ describe("feature contracts", () => {
 
     expect(onSex).toHaveBeenCalledWith("feminino");
     expect(onPresetFunctional).toHaveBeenCalledTimes(1);
+  });
+
+  test("pose/control adapters and ui rules expose stable contracts", () => {
+    const poseState = {
+      sex: "masculino",
+      percentile: 50,
+      age: 30,
+      activePreset: "none",
+      thumb: {},
+      thumbGoniometry: {},
+      thumbClinical: {},
+      isExplorationMode: false,
+      explorationKapandjiTarget: 0,
+      globalD2D5: { MCP: 0, PIP: 0, DIP: 0 },
+      wrist: { flex: 0, dev: 0 },
+      grip: 0,
+      globalMode: "functional",
+    };
+
+    const poseActions = {
+      setSex: jest.fn(),
+      setPercentile: jest.fn(),
+      setAge: jest.fn(),
+      presetFunctional: jest.fn(),
+      presetNeutral: jest.fn(),
+      presetZero: jest.fn(),
+      setThumbVal: jest.fn(),
+      setThumbCmcInput: jest.fn(),
+      enterOppositionExploration: jest.fn(),
+      updateOppositionExploration: jest.fn(),
+      restoreUserInputData: jest.fn(),
+      exitOppositionExploration: jest.fn(),
+      updateGlobalD2D5: jest.fn(),
+      setWrist: jest.fn(),
+    };
+
+    const poseSetupProps = buildPoseSetupProps({ poseState, poseActions });
+    expect(poseSetupProps.state.sex).toBe("masculino");
+    expect(typeof poseSetupProps.actions.onPresetNeutral).toBe("function");
+
+    const accordionsProps = buildOrderedAccordionsProps({
+      poseState,
+      poseActions,
+      openPanel: "none",
+      onTogglePanel: jest.fn(),
+      onGlobalMode: jest.fn(),
+      onGrip: jest.fn(),
+      onClearPreset: jest.fn(),
+      onSetDebugKey: jest.fn(),
+      onClearDebugKey: jest.fn(),
+    });
+
+    expect(accordionsProps).toHaveProperty("state");
+    expect(accordionsProps).toHaveProperty("actions");
+    expect(accordionsProps).toHaveProperty("ui");
+    expect(nextOpenPanel("none", "thumb")).toBe("thumb");
+    expect(nextOpenPanel("thumb", "thumb")).toBe("none");
+    expect(shouldClearDebugForPanel("global")).toBe(true);
+    expect(shouldClearDebugForPanel("thumb")).toBe(false);
   });
 
   test("d2d5 and closure sections forward key callbacks", () => {
@@ -75,35 +139,41 @@ describe("feature contracts", () => {
 
   test("ordered accordions keep expected order", () => {
     const element = OrderedAccordions({
-      openPanel: "none",
-      onTogglePanel: jest.fn(),
-      thumb: { CMC_abd: 0, CMC_opp: 0, CMC_flex: 0, MCP_flex: 0, IP: 0 },
-      thumbGoniometry: { abd: { inputDirection: "abducao", inputMagnitudeDeg: 0 }, flex: { inputDirection: "extensao", inputMagnitudeDeg: 0 } },
-      thumbClinical: { opp: { inputDirection: "oposicao", inputMagnitudeDeg: 0 } },
-      isExplorationMode: false,
-      explorationKapandjiTarget: 0,
-      onThumbVal: jest.fn(),
-      onThumbCmcInput: jest.fn(),
-      onEnterOppositionExploration: jest.fn(),
-      onUpdateOppositionExploration: jest.fn(),
-      onRestoreUserInputData: jest.fn(),
-      onExitOppositionExploration: jest.fn(),
-      onThumbHighlight: jest.fn(),
-      onThumbClearHighlight: jest.fn(),
-      onThumbClearPreset: jest.fn(),
-      globalD2D5: { MCP: 0, PIP: 0, DIP: 0 },
-      onUpdateGlobalD2D5: jest.fn(),
-      onGlobalHighlight: jest.fn(),
-      onGlobalClearPreset: jest.fn(),
-      wrist: { flex: 0, dev: 0 },
-      onWrist: jest.fn(),
-      onWristHighlight: jest.fn(),
-      onWristClearPreset: jest.fn(),
-      grip: 0,
-      globalMode: "functional",
-      onGlobalMode: jest.fn(),
-      onGrip: jest.fn(),
-      onGlobalClearHighlight: jest.fn(),
+      state: {
+        openPanel: "none",
+        thumb: { CMC_abd: 0, CMC_opp: 0, CMC_flex: 0, MCP_flex: 0, IP: 0 },
+        thumbGoniometry: { abd: { inputDirection: "abducao", inputMagnitudeDeg: 0 }, flex: { inputDirection: "extensao", inputMagnitudeDeg: 0 } },
+        thumbClinical: { opp: { inputDirection: "oposicao", inputMagnitudeDeg: 0 } },
+        isExplorationMode: false,
+        explorationKapandjiTarget: 0,
+        globalD2D5: { MCP: 0, PIP: 0, DIP: 0 },
+        wrist: { flex: 0, dev: 0 },
+        grip: 0,
+        globalMode: "functional",
+      },
+      actions: {
+        onTogglePanel: jest.fn(),
+        onThumbVal: jest.fn(),
+        onThumbCmcInput: jest.fn(),
+        onEnterOppositionExploration: jest.fn(),
+        onUpdateOppositionExploration: jest.fn(),
+        onRestoreUserInputData: jest.fn(),
+        onExitOppositionExploration: jest.fn(),
+        onUpdateGlobalD2D5: jest.fn(),
+        onWrist: jest.fn(),
+        onGlobalMode: jest.fn(),
+        onGrip: jest.fn(),
+      },
+      ui: {
+        onThumbHighlight: jest.fn(),
+        onGlobalHighlight: jest.fn(),
+        onWristHighlight: jest.fn(),
+        onThumbClearHighlight: jest.fn(),
+        onGlobalClearHighlight: jest.fn(),
+        onThumbClearPreset: jest.fn(),
+        onGlobalClearPreset: jest.fn(),
+        onWristClearPreset: jest.fn(),
+      },
     });
 
     const children = element.props.children;

@@ -3,37 +3,45 @@ import { D2D5FeatureSection } from "../d2d5";
 import { GlobalClosureSection } from "../pose-controls";
 import { WristFeatureSection } from "../wrist";
 
-export function OrderedAccordions({
-  openPanel,
-  onTogglePanel,
-  thumb,
-  thumbGoniometry,
-  thumbClinical,
-  isExplorationMode,
-  explorationKapandjiTarget,
-  onThumbVal,
-  onThumbCmcInput,
-  onEnterOppositionExploration,
-  onUpdateOppositionExploration,
-  onRestoreUserInputData,
-  onExitOppositionExploration,
-  onThumbHighlight,
-  onThumbClearHighlight,
-  onThumbClearPreset,
-  globalD2D5,
-  onUpdateGlobalD2D5,
-  onGlobalHighlight,
-  onGlobalClearPreset,
-  wrist,
-  onWrist,
-  onWristHighlight,
-  onWristClearPreset,
-  grip,
-  globalMode,
-  onGlobalMode,
-  onGrip,
-  onGlobalClearHighlight,
-}) {
+export function OrderedAccordions({ state, actions, ui }) {
+  const {
+    openPanel,
+    thumb,
+    thumbGoniometry,
+    thumbClinical,
+    isExplorationMode,
+    explorationKapandjiTarget,
+    globalD2D5,
+    wrist,
+    grip,
+    globalMode,
+  } = state;
+
+  const {
+    onTogglePanel,
+    onThumbVal,
+    onThumbCmcInput,
+    onEnterOppositionExploration,
+    onUpdateOppositionExploration,
+    onRestoreUserInputData,
+    onExitOppositionExploration,
+    onUpdateGlobalD2D5,
+    onWrist,
+    onGlobalMode,
+    onGrip,
+  } = actions;
+
+  const {
+    onThumbHighlight,
+    onGlobalHighlight,
+    onWristHighlight,
+    onThumbClearHighlight,
+    onGlobalClearHighlight,
+    onThumbClearPreset,
+    onGlobalClearPreset,
+    onWristClearPreset,
+  } = ui;
+
   return (
     <>
       <ThumbFeatureSection
