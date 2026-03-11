@@ -1,3 +1,7 @@
+/**
+ * Build the prop contract consumed by OrderedAccordions.
+ * This adapter keeps App-level orchestration isolated from feature sections.
+ */
 export function buildOrderedAccordionsProps({
   poseState,
   poseActions,

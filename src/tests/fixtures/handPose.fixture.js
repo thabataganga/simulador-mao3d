@@ -1,4 +1,4 @@
-import { createUseHandPoseInitialState } from "../../hooks/handPose/reducer";
+import { createUseHandPoseInitialState } from "../../hooks/handPose/initialState";
 
 export function createHandPoseFixture(overrides = {}) {
   return {

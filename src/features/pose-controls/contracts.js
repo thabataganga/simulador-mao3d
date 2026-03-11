@@ -1,3 +1,7 @@
+/**
+ * Build the prop contract consumed by pose setup controls.
+ * Keeps UI wiring stable while handPose internals evolve.
+ */
 export function buildPoseSetupProps({ poseState, poseActions }) {
   return {
     state: {

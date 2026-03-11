@@ -37,8 +37,19 @@ jest.mock("../handRig", () => ({
   syncHandRigOverlays: jest.fn(() => 6),
 }));
 
+const mockBuildHandRig = jest.fn();
+jest.mock("../../three/buildHandRig", () => ({
+  buildHandRig: (...args) => mockBuildHandRig(...args),
+}));
+
+const mockMeasureThumbCmcGoniometryFromRig = jest.fn();
+jest.mock("../../domain/thumb", () => ({
+  measureThumbCmcGoniometryFromRig: (...args) => mockMeasureThumbCmcGoniometryFromRig(...args),
+}));
+
 import {
   applyPoseAndMeasure,
+  buildOrRebuildRig,
   createResizeOverlaySyncHandler,
   shouldRebuildRigInputs,
   shouldUseInstantCmcAutoFrame,
@@ -46,6 +57,15 @@ import {
 import { getViewportSize, syncHandRigOverlays } from "../handRig";
 
 describe("runtimePipeline", () => {
+  beforeEach(() => {
+    mockBuildHandRig.mockReset();
+    mockMeasureThumbCmcGoniometryFromRig.mockReset();
+    mockBuildHandRig.mockImplementation(() => ({ root: { id: "rig-root" } }));
+    mockMeasureThumbCmcGoniometryFromRig.mockReturnValue({
+      isolated: { CMC_abd: 0, CMC_flex: 0 },
+    });
+  });
+
   test("shouldUseInstantCmcAutoFrame only on CMC transitions", () => {
     expect(shouldUseInstantCmcAutoFrame("off", "TH_CMC_ABD")).toBe(true);
     expect(shouldUseInstantCmcAutoFrame("TH_CMC_ABD", "TH_CMC_ABD")).toBe(false);
@@ -93,6 +113,60 @@ describe("runtimePipeline", () => {
 
     handler();
     expect(syncHandRigOverlays.mock.calls.length).toBe(callsBefore);
+  });
+
+  test("buildOrRebuildRig does not unmount rig on rerun without structural changes", () => {
+    const scene = { add: jest.fn(), remove: jest.fn() };
+    const dims = { palm: { LENGTH: 70, WIDTH: 55 } };
+    const handRigRef = { current: null };
+    const mountedSceneRef = { current: null };
+    const hasInitialFrameRef = { current: true };
+    const cmcBaselineRef = { current: { CMC_abd: 0, CMC_flex: 0 } };
+    const lastRigBuildInputsRef = { current: null };
+
+    const firstRig = buildOrRebuildRig({
+      scene,
+      dims,
+      handRigRef,
+      mountedSceneRef,
+      hasInitialFrameRef,
+      cmcBaselineRef,
+      lastRigBuildInputsRef,
+    });
+    const secondRig = buildOrRebuildRig({
+      scene,
+      dims,
+      handRigRef,
+      mountedSceneRef,
+      hasInitialFrameRef,
+      cmcBaselineRef,
+      lastRigBuildInputsRef,
+    });
+
+    expect(firstRig).toBe(secondRig);
+    expect(mockBuildHandRig).toHaveBeenCalledTimes(1);
+    expect(scene.add).toHaveBeenCalledTimes(1);
+    expect(scene.remove).not.toHaveBeenCalled();
+  });
+
+  test("createResizeOverlaySyncHandler keeps active CMC overlay synced after resize", () => {
+    const handler = createResizeOverlaySyncHandler({
+      getRig: () => ({ root: { id: "rig-root" } }),
+      getParams: () => ({
+        debugKey: "TH_CMC_ABD",
+        dims: { palm: { LENGTH: 70, WIDTH: 55 } },
+        thumbClinical: {},
+        thumb: {},
+        three: { renderer: {} },
+      }),
+    });
+
+    handler();
+
+    const calls = syncHandRigOverlays.mock.calls;
+    const lastCall = calls[calls.length - 1]?.[0];
+    expect(lastCall.debugKey).toBe("TH_CMC_ABD");
+    expect(lastCall.viewport).toEqual({ width: 100, height: 50 });
   });
 });
 

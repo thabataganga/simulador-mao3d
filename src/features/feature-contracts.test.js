@@ -1,7 +1,6 @@
-import { PoseSetupControls, GlobalClosureSection } from "./pose-controls";
+import { PoseSetupControls, GlobalClosureSection, buildPoseSetupProps } from "./pose-controls";
 import { D2D5FeatureSection } from "./d2d5";
 import { OrderedAccordions, buildOrderedAccordionsProps, nextOpenPanel, shouldClearDebugForPanel } from "./control-panel";
-import { buildPoseSetupProps } from "./pose-controls";
 import { ThumbFeatureSection } from "./thumb";
 import { WristFeatureSection } from "./wrist";
 import Scene3DViewport from "./scene3d/Scene3DViewport";
@@ -235,4 +234,82 @@ describe("feature contracts", () => {
     expect(rendered.props.debugKey).toBe("off");
     expect(rendered.props.sceneInput).toEqual({ dims: {}, fingers: [], thumb: {}, wrist: {} });
   });
+  test("feature adapters forward behavior callbacks through grouped contracts", () => {
+    const poseState = {
+      sex: "masculino",
+      percentile: 50,
+      age: 25,
+      activePreset: "none",
+      thumb: {},
+      thumbGoniometry: {},
+      thumbClinical: {},
+      isExplorationMode: false,
+      explorationKapandjiTarget: 0,
+      globalD2D5: { MCP: 0, PIP: 0, DIP: 0 },
+      wrist: { flex: 0, dev: 0 },
+      grip: 0,
+      globalMode: "functional",
+    };
+
+    const poseActions = {
+      setSex: jest.fn(),
+      setPercentile: jest.fn(),
+      setAge: jest.fn(),
+      presetFunctional: jest.fn(),
+      presetNeutral: jest.fn(),
+      presetZero: jest.fn(),
+      setThumbVal: jest.fn(),
+      setThumbCmcInput: jest.fn(),
+      enterOppositionExploration: jest.fn(),
+      updateOppositionExploration: jest.fn(),
+      restoreUserInputData: jest.fn(),
+      exitOppositionExploration: jest.fn(),
+      updateGlobalD2D5: jest.fn(),
+      setWrist: jest.fn(),
+    };
+
+    const onSetDebugKey = jest.fn();
+    const onClearDebugKey = jest.fn();
+    const onClearPreset = jest.fn();
+    const onGlobalMode = jest.fn();
+    const onGrip = jest.fn();
+
+    const poseProps = buildPoseSetupProps({ poseState, poseActions });
+    poseProps.actions.onPresetNeutral();
+    poseProps.actions.onSex("feminino");
+
+    expect(poseActions.presetNeutral).toHaveBeenCalledTimes(1);
+    expect(poseActions.setSex).toHaveBeenCalledWith("feminino");
+
+    const accordionProps = buildOrderedAccordionsProps({
+      poseState,
+      poseActions,
+      openPanel: "thumb",
+      onTogglePanel: jest.fn(),
+      onGlobalMode,
+      onGrip,
+      onClearPreset,
+      onSetDebugKey,
+      onClearDebugKey,
+    });
+
+    accordionProps.actions.onThumbVal("CMC_abd", 15);
+    accordionProps.actions.onThumbCmcInput("CMC_flex", "extensao", 10);
+    accordionProps.actions.onGlobalMode("pinch");
+    accordionProps.actions.onGrip(42);
+
+    accordionProps.ui.onThumbHighlight("TH_CMC_ABD");
+    accordionProps.ui.onThumbClearHighlight();
+    accordionProps.ui.onGlobalClearPreset();
+
+    expect(poseActions.setThumbVal).toHaveBeenCalledWith("CMC_abd", 15);
+    expect(poseActions.setThumbCmcInput).toHaveBeenCalledWith("CMC_flex", "extensao", 10);
+    expect(onGlobalMode).toHaveBeenCalledWith("pinch");
+    expect(onGrip).toHaveBeenCalledWith(42);
+    expect(onSetDebugKey).toHaveBeenCalledWith("TH_CMC_ABD");
+    expect(onClearDebugKey).toHaveBeenCalledTimes(1);
+    expect(onClearPreset).toHaveBeenCalledTimes(1);
+  });
 });
+
+
