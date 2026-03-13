@@ -51,6 +51,13 @@ export function buildOrRebuildRig({
   }
 
   const rig = buildHandRig(dims);
+  if (!rig?.root) {
+    handRigRef.current = null;
+    mountedSceneRef.current = null;
+    hasInitialFrameRef.current = false;
+    return null;
+  }
+
   handRigRef.current = rig;
   mountedSceneRef.current = scene;
   scene.add(rig.root);
@@ -160,4 +167,5 @@ export function disposeMountedRig({ mountedSceneRef, handRigRef, lastRigBuildInp
   mountedSceneRef.current = null;
   lastRigBuildInputsRef.current = null;
 }
+
 

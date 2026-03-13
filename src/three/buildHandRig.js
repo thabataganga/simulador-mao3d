@@ -51,6 +51,28 @@ function createWristDebugFactory(dbgMap) {
   };
 }
 
+function hasValidDims(d) {
+  return Boolean(
+    d?.palm?.LENGTH &&
+      d?.palm?.WIDTH &&
+      d?.palm?.THICKNESS &&
+      d?.wrist?.radius != null &&
+      d?.wrist?.length != null &&
+      d?.forearm?.len != null &&
+      d?.forearm?.radProx != null &&
+      d?.forearm?.radDist != null &&
+      Array.isArray(d?.fingers) &&
+      d.fingers.length >= 4 &&
+      d.fingers.every(finger => Array.isArray(finger?.len) && finger.len.length === 3) &&
+      Array.isArray(d?.fingerWid) &&
+      d.fingerWid.length >= 3 &&
+      Array.isArray(d?.thumbLen) &&
+      d.thumbLen.length >= 2 &&
+      Array.isArray(d?.thumbWid) &&
+      d.thumbWid.length >= 2
+  );
+}
+
 function buildWristSubsystem(f) {
   const root = new Group();
   const { d, mkCyl, mkBox, addHL } = f;
@@ -163,8 +185,12 @@ function buildFingersSubsystem(f, palm, dbgMap, highlightMap, allMovers) {
 }
 
 function buildGlobalFingerDebug(fingersRig, dims, dbgMap) {
-  const d3 = fingersRig[1];
-  const [Lp3, Lm3, Ld3] = dims.fingers[1].len;
+  const fallbackIndex = fingersRig[1] && dims?.fingers?.[1]?.len ? 1 : 0;
+  const d3 = fingersRig[fallbackIndex];
+  const fingerDims = dims?.fingers?.[fallbackIndex]?.len;
+  if (!d3 || !Array.isArray(fingerDims) || fingerDims.length < 3 || !Array.isArray(dims?.fingerWid) || dims.fingerWid.length < 3) return;
+
+  const [Lp3, Lm3, Ld3] = fingerDims;
   const [Wp3, Wm3, Wd3] = dims.fingerWid;
 
   const gMG = new Group();
@@ -325,6 +351,8 @@ function buildWristDebug(dims, wristDev, wristFlex, dbgMap) {
 }
 
 export function buildHandRig(d) {
+  if (!hasValidDims(d)) return null;
+
   const hlList = [];
   const dbgMap = {};
   const highlightMap = {};
@@ -355,4 +383,7 @@ export function buildHandRig(d) {
     highlight: { map: highlightMap, all: hlList },
   };
 }
+
+
+
 

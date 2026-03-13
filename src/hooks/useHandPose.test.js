@@ -1,6 +1,7 @@
 import { applyGlobalGripToPose, createNeutralPose } from "../domain/pose";
 import { buildProfile, makeDims } from "../utils/anthropometry/profile";
 import { buildCmcInputStateForAxis, createDefaultCmcInputState } from "../domain/thumb";
+import { createPoseActions } from "./handPose/actions";
 import { __testables } from "./useHandPose";
 
 describe("useHandPose reducer", () => {
@@ -219,4 +220,40 @@ describe("useHandPose reducer", () => {
     expect(next.anthropometry).toEqual({ sex: "masculino", percentile: 95, age: 25 });
   });
 });
+
+
+describe("anthropometry validation guards", () => {
+  test("SET_ANTHROPOMETRY ignores missing or invalid values", () => {
+    const base = {
+      ...__testables.createInitialState(),
+      anthropometry: { sex: "masculino", percentile: 50, age: 25 },
+    };
+
+    const missingValue = __testables.poseReducer(base, { type: "SET_ANTHROPOMETRY" });
+    expect(missingValue.anthropometry).toEqual(base.anthropometry);
+
+    const invalidValue = __testables.poseReducer(base, {
+      type: "SET_ANTHROPOMETRY",
+      value: { sex: "outro", percentile: 42, age: NaN },
+    });
+    expect(invalidValue.anthropometry).toEqual(base.anthropometry);
+  });
+
+  test("pose actions ignore invalid anthropometry commands", () => {
+
+    const dispatch = jest.fn();
+    const track = jest.fn();
+    const actions = createPoseActions({ dispatch, track, dims: {}, globalMode: "functional" });
+
+    actions.setSex("outro");
+    actions.setPercentile(42);
+    actions.setAge(91);
+    actions.setAge(Number.NaN);
+
+    expect(dispatch).not.toHaveBeenCalled();
+    expect(track).not.toHaveBeenCalled();
+  });
+});
+
+
 

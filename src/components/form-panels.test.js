@@ -36,6 +36,33 @@ describe("AnthropometryForm", () => {
     expect(onPercentile).toHaveBeenCalledWith(75);
     expect(onAge).toHaveBeenCalledWith(40);
   });
+
+  test("ignores invalid anthropometry values at the form boundary", () => {
+    const onSex = jest.fn();
+    const onPercentile = jest.fn();
+    const onAge = jest.fn();
+
+    const element = AnthropometryForm({
+      sex: "masculino",
+      percentile: 50,
+      age: 25,
+      onSex,
+      onPercentile,
+      onAge,
+    });
+
+    const [sexWrap, percentileWrap, ageWrap] = element.props.children;
+
+    getControl(sexWrap).props.onChange({ target: { value: "outro" } });
+    getControl(percentileWrap).props.onChange({ target: { value: "42" } });
+    getControl(ageWrap).props.onChange({ target: { value: "" } });
+    getControl(ageWrap).props.onChange({ target: { value: "120" } });
+
+    expect(onSex).not.toHaveBeenCalled();
+    expect(onPercentile).not.toHaveBeenCalled();
+    expect(onAge).toHaveBeenCalledTimes(1);
+    expect(onAge).toHaveBeenCalledWith(90);
+  });
 });
 
 describe("GripPanel", () => {
@@ -169,6 +196,3 @@ describe("ThumbPanel", () => {
     expect(onClearPreset).toHaveBeenCalledTimes(1);
   });
 });
-
-
-

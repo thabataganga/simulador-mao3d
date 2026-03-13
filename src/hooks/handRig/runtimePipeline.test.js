@@ -149,6 +149,33 @@ describe("runtimePipeline", () => {
     expect(scene.remove).not.toHaveBeenCalled();
   });
 
+  test("buildOrRebuildRig safely returns null when rig construction fails", () => {
+    const scene = { add: jest.fn(), remove: jest.fn() };
+    const handRigRef = { current: null };
+    const mountedSceneRef = { current: null };
+    const hasInitialFrameRef = { current: true };
+    const cmcBaselineRef = { current: { CMC_abd: 0, CMC_flex: 0 } };
+    const lastRigBuildInputsRef = { current: null };
+
+    mockBuildHandRig.mockReturnValueOnce(null);
+
+    const result = buildOrRebuildRig({
+      scene,
+      dims: { palm: { LENGTH: 70, WIDTH: 55 } },
+      handRigRef,
+      mountedSceneRef,
+      hasInitialFrameRef,
+      cmcBaselineRef,
+      lastRigBuildInputsRef,
+    });
+
+    expect(result).toBeNull();
+    expect(scene.add).not.toHaveBeenCalled();
+    expect(handRigRef.current).toBeNull();
+    expect(mountedSceneRef.current).toBeNull();
+    expect(hasInitialFrameRef.current).toBe(false);
+  });
+
   test("createResizeOverlaySyncHandler keeps active CMC overlay synced after resize", () => {
     const handler = createResizeOverlaySyncHandler({
       getRig: () => ({ root: { id: "rig-root" } }),
@@ -169,4 +196,3 @@ describe("runtimePipeline", () => {
     expect(lastCall.viewport).toEqual({ width: 100, height: 50 });
   });
 });
-

@@ -93,4 +93,8 @@ describe("buildHandRig debug anchors", () => {
       expect(targets).not.toContain(proximalMesh);
     });
   });
+
+  test("returns null when dims are incomplete", () => {
+    expect(buildHandRig({ palm: { LENGTH: 70 } })).toBeNull();
+  });
 });

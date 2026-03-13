@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   BoxGeometry,
   Color,
@@ -93,7 +93,7 @@ export function useThreeScene(mountRef, viewcubeRef) {
       miniCube.setRotationFromQuaternion(invertedCameraQuaternionRef.current);
 
       renderer.render(scene, camera);
-      if (miniAttachedRef.current) {
+      if (miniAttachedRef.current && !disposed) {
         miniRenderer.render(miniScene, miniCamera);
       }
     };
@@ -120,8 +120,10 @@ export function useThreeScene(mountRef, viewcubeRef) {
       orbitRef.current = null;
       setControlsReady(false);
 
+      miniAttachedRef.current = false;
       detachRendererFromElement(mount, renderer);
       renderer.dispose();
+      miniRenderer.dispose();
       disposeSceneMaterials(scene);
     };
   }, [mini, mountRef, three]);
@@ -145,11 +147,8 @@ export function useThreeScene(mountRef, viewcubeRef) {
     return () => {
       miniAttachedRef.current = false;
       detachRendererFromElement(viewcube, renderer);
-      renderer.dispose();
     };
   }, [mini, viewcubeRef]);
 
   return { three, mini, orbitRef, controlsReady };
 }
-
-
