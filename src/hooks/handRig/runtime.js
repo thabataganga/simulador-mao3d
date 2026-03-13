@@ -81,8 +81,8 @@ export function useHandRigRuntime({
     measured => {
       if (!onThumbGoniometry || !didGoniometryChange(lastEmittedGoniometryRef.current, measured)) return;
       lastEmittedGoniometryRef.current = {
-        CMC_abd: Number(measured.CMC_abd) || 0,
-        CMC_flex: Number(measured.CMC_flex) || 0,
+        CMC_abd: Number.isFinite(Number(measured.CMC_abd)) ? Number(measured.CMC_abd) : 0,
+        CMC_flex: Number.isFinite(Number(measured.CMC_flex)) ? Number(measured.CMC_flex) : 0,
       };
       onThumbGoniometry(lastEmittedGoniometryRef.current);
     },

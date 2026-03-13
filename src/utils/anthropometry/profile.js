@@ -60,7 +60,7 @@ export function buildProfile(sex, percentile, age) {
 }
 
 export function makeDims(profile) {
-  const ratios = SEX_RATIOS[profile.sex];
+  const ratios = SEX_RATIOS[profile.sex] ?? SEX_RATIOS["feminino"];
   const palmLen = PALM_DIMS.LENGTH * profile.palmScale;
   const palmWidth = palmLen * ratios.palmWidthToLength;
   const palmThick = palmWidth * ratios.palmThickToWidth;

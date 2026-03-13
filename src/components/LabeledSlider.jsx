@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { normalizeSliderInput } from "./labeledSliderModel";
 
 export function LabeledSlider({
@@ -14,8 +14,11 @@ export function LabeledSlider({
   onHighlight,
   unit = "deg",
 }) {
-  const [temp, setTemp] = useState(value);
-  useEffect(() => setTemp(value), [value]);
+  const [temp, setTemp] = useState(value ?? "");
+  const isFocused = useRef(false);
+  useEffect(() => {
+    if (!isFocused.current) setTemp(value ?? "");
+  }, [value]);
 
   const commit = () => {
     const normalized = normalizeSliderInput(temp, value, step, min, max);
@@ -37,8 +40,8 @@ export function LabeledSlider({
             step={step}
             value={temp}
             onChange={e => setTemp(e.target.value)}
-            onFocus={() => onHighlight?.()}
-            onBlur={commit}
+            onFocus={() => { isFocused.current = true; onHighlight?.(); }}
+            onBlur={() => { isFocused.current = false; commit(); }}
             onKeyDown={e => e.key === "Enter" && commit()}
             disabled={disabled}
             className="w-20 px-2 py-1 border border-gray-300 rounded-md text-right disabled:opacity-60"

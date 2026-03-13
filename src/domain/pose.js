@@ -12,10 +12,12 @@ import { defaultFinger, defaultThumb, restFromDims } from "../utils/pose/default
  * @param {FingerPose[]} fingers
  */
 export function calculateGlobalD2D5(fingers) {
+  if (!fingers?.length) return { MCP: 0, PIP: 0, DIP: 0 };
+  const n = fingers.length;
   return {
-    MCP: Math.round(fingers.reduce((sum, finger) => sum + finger.MCP, 0) / 4),
-    PIP: Math.round(fingers.reduce((sum, finger) => sum + finger.PIP, 0) / 4),
-    DIP: Math.round(fingers.reduce((sum, finger) => sum + finger.DIP, 0) / 4),
+    MCP: Math.round(fingers.reduce((sum, finger) => sum + finger.MCP, 0) / n),
+    PIP: Math.round(fingers.reduce((sum, finger) => sum + finger.PIP, 0) / n),
+    DIP: Math.round(fingers.reduce((sum, finger) => sum + finger.DIP, 0) / n),
   };
 }
 
@@ -25,6 +27,7 @@ export function calculateGlobalD2D5(fingers) {
  * @param {number} value
  */
 export function setGlobalFingerAngle(fingers, key, value) {
+  if (!RANGES[key]) return fingers;
   return fingers.map(finger => ({ ...finger, [key]: clamp(value, RANGES[key]) }));
 }
 
@@ -34,7 +37,9 @@ export function setGlobalFingerAngle(fingers, key, value) {
  * @param {number} value
  */
 export function setThumbAngle(thumb, key, value) {
-  return { ...thumb, [key]: clamp(value, RANGES[THUMB_RANGE_KEY[key]]) };
+  const rangeKey = THUMB_RANGE_KEY[key];
+  if (!rangeKey || !RANGES[rangeKey]) return thumb;
+  return { ...thumb, [key]: clamp(value, RANGES[rangeKey]) };
 }
 
 /**

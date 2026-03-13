@@ -91,6 +91,7 @@ export function handleSetThumbAngle(state, action) {
 }
 
 export function handleSetThumbCmcInput(state, action) {
+  if (!action.value) return state;
   const { axis, direction, magnitudeDeg } = action.value;
   const { nextInputAxisState, solved } = buildCmcInputStateForAxis({
     axis,

@@ -33,7 +33,7 @@ export function buildOrRebuildRig({
   cmcBaselineRef,
   lastRigBuildInputsRef,
 }) {
-  if (!scene) return null;
+  if (!scene || !dims) return null;
 
   const nextBuildInputs = /** @type {RigBuildInputs} */ ({ scene, dims });
   if (!shouldRebuildRigInputs(lastRigBuildInputsRef.current, nextBuildInputs)) {

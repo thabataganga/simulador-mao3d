@@ -85,7 +85,7 @@ export function solveCmcCommandForMeasuredTarget(axis, targetMeasuredDeg, thumbC
   for (let command = min; command <= max; command += 1) {
     const simulatedThumb = { ...thumbContext, [axis]: command };
     const mapped = mapClinicalCmcToRigAngles(simulatedThumb);
-    const predictedMeasuredDeg = mapped[config.modelKey];
+    const predictedMeasuredDeg = mapped?.[config.modelKey] ?? 0;
     const errorDeg = Math.abs(predictedMeasuredDeg - targetMeasuredDeg);
 
     if (
@@ -109,6 +109,7 @@ export function solveCmcCommandForMeasuredTarget(axis, targetMeasuredDeg, thumbC
 
 export function buildCmcInputStateForAxis({ axis, direction, magnitudeDeg, thumbContext, prevState }) {
   const config = AXIS_CONFIG[axis];
+  if (!config) return { nextInputAxisState: prevState?.[axis] || {}, solved: { commandDeg: 0, saturated: false } };
   const absMagnitude = Math.abs(Number(magnitudeDeg) || 0);
   const directionMax = direction === config.positiveDirection ? config.range[1] : Math.abs(config.range[0]);
   const clampedMagnitude = Math.min(absMagnitude, directionMax);
