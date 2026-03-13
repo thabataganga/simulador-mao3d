@@ -184,15 +184,18 @@ export function useHandRigRuntime({
     });
   }, [autoFrameCmcView, controlsReady, debugKey, dims, thumb, thumbClinical, three]);
 
+  const resizeParamsRef = useRef({ debugKey, dims, thumbClinical, thumb, three });
+  resizeParamsRef.current = { debugKey, dims, thumbClinical, thumb, three };
+
   useEffect(() => {
     const onResize = createResizeOverlaySyncHandler({
       getRig: () => handRig.current,
-      getParams: () => ({ debugKey, dims, thumbClinical, thumb, three }),
+      getParams: () => resizeParamsRef.current,
     });
 
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
-  }, [debugKey, dims, thumb, thumbClinical, three]);
+  }, []);
 
   return handRig;
 }

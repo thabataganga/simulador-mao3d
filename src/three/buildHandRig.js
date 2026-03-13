@@ -1,13 +1,16 @@
 import { Box3, BoxGeometry, CylinderGeometry, Group, Mesh, MeshStandardMaterial, SphereGeometry, Vector3 } from "three";
 import { THUMB_CMC_NEUTRAL } from "../domain/thumb";
+import { THUMB_SEGMENT_RATIOS } from "../constants/biomechanics";
 import { deg2rad } from "../utils/math/core";
 import { makeDebugPkg } from "./helpers";
 
-const matArm = new MeshStandardMaterial({ color: 0xcad4e0, roughness: 0.8, metalness: 0.05 });
-const matPalm = new MeshStandardMaterial({ color: 0xdde6ee, roughness: 0.85, metalness: 0.03 });
-const matFinger = new MeshStandardMaterial({ color: 0xe9eef3, roughness: 0.9, metalness: 0.02 });
+const MAT_ARM_DEF = { color: 0xcad4e0, roughness: 0.8, metalness: 0.05 };
+const MAT_PALM_DEF = { color: 0xdde6ee, roughness: 0.85, metalness: 0.03 };
+const MAT_FINGER_DEF = { color: 0xe9eef3, roughness: 0.9, metalness: 0.02 };
 
-function createFactories(d, hlList) {
+const mkMat = def => new MeshStandardMaterial(def);
+
+function createFactories(d, hlList, mats) {
   const mkCyl = (r1, r2, h, mat) => new Mesh(new CylinderGeometry(r1, r2, h, 24), mat);
   const mkBox = (lx, wy, wz, mat) => new Mesh(new BoxGeometry(lx, wy, wz), mat);
   const mkSphere = (r, mat) => new Mesh(new SphereGeometry(r, 16, 16), mat);
@@ -24,7 +27,7 @@ function createFactories(d, hlList) {
     return { group, mesh };
   };
 
-  return { d, mkCyl, mkBox, mkSphere, mkPhal, addHL };
+  return { d, mkCyl, mkBox, mkSphere, mkPhal, addHL, mats };
 }
 
 function createFingerDebugFactory(dbgMap) {
@@ -53,18 +56,18 @@ function createWristDebugFactory(dbgMap) {
 
 function buildWristSubsystem(f) {
   const root = new Group();
-  const { d, mkCyl, mkBox, addHL } = f;
+  const { d, mkCyl, mkBox, addHL, mats } = f;
   const clear = Math.max(0.5, 0.1 * d.palm.THICKNESS);
 
-  const forearm = mkCyl(d.forearm.radDist, d.forearm.radProx, d.forearm.len, matArm);
+  const forearm = mkCyl(d.forearm.radDist, d.forearm.radProx, d.forearm.len, mats.arm.clone());
   forearm.rotation.z = Math.PI / 2;
 
-  const wristLenProx = d.wrist.length * 0.55;
-  const wristProx = mkCyl(d.wrist.radius, d.wrist.radius, wristLenProx, matArm);
+  const wristLenProx = d.wrist.length * THUMB_SEGMENT_RATIOS.WRIST_PROX;
+  const wristProx = mkCyl(d.wrist.radius, d.wrist.radius, wristLenProx, mats.arm.clone());
   wristProx.rotation.z = Math.PI / 2;
 
-  const wristCov = new Mesh(new SphereGeometry(d.wrist.radius, 24, 18), matArm);
-  const palm = addHL(mkBox(d.palm.LENGTH, d.palm.THICKNESS, d.palm.WIDTH, matPalm.clone()));
+  const wristCov = new Mesh(new SphereGeometry(d.wrist.radius, 24, 18), mats.arm.clone());
+  const palm = addHL(mkBox(d.palm.LENGTH, d.palm.THICKNESS, d.palm.WIDTH, mats.palm.clone()));
 
   const pivX = -d.palm.LENGTH / 2;
   const wristDev = new Group();
@@ -93,7 +96,7 @@ function buildWristSubsystem(f) {
 }
 
 function buildFingersSubsystem(f, palm, dbgMap, highlightMap, allMovers) {
-  const { d, mkSphere, mkPhal, addHL } = f;
+  const { d, mkSphere, mkPhal, addHL, mats } = f;
   const createFingerDebug = createFingerDebugFactory(dbgMap);
   const fingersRig = [];
   const tips = [];
@@ -109,27 +112,27 @@ function buildFingersSubsystem(f, palm, dbgMap, highlightMap, allMovers) {
 
     const mcp = new Group();
     base.add(mcp);
-    mcp.add(addHL(mkSphere(Wp / 2, matFinger.clone())));
+    mcp.add(addHL(mkSphere(Wp / 2, mats.finger.clone())));
 
-    const prox = mkPhal(Lp, Wp, matFinger);
+    const prox = mkPhal(Lp, Wp, mats.finger);
     prox.mesh.position.x = Lp / 2;
     mcp.add(prox.group);
 
     const pip = new Group();
     pip.position.set(Lp, 0, 0);
     prox.group.add(pip);
-    pip.add(addHL(mkSphere(Wm / 2, matFinger.clone())));
+    pip.add(addHL(mkSphere(Wm / 2, mats.finger.clone())));
 
-    const mid = mkPhal(Lm, Wm, matFinger);
+    const mid = mkPhal(Lm, Wm, mats.finger);
     mid.mesh.position.x = Lm / 2;
     pip.add(mid.group);
 
     const dip = new Group();
     dip.position.set(Lm, 0, 0);
     mid.group.add(dip);
-    dip.add(addHL(mkSphere(Wd / 2, matFinger.clone())));
+    dip.add(addHL(mkSphere(Wd / 2, mats.finger.clone())));
 
-    const dist = mkPhal(Ld, Wd, matFinger);
+    const dist = mkPhal(Ld, Wd, mats.finger);
     dist.mesh.position.x = Ld / 2;
     dip.add(dist.group);
 
@@ -137,7 +140,7 @@ function buildFingersSubsystem(f, palm, dbgMap, highlightMap, allMovers) {
     let tipOff = Ld;
     const padLen = [d.tipPads.index, d.tipPads.middle, d.tipPads.ring, d.tipPads.little][i] || 0;
     if (padLen > 0.5) {
-      const pad = mkPhal(padLen, Wd * 0.9, matFinger);
+      const pad = mkPhal(padLen, Wd * 0.9, mats.finger);
       pad.mesh.position.x = padLen / 2;
       dist.group.add(pad.group);
       tip = pad.group;
@@ -185,7 +188,7 @@ function buildGlobalFingerDebug(fingersRig, dims, dbgMap) {
 }
 
 function buildThumbSubsystem(f, palm, dbgMap, highlightMap, allMovers) {
-  const { d, mkSphere, mkPhal, addHL } = f;
+  const { d, mkSphere, mkPhal, addHL, mats } = f;
   const createThumbDebug = createThumbDebugFactory(dbgMap);
 
   const thumbBase = new Group();
@@ -210,42 +213,42 @@ function buildThumbSubsystem(f, palm, dbgMap, highlightMap, allMovers) {
   const cmcPronation = new Group();
   cmcFlex.add(cmcPronation);
 
-  const metacarpalLen = d.thumbLen[0] * 0.55;
-  const proximalLen = d.thumbLen[0] * 0.45;
+  const metacarpalLen = d.thumbLen[0] * THUMB_SEGMENT_RATIOS.METACARPAL;
+  const proximalLen = d.thumbLen[0] * THUMB_SEGMENT_RATIOS.PROXIMAL;
   const distalLen = d.thumbLen[1];
 
-  const cmcJointSphere = addHL(mkSphere(d.thumbWid[0] * 0.42, matFinger.clone()));
+  const cmcJointSphere = addHL(mkSphere(d.thumbWid[0] * THUMB_SEGMENT_RATIOS.CMC_JOINT_SPHERE, mats.finger.clone()));
   cmcPronation.add(cmcJointSphere);
 
-  const tMeta = mkPhal(metacarpalLen, d.thumbWid[0] * 1.02, matFinger);
+  const tMeta = mkPhal(metacarpalLen, d.thumbWid[0] * 1.02, mats.finger);
   tMeta.mesh.position.x = metacarpalLen / 2;
   cmcPronation.add(tMeta.group);
 
   const tmcp = new Group();
   tmcp.position.set(metacarpalLen, 0, 0);
   cmcPronation.add(tmcp);
-  tmcp.add(addHL(mkSphere(d.thumbWid[0] / 2, matFinger.clone())));
+  tmcp.add(addHL(mkSphere(d.thumbWid[0] / 2, mats.finger.clone())));
 
   const tmcpAccessory = new Group();
   tmcp.add(tmcpAccessory);
 
-  const tProx = mkPhal(proximalLen, d.thumbWid[0], matFinger);
+  const tProx = mkPhal(proximalLen, d.thumbWid[0], mats.finger);
   tProx.mesh.position.x = proximalLen / 2;
   tmcpAccessory.add(tProx.group);
 
   const tipIp = new Group();
   tipIp.position.set(proximalLen, 0, 0);
   tProx.group.add(tipIp);
-  tipIp.add(addHL(mkSphere(d.thumbWid[1] / 2, matFinger.clone())));
+  tipIp.add(addHL(mkSphere(d.thumbWid[1] / 2, mats.finger.clone())));
 
-  const tDist = mkPhal(distalLen, d.thumbWid[1], matFinger);
+  const tDist = mkPhal(distalLen, d.thumbWid[1], mats.finger);
   tDist.mesh.position.x = distalLen / 2;
   tipIp.add(tDist.group);
 
   let tip = tDist.group;
   let tipOff = distalLen;
   if (d.tipPads.thumb > 0.5) {
-    const pad = mkPhal(d.tipPads.thumb, d.thumbWid[1] * 0.9, matFinger);
+    const pad = mkPhal(d.tipPads.thumb, d.thumbWid[1] * 0.9, mats.finger);
     pad.mesh.position.x = d.tipPads.thumb / 2;
     tDist.group.add(pad.group);
     tip = pad.group;
@@ -329,7 +332,8 @@ export function buildHandRig(d) {
   const dbgMap = {};
   const highlightMap = {};
 
-  const f = createFactories(d, hlList);
+  const mats = { arm: mkMat(MAT_ARM_DEF), palm: mkMat(MAT_PALM_DEF), finger: mkMat(MAT_FINGER_DEF) };
+  const f = createFactories(d, hlList, mats);
   const wrist = buildWristSubsystem(f);
   const allMovers = [wrist.palm];
 

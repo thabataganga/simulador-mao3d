@@ -14,10 +14,19 @@ import { defaultFinger, defaultThumb, restFromDims } from "../utils/pose/default
 export function calculateGlobalD2D5(fingers) {
   if (!fingers?.length) return { MCP: 0, PIP: 0, DIP: 0 };
   const n = fingers.length;
+  const sums = fingers.reduce(
+    (acc, finger) => {
+      acc.MCP += finger.MCP;
+      acc.PIP += finger.PIP;
+      acc.DIP += finger.DIP;
+      return acc;
+    },
+    { MCP: 0, PIP: 0, DIP: 0 },
+  );
   return {
-    MCP: Math.round(fingers.reduce((sum, finger) => sum + finger.MCP, 0) / n),
-    PIP: Math.round(fingers.reduce((sum, finger) => sum + finger.PIP, 0) / n),
-    DIP: Math.round(fingers.reduce((sum, finger) => sum + finger.DIP, 0) / n),
+    MCP: Math.round(sums.MCP / n),
+    PIP: Math.round(sums.PIP / n),
+    DIP: Math.round(sums.DIP / n),
   };
 }
 

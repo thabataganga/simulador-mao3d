@@ -21,6 +21,18 @@ export const THUMB_RANGE_KEY = {
   IP: "THUMB_IP",
 };
 
+/** Anatomical segment length ratios used in 3D rig construction */
+export const THUMB_SEGMENT_RATIOS = Object.freeze({
+  /** Fraction of thumb proximal bone length that forms the metacarpal segment */
+  METACARPAL: 0.55,
+  /** Fraction of thumb proximal bone length that forms the proximal phalanx segment */
+  PROXIMAL: 0.45,
+  /** Radius of CMC joint sphere relative to thumb width[0] */
+  CMC_JOINT_SPHERE: 0.42,
+  /** Fraction of wrist length used for the proximal wrist cylinder */
+  WRIST_PROX: 0.55,
+});
+
 export const THUMB_CMC_NEUTRAL = Object.freeze({
   mountRotationOrder: "ZYX",
   cmcNeutralMountDeg: Object.freeze({ z: 0, y: 0, x: 0 }),

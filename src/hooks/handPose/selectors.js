@@ -32,22 +32,22 @@ export function selectThumbGoniometry(thumb, thumbMeasured, cmcInput) {
   });
 }
 
+function buildExplorationMeasurement(exploration) {
+  const level = Number(exploration.explorationKapandjiTarget);
+  const { commandDeg } = resolveKapandjiOperationalPose(level);
+  return {
+    level,
+    rigDirection: commandDeg >= 0 ? "oposicao" : "retroposicao",
+    rigMagnitudeDeg: Math.abs(commandDeg),
+  };
+}
+
 export function selectThumbClinical(renderedThumb, kapandjiEstimatedFromRig, thumbOppRig, exploration = {}) {
   const rigMeasurement = exploration.isExplorationMode
     ? exploration.explorationRigBaseline || thumbOppRig
     : thumbOppRig;
 
-  const explorationMeasurement = exploration.isExplorationMode
-    ? (() => {
-        const level = Number(exploration.explorationKapandjiTarget);
-        const { commandDeg } = resolveKapandjiOperationalPose(level);
-        return {
-          level,
-          rigDirection: commandDeg >= 0 ? "oposicao" : "retroposicao",
-          rigMagnitudeDeg: Math.abs(commandDeg),
-        };
-      })()
-    : null;
+  const explorationMeasurement = exploration.isExplorationMode ? buildExplorationMeasurement(exploration) : null;
 
   return {
     opp: buildThumbOppositionClinicalModel({

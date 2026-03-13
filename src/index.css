@@ -1,6 +1,15 @@
 /* Carrega o Tailwind v4 */
 @import "tailwindcss";
 
+/* Variáveis de cor da marca */
+:root {
+  --lmb-navy: #0e1e35;
+  --lmb-coral: #f04d4f;
+  --lmb-teal: #3bb7a2;
+  --lmb-ivory: #f9f8f4;
+  --lmb-blue: #10315a;
+}
+
 /* Base mínima só pra garantir altura e tirar margens */
 @layer base {
   html, body, #root { height: 100%; }

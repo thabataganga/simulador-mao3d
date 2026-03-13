@@ -73,7 +73,23 @@ export function useHandPoseRuntime() {
         thumbGoniometry,
         thumbClinical,
       }),
-    [dims, globalD2D5, profile, state, thumbClinical, thumbGoniometry],
+    [
+      dims,
+      globalD2D5,
+      profile,
+      state.fingers,
+      state.thumb,
+      state.wrist,
+      state.grip,
+      state.globalMode,
+      state.activePreset,
+      state.isExplorationMode,
+      state.exploreOverlayState,
+      state.explorationKapandjiTarget,
+      state.anthropometry,
+      thumbClinical,
+      thumbGoniometry,
+    ],
   );
 
   const sceneInput = useMemo(

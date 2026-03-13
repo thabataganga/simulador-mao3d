@@ -1,7 +1,9 @@
-import { lazy, Suspense, useCallback, useEffect, useState } from "react";
+import { lazy, Suspense, useCallback, useState } from "react";
 import { RANGES } from "./constants/biomechanics";
 
 import { useHandPose } from "./hooks/useHandPose";
+import { useQaParams } from "./hooks/useQaParams";
+import { SceneErrorBoundary } from "./components/SceneErrorBoundary";
 
 import { buildPoseSetupProps, PoseSetupControls } from "./features/pose-controls";
 import {
@@ -21,46 +23,7 @@ export default function HandSimulatorApp() {
   const { poseState, poseActions, sceneInput } = useHandPose();
   const { setThumbVal, setActivePreset, setThumbGoniometry, setOppositionEstimate } = poseActions;
 
-  useEffect(() => {
-    const link = document.createElement("link");
-    link.rel = "stylesheet";
-    link.href = "https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Montserrat:wght@600;700&display=swap";
-    document.head.appendChild(link);
-    return () => {
-      if (document.head.contains(link)) document.head.removeChild(link);
-    };
-  }, []);
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("qaThumb") !== "1") return;
-
-    const kapandjiRaw = params.get("kapandji");
-    if (kapandjiRaw != null) {
-      const kapandjiValue = Number(kapandjiRaw);
-      if (Number.isFinite(kapandjiValue)) setThumbVal("CMC_opp", kapandjiValue);
-    }
-
-    const map = {
-      CMC_abd: "cmc_abd",
-      CMC_flex: "cmc_flex",
-      CMC_opp: "cmc_opp",
-      MCP_flex: "mcp_flex",
-      IP: "ip",
-    };
-
-    Object.entries(map).forEach(([key, queryKey]) => {
-      const raw = params.get(queryKey);
-      if (raw == null) return;
-      const value = Number(raw);
-      if (!Number.isFinite(value)) return;
-      if (key === "CMC_opp" && kapandjiRaw != null) return;
-      setThumbVal(key, value);
-    });
-
-    setActivePreset("none");
-    setOpenPanel("thumb");
-  }, [setActivePreset, setThumbVal]);
+  useQaParams({ setThumbVal, setActivePreset, setOpenPanel });
 
   const onClearDebugKey = useCallback(() => clearDebug(setDebugKey), []);
 
@@ -112,11 +75,6 @@ export default function HandSimulatorApp() {
     <div
       className="w-full h-screen text-gray-900 flex overflow-hidden"
       style={{
-        "--lmb-navy": "#0e1e35",
-        "--lmb-coral": "#f04d4f",
-        "--lmb-teal": "#3bb7a2",
-        "--lmb-ivory": "#f9f8f4",
-        "--lmb-blue": "#10315a",
         backgroundColor: "var(--lmb-ivory)",
         fontFamily: '"DM Sans",ui-sans-serif,system-ui',
       }}
@@ -144,16 +102,18 @@ export default function HandSimulatorApp() {
         </details>
       </aside>
 
-      <Suspense fallback={<main className="flex-1 grid place-items-center text-sm text-gray-500">Carregando cena 3D...</main>}>
-        <HandScene3D
+      <SceneErrorBoundary>
+        <Suspense fallback={<main className="flex-1 grid place-items-center text-sm text-gray-500">Carregando cena 3D...</main>}>
+          <HandScene3D
           sceneInput={sceneInput}
           thumbClinical={poseState.thumbClinical}
           thumbGoniometry={poseState.thumbGoniometry}
           debugKey={debugKey}
           onThumbGoniometry={setThumbGoniometry}
           onOppositionEstimate={setOppositionEstimate}
-        />
-      </Suspense>
+          />
+        </Suspense>
+      </SceneErrorBoundary>
     </div>
   );
 }
