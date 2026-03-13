@@ -1,6 +1,5 @@
 import { Box3, Quaternion, Vector3 } from "three";
-
-const CMC_AUTOFRAME_KEYS = new Set(["TH_CMC_ABD", "TH_CMC_FLEX"]);
+import { CMC_AUTOFRAME_KEYS } from "./constants";
 
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
@@ -110,3 +109,4 @@ export function disposeRigResources(rig) {
     }
   });
 }
+

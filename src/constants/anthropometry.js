@@ -1,6 +1,6 @@
 export const PALM_DIMS = { LENGTH: 70, THICKNESS: 14, WIDTH: 55 };
 
-export const THUMB_BASE_RATIO = { xL: 24 / 70, yT: -2 / 14, zW: 28 / 55 };
+export const THUMB_BASE_RATIO = { xL: 24 / 70, yT: -2 / 14, zW: 0.54 };
 
 export const RATIOS = {
   baseZ: [18 / 55, 6 / 55, -6 / 55, -18 / 55],
@@ -15,7 +15,7 @@ export const PHAL_RATIOS = {
   D5: { totalVsD3: 0.756, seg: { pp: 0.49, pm: 0.271, pd: 0.239 } },
 };
 
-export const THUMB_RATIOS = { totalVsD3: 0.602, seg: { pp: 0.593, pd: 0.407 } };
+export const THUMB_RATIOS = { totalVsD3: 0.66, seg: { pp: 0.593, pd: 0.407 } };
 
 export const TIP_SOFT_MM = { D2: 3.84, D3: 3.95, D4: 3.95, D5: 3.73, TH: 5.67 };
 
@@ -29,7 +29,7 @@ export const SEX_RATIOS = {
     forearmProxToWrist: 1.15,
     forearmDistToWrist: 0.9,
     d3ToPalm: 1.03,
-    thumbBaseFromProx: 0.18,
+    thumbBaseFromProx: 0.21,
   },
   feminino: {
     palmWidthToLength: 0.82,
@@ -40,9 +40,10 @@ export const SEX_RATIOS = {
     forearmProxToWrist: 1.1,
     forearmDistToWrist: 0.88,
     d3ToPalm: 0.99,
-    thumbBaseFromProx: 0.16,
+    thumbBaseFromProx: 0.19,
   },
 };
 
 export const PERC_OPTIONS = [5, 25, 50, 75, 95];
+
 

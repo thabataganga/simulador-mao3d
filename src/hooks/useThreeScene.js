@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useRef, useState } from "react";
+﻿import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   BoxGeometry,
   Color,
@@ -14,13 +14,39 @@ import {
 } from "three";
 import { attachRendererToElement, detachRendererFromElement, disposeSceneMaterials } from "./threeSceneLifecycle";
 
+export function syncRendererSize(renderer, camera, width, height) {
+  if (!renderer || !camera || width <= 0 || height <= 0) return false;
+
+  const prevWidth = Number(renderer.userData?.viewportWidth) || 0;
+  const prevHeight = Number(renderer.userData?.viewportHeight) || 0;
+  const changed = prevWidth !== width || prevHeight !== height;
+  if (!changed) return false;
+
+  camera.aspect = width / height;
+  camera.updateProjectionMatrix();
+  renderer.setSize(width, height);
+  renderer.userData = {
+    ...renderer.userData,
+    viewportWidth: width,
+    viewportHeight: height,
+  };
+  return true;
+}
+
+export function shouldRenderScene({ isVisible, mountReady }) {
+  return Boolean(isVisible && mountReady);
+}
+
 export function useThreeScene(mountRef, viewcubeRef) {
   const orbitRef = useRef(null);
-  const [controlsReady, setControlsReady] = useState(false);
+  const resizeObserverRef = useRef(null);
+  const frameRef = useRef(0);
+  const framePendingRef = useRef(false);
+  const mountedRef = useRef(false);
+  const visibleRef = useRef(typeof document === "undefined" ? true : document.visibilityState !== "hidden");
   const invertedCameraQuaternionRef = useRef(new Quaternion());
-  const mainRendererSizeRef = useRef({ width: 0, height: 0 });
-  const miniRendererSizeRef = useRef({ width: 0, height: 0 });
   const miniAttachedRef = useRef(false);
+  const [controlsReady, setControlsReady] = useState(false);
 
   const three = useMemo(() => {
     const scene = new Scene();
@@ -53,50 +79,67 @@ export function useThreeScene(mountRef, viewcubeRef) {
     return { scene, camera, renderer, cube };
   }, []);
 
+  const renderFrame = useCallback(() => {
+    framePendingRef.current = false;
+    if (!shouldRenderScene({ isVisible: visibleRef.current, mountReady: mountedRef.current })) return;
+
+    const { scene, camera, renderer } = three;
+    const { scene: miniScene, camera: miniCamera, renderer: miniRenderer, cube: miniCube } = mini;
+    const controlsChanged = orbitRef.current?.update?.() || false;
+
+    invertedCameraQuaternionRef.current.copy(camera.quaternion).invert();
+    miniCube.setRotationFromQuaternion(invertedCameraQuaternionRef.current);
+
+    renderer.render(scene, camera);
+    if (miniAttachedRef.current) {
+      miniRenderer.render(miniScene, miniCamera);
+    }
+
+    if (controlsChanged) {
+      framePendingRef.current = true;
+      frameRef.current = requestAnimationFrame(renderFrame);
+    }
+  }, [mini, three]);
+
+  const requestRender = useCallback(() => {
+    if (framePendingRef.current || !shouldRenderScene({ isVisible: visibleRef.current, mountReady: mountedRef.current })) return;
+    framePendingRef.current = true;
+    frameRef.current = requestAnimationFrame(renderFrame);
+  }, [renderFrame]);
+
   useEffect(() => {
     const mount = mountRef.current;
     if (!mount) return;
 
-    const { scene, camera, renderer } = three;
-    const { scene: miniScene, camera: miniCamera, renderer: miniRenderer, cube: miniCube } = mini;
+    const { camera, renderer } = three;
+    mountedRef.current = true;
 
     const resize = () => {
-      const width = mount.clientWidth;
-      const height = mount.clientHeight;
-      if (width <= 0 || height <= 0) return;
-
-      camera.aspect = width / height;
-      camera.updateProjectionMatrix();
-
-      const prev = mainRendererSizeRef.current;
-      if (prev.width !== width || prev.height !== height) {
-        renderer.setSize(width, height);
-        mainRendererSizeRef.current = { width, height };
-      }
+      const resized = syncRendererSize(renderer, camera, mount.clientWidth, mount.clientHeight);
+      if (resized) requestRender();
     };
 
     resize();
-    window.addEventListener("resize", resize);
     attachRendererToElement(mount, renderer);
 
-    let raf = 0;
+    const resizeObserver = new ResizeObserver(() => resize());
+    resizeObserver.observe(mount);
+    resizeObserverRef.current = resizeObserver;
+
     let disposed = false;
     let controls = null;
-
-    // DevTools may warn about long rAF handlers in development; this is a performance hint, not a runtime error.
-    const animate = () => {
-      if (disposed) return;
-      raf = requestAnimationFrame(animate);
-      controls?.update();
-
-      invertedCameraQuaternionRef.current.copy(camera.quaternion).invert();
-      miniCube.setRotationFromQuaternion(invertedCameraQuaternionRef.current);
-
-      renderer.render(scene, camera);
-      if (miniAttachedRef.current) {
-        miniRenderer.render(miniScene, miniCamera);
+    const handleVisibilityChange = () => {
+      visibleRef.current = document.visibilityState !== "hidden";
+      if (!visibleRef.current && frameRef.current) {
+        cancelAnimationFrame(frameRef.current);
+        frameRef.current = 0;
+        framePendingRef.current = false;
+        return;
       }
+      requestRender();
     };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 
     (async () => {
       const controlsModule = await import("three/examples/jsm/controls/OrbitControls.js");
@@ -106,50 +149,50 @@ export function useThreeScene(mountRef, viewcubeRef) {
       controls.enableDamping = true;
       controls.dampingFactor = 0.06;
       controls.target.set(0, 60, 0);
+      controls.addEventListener("change", requestRender);
       orbitRef.current = controls;
       setControlsReady(true);
-
-      animate();
+      requestRender();
     })();
 
     return () => {
       disposed = true;
-      cancelAnimationFrame(raf);
-      window.removeEventListener("resize", resize);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      resizeObserver.disconnect();
+      resizeObserverRef.current = null;
+      mountedRef.current = false;
+      if (frameRef.current) cancelAnimationFrame(frameRef.current);
+      frameRef.current = 0;
+      framePendingRef.current = false;
+      controls?.removeEventListener?.("change", requestRender);
       controls?.dispose();
       orbitRef.current = null;
       setControlsReady(false);
 
+      miniAttachedRef.current = false;
       detachRendererFromElement(mount, renderer);
       renderer.dispose();
-      disposeSceneMaterials(scene);
+      mini.renderer.dispose();
+      disposeSceneMaterials(three.scene);
+      disposeSceneMaterials(mini.scene);
     };
-  }, [mini, mountRef, three]);
+  }, [mini, mountRef, requestRender, three]);
 
   useEffect(() => {
     const viewcube = viewcubeRef.current;
     if (!viewcube) return;
 
-    const { renderer } = mini;
-    const targetWidth = 100;
-    const targetHeight = 100;
-    const prev = miniRendererSizeRef.current;
-    if (prev.width !== targetWidth || prev.height !== targetHeight) {
-      renderer.setSize(targetWidth, targetHeight);
-      miniRendererSizeRef.current = { width: targetWidth, height: targetHeight };
-    }
-
+    const { camera, renderer } = mini;
+    syncRendererSize(renderer, camera, 100, 100);
     attachRendererToElement(viewcube, renderer);
     miniAttachedRef.current = true;
+    requestRender();
 
     return () => {
       miniAttachedRef.current = false;
       detachRendererFromElement(viewcube, renderer);
-      renderer.dispose();
     };
-  }, [mini, viewcubeRef]);
+  }, [mini, requestRender, viewcubeRef]);
 
-  return { three, mini, orbitRef, controlsReady };
+  return { three, mini, orbitRef, controlsReady, requestRender };
 }
-
-

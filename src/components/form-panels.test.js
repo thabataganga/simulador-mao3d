@@ -1,5 +1,6 @@
-import { AnthropometryForm } from "./AnthropometryForm";
+﻿import { AnthropometryForm } from "./AnthropometryForm";
 import { GripPanel } from "./GripPanel";
+import { PresetButtons } from "./PresetButtons";
 import { ThumbPanel } from "./ThumbPanel";
 
 function getControl(wrapperElement) {
@@ -36,6 +37,33 @@ describe("AnthropometryForm", () => {
     expect(onPercentile).toHaveBeenCalledWith(75);
     expect(onAge).toHaveBeenCalledWith(40);
   });
+
+  test("ignores invalid anthropometry values at the form boundary", () => {
+    const onSex = jest.fn();
+    const onPercentile = jest.fn();
+    const onAge = jest.fn();
+
+    const element = AnthropometryForm({
+      sex: "masculino",
+      percentile: 50,
+      age: 25,
+      onSex,
+      onPercentile,
+      onAge,
+    });
+
+    const [sexWrap, percentileWrap, ageWrap] = element.props.children;
+
+    getControl(sexWrap).props.onChange({ target: { value: "outro" } });
+    getControl(percentileWrap).props.onChange({ target: { value: "42" } });
+    getControl(ageWrap).props.onChange({ target: { value: "" } });
+    getControl(ageWrap).props.onChange({ target: { value: "120" } });
+
+    expect(onSex).not.toHaveBeenCalled();
+    expect(onPercentile).not.toHaveBeenCalled();
+    expect(onAge).toHaveBeenCalledTimes(1);
+    expect(onAge).toHaveBeenCalledWith(90);
+  });
 });
 
 describe("GripPanel", () => {
@@ -53,6 +81,11 @@ describe("GripPanel", () => {
     expect(slider.props.max).toBe(100);
     expect(slider.props.value).toBe(30);
     expect(slider.props.unit).toBe("%");
+    expect(pinchButton.props.style).toEqual({
+      backgroundColor: "var(--app-color-blue)",
+      color: "#fff",
+      borderColor: "var(--app-color-blue)",
+    });
 
     slider.props.onChange(88);
     expect(onGrip).toHaveBeenCalledWith(88);
@@ -75,6 +108,33 @@ describe("GripPanel", () => {
     const slider = element.props.children[1];
     expect(slider.props.label).toBe("Fechamento (funcional) 0-100");
     expect(slider.props.unit).toBe("%");
+  });
+});
+
+describe("PresetButtons", () => {
+  test("uses current app theme token for the active preset", () => {
+    const element = PresetButtons({
+      activePreset: "neutro",
+      onFunctional: jest.fn(),
+      onNeutral: jest.fn(),
+      onZero: jest.fn(),
+    });
+
+    const [functionalButton, neutralButton, zeroButton] = element.props.children;
+
+    expect(neutralButton.props.style).toEqual({
+      backgroundColor: "var(--app-color-blue)",
+      color: "#fff",
+      borderColor: "var(--app-color-blue)",
+    });
+    expect(functionalButton.props.style).toEqual({
+      color: "var(--app-color-blue)",
+      borderColor: "var(--app-color-blue)",
+    });
+    expect(zeroButton.props.style).toEqual({
+      color: "var(--app-color-blue)",
+      borderColor: "var(--app-color-blue)",
+    });
   });
 });
 
@@ -169,6 +229,3 @@ describe("ThumbPanel", () => {
     expect(onClearPreset).toHaveBeenCalledTimes(1);
   });
 });
-
-
-

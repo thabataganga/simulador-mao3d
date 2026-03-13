@@ -1,4 +1,4 @@
-import { useMemo, useReducer } from "react";
+﻿import { useMemo, useReducer } from "react";
 import {
   createMetricTracker,
   createPoseActions,
@@ -27,8 +27,8 @@ export function useHandPoseRuntime() {
   const dims = useMemo(() => selectDims(profile), [profile]);
   const globalD2D5 = useMemo(() => selectGlobalD2D5(state.fingers), [state.fingers]);
   const renderedThumb = useMemo(
-    () => selectRenderedThumb(state.thumb, state.exploreOverlayState, state.isExplorationMode),
-    [state.thumb, state.exploreOverlayState, state.isExplorationMode],
+    () => selectRenderedThumb(state.thumb, state.exploration.overlay, state.exploration.isActive),
+    [state.thumb, state.exploration],
   );
   const thumbGoniometry = useMemo(
     () => selectThumbGoniometry(state.thumb, state.thumbMeasured, state.cmcInput),
@@ -37,18 +37,11 @@ export function useHandPoseRuntime() {
   const thumbClinical = useMemo(
     () =>
       selectThumbClinical(renderedThumb, state.kapandjiEstimatedFromRig, state.thumbOppRig, {
-        isExplorationMode: state.isExplorationMode,
-        explorationKapandjiTarget: state.explorationKapandjiTarget,
-        explorationRigBaseline: state.explorationRigBaseline,
+        isExplorationMode: state.exploration.isActive,
+        explorationKapandjiTarget: state.exploration.kapandjiTarget,
+        explorationRigBaseline: state.exploration.rigBaseline,
       }),
-    [
-      renderedThumb,
-      state.kapandjiEstimatedFromRig,
-      state.thumbOppRig,
-      state.isExplorationMode,
-      state.explorationKapandjiTarget,
-      state.explorationRigBaseline,
-    ],
+    [renderedThumb, state.kapandjiEstimatedFromRig, state.thumbOppRig, state.exploration],
   );
 
   const track = useMemo(() => createMetricTracker(), []);

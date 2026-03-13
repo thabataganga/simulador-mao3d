@@ -1,5 +1,11 @@
-module.exports = {
+﻿module.exports = {
   testEnvironment: "node",
+  testPathIgnorePatterns: [
+    "\\\\.claude\\\\",
+    "\\\\dist\\\\",
+    "\\\\coverage\\\\",
+    "/node_modules/",
+  ],
   transform: {
     "^.+\\.[jt]sx?$": "babel-jest",
   },
@@ -24,4 +30,3 @@ module.exports = {
     },
   },
 };
-

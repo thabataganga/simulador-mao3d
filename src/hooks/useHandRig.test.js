@@ -85,7 +85,7 @@ describe("useHandRig testables", () => {
     expect(__testables.didGoniometryChange({ CMC_abd: 1, CMC_flex: 2 }, { CMC_abd: 1.02, CMC_flex: 2 })).toBe(true);
   });
 
-  test("applyDebugSelection clears overlays when debug key is off", () => {
+  test("syncHandRigOverlays clears overlays when debug key is off", () => {
     const pkgFlex = createPkg();
     const pkgAbd = createPkg();
     const pkgOpp = createPkg();
@@ -94,30 +94,19 @@ describe("useHandRig testables", () => {
         TH_CMC_FLEX: pkgFlex,
         TH_CMC_ABD: pkgAbd,
         TH_CMC_OPP: pkgOpp,
-        D2_MCP: createPkg(),
-        D3_MCP: createPkg(),
-        D4_MCP: createPkg(),
-        D5_MCP: createPkg(),
       },
-      highlight: {
-        all: [createMesh()],
-        map: {
-          D2_MCP: [],
-          D3_MCP: [],
-          D4_MCP: [],
-          D5_MCP: [],
-        },
-      },
+      thumb: {},
+      root: {},
     };
 
-    __testables.applyDebugSelection(
+    __testables.syncHandRigOverlays({
       rig,
-      "off",
-      { palm: { LENGTH: 70, WIDTH: 55 } },
-      { opp: {} },
-      {},
-      { renderer: { domElement: { width: 1, height: 1 } } },
-    );
+      debugKey: "off",
+      dims: { palm: { LENGTH: 70, WIDTH: 55 } },
+      thumbClinical: { opp: {} },
+      viewport: { width: 1, height: 1 },
+      thumb: {},
+    });
 
     expect(pkgFlex.setGoniometer).toHaveBeenCalledWith(null);
     expect(pkgAbd.setGoniometer).toHaveBeenCalledWith(null);
@@ -130,14 +119,7 @@ describe("useHandRig testables", () => {
     const segmentMesh = createMesh("cmcSegment");
     const rig = createRigWithTarget("TH_CMC_ABD", [jointMesh, segmentMesh]);
 
-    __testables.applyDebugSelection(
-      rig,
-      "TH_CMC_ABD",
-      { palm: { LENGTH: 70, WIDTH: 55 } },
-      { opp: {} },
-      {},
-      { renderer: { domElement: { width: 1, height: 1 } } },
-    );
+    __testables.applyDebugSelection(rig, "TH_CMC_ABD");
 
     expect(jointMesh.material.color.set).toHaveBeenCalledWith(0x5ad7ff);
     expect(jointMesh.material.emissive.set).toHaveBeenCalledWith(0x114455);
@@ -149,23 +131,30 @@ describe("useHandRig testables", () => {
     const mesh = createMesh();
     const rig = createRigWithTarget("TH_MCP", [mesh]);
 
-    __testables.applyDebugSelection(
-      rig,
-      "TH_MCP",
-      { palm: { LENGTH: 70, WIDTH: 55 } },
-      { opp: {} },
-      {},
-      { renderer: { domElement: { width: 1, height: 1 } } },
-    );
+    __testables.applyDebugSelection(rig, "TH_MCP");
 
     expect(mesh.material.color.set).toHaveBeenCalledWith(0xffcc66);
     expect(mesh.material.emissive.set).toHaveBeenCalledWith(0x553300);
   });
+
   test("shouldUseInstantCmcAutoFrame is true only when entering CMC key", () => {
     expect(__testables.shouldUseInstantCmcAutoFrame("off", "TH_CMC_ABD")).toBe(true);
     expect(__testables.shouldUseInstantCmcAutoFrame("TH_CMC_ABD", "TH_CMC_ABD")).toBe(false);
     expect(__testables.shouldUseInstantCmcAutoFrame("TH_CMC_ABD", "TH_CMC_FLEX")).toBe(true);
     expect(__testables.shouldUseInstantCmcAutoFrame("TH_CMC_FLEX", "TH_MCP")).toBe(false);
   });
+
+  test("shouldRebuildRigInputs ignores debug-only changes", () => {
+    const scene = {};
+    const dims = {};
+
+    expect(__testables.shouldRebuildRigInputs(null, { scene, dims })).toBe(true);
+    expect(__testables.shouldRebuildRigInputs({ scene, dims, debugKey: "off" }, { scene, dims, debugKey: "TH_CMC_ABD" })).toBe(false);
+    expect(__testables.shouldRebuildRigInputs({ scene, dims, controlsReady: false }, { scene, dims, controlsReady: true })).toBe(false);
+    expect(__testables.shouldRebuildRigInputs({ scene, dims }, { scene: {}, dims })).toBe(true);
+    expect(__testables.shouldRebuildRigInputs({ scene, dims }, { scene, dims: {} })).toBe(true);
+  });
 });
+
+
 

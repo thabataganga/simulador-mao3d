@@ -1,4 +1,3 @@
-import { RANGES } from "./biomechanics";
 import { TH_CMC_ABD_DEBUG_KEY, TH_CMC_FLEX_DEBUG_KEY, OPPOSITION_DEBUG_KEY } from "./debugKeys";
 
 export const THUMB_SLIDER_CONFIG = [
@@ -63,6 +62,3 @@ export const WRIST_SLIDER_CONFIG = [
   },
 ];
 
-export function getRangeByKey(rangeKey) {
-  return RANGES[rangeKey];
-}

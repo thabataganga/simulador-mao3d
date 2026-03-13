@@ -1,25 +1,24 @@
-import { buildClinicalOppositionEstimate, clampKapandjiLevel, resolveKapandjiOperationalPose } from "../../../domain/thumbKapandji";
-import { ZERO_OVERLAY } from "../constants";
+﻿import { buildClinicalOppositionEstimate, clampKapandjiLevel, resolveKapandjiOperationalPose } from "../../../domain/thumbKapandji";
+import { createExplorationState, resetExplorationState as resetExplorationModelState, restoreThumbFromSnapshot, snapshotEditedThumb } from "../explorationState";
 
 export function handleEnterOppositionExploration(state) {
-  const snapshot = Object.keys(state.userEditedThumb || {}).reduce((acc, key) => {
-    if (!state.userEditedThumb[key]) return acc;
-    acc[key] = state.thumb[key];
-    return acc;
-  }, {});
+  const snapshot = snapshotEditedThumb(state.thumb, state.exploration.userEditedThumb);
 
   return {
     ...state,
-    isExplorationMode: true,
-    explorationSnapshotThumb: snapshot,
-    explorationKapandjiTarget: clampKapandjiLevel(state.kapandjiEstimatedFromRig),
-    explorationRigBaseline: state.thumbOppRig
-      ? {
-          level: state.thumbOppRig.level,
-          rigDirection: state.thumbOppRig.rigDirection,
-          rigMagnitudeDeg: state.thumbOppRig.rigMagnitudeDeg,
-        }
-      : null,
+    exploration: createExplorationState({
+      ...state.exploration,
+      isActive: true,
+      snapshotThumb: snapshot,
+      kapandjiTarget: clampKapandjiLevel(state.kapandjiEstimatedFromRig),
+      rigBaseline: state.thumbOppRig
+        ? {
+            level: state.thumbOppRig.level,
+            rigDirection: state.thumbOppRig.rigDirection,
+            rigMagnitudeDeg: state.thumbOppRig.rigMagnitudeDeg,
+          }
+        : null,
+    }),
   };
 }
 
@@ -31,37 +30,29 @@ export function handleUpdateOppositionExploration(state, action) {
 
   return {
     ...state,
-    isExplorationMode: true,
-    explorationKapandjiTarget: kapandjiTarget,
-    exploreOverlayState: {
-      ...ZERO_OVERLAY,
-      CMC_opp: deltaOpp,
-    },
+    exploration: createExplorationState({
+      ...state.exploration,
+      isActive: true,
+      kapandjiTarget,
+      overlay: {
+        ...state.exploration.overlay,
+        CMC_opp: deltaOpp,
+      },
+    }),
   };
 }
 
 export function handleRestoreUserInputData(state) {
-  const restoredThumb = { ...state.thumb };
-  Object.keys(state.explorationSnapshotThumb || {}).forEach(key => {
-    restoredThumb[key] = state.explorationSnapshotThumb[key];
-  });
-
   return {
     ...state,
-    thumb: restoredThumb,
-    isExplorationMode: false,
-    exploreOverlayState: { ...ZERO_OVERLAY },
-    explorationKapandjiTarget: clampKapandjiLevel(state.kapandjiEstimatedFromRig),
-    explorationRigBaseline: null,
+    thumb: restoreThumbFromSnapshot(state.thumb, state.exploration.snapshotThumb),
+    exploration: resetExplorationModelState(state.exploration, state.kapandjiEstimatedFromRig),
   };
 }
 
 export function handleExitOppositionExploration(state) {
   return {
     ...state,
-    isExplorationMode: false,
-    exploreOverlayState: { ...ZERO_OVERLAY },
-    explorationKapandjiTarget: clampKapandjiLevel(state.kapandjiEstimatedFromRig),
-    explorationRigBaseline: null,
+    exploration: resetExplorationModelState(state.exploration, state.kapandjiEstimatedFromRig),
   };
 }

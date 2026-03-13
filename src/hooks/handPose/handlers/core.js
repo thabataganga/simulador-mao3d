@@ -1,6 +1,7 @@
-import { syncCmcInputStateFromThumb, buildCmcInputStateForAxis } from "../../../domain/thumbCmcClinical";
+﻿import { syncCmcInputStateFromThumb, buildCmcInputStateForAxis } from "../../../domain/thumbCmcClinical";
 import { setGlobalFingerAngle, setThumbAngle } from "../../../domain/pose";
 import { GONIOMETRY_STATE_EPSILON } from "../constants";
+import { markThumbAxisEdited } from "../explorationState";
 import { normalizeOppositionMetric } from "../helpers";
 
 export function handleSetFingers(state, action) {
@@ -33,7 +34,7 @@ export function handleSetThumbGoniometry(state, action) {
 }
 
 export function handleSetOppositionEstimate(state, action) {
-  if (state.isExplorationMode) return state;
+  if (state.exploration.isActive) return state;
 
   const nextMetric = normalizeOppositionMetric(action.value, state.kapandjiEstimatedFromRig);
   const levelUnchanged = nextMetric.level === state.kapandjiEstimatedFromRig;
@@ -74,11 +75,13 @@ export function handleSetGlobalFingerAngle(state, action) {
 
 export function handleSetThumbAngle(state, action) {
   const nextThumb = setThumbAngle(state.thumb, action.key, action.value);
+  const nextExploration = markThumbAxisEdited(state.exploration, action.key);
+
   if (action.key !== "CMC_abd" && action.key !== "CMC_flex") {
     return {
       ...state,
       thumb: nextThumb,
-      userEditedThumb: { ...state.userEditedThumb, [action.key]: true },
+      exploration: nextExploration,
     };
   }
 
@@ -86,7 +89,7 @@ export function handleSetThumbAngle(state, action) {
     ...state,
     thumb: nextThumb,
     cmcInput: syncCmcInputStateFromThumb(state.cmcInput, nextThumb),
-    userEditedThumb: { ...state.userEditedThumb, [action.key]: true },
+    exploration: nextExploration,
   };
 }
 
@@ -110,6 +113,6 @@ export function handleSetThumbCmcInput(state, action) {
       ...state.cmcInput,
       [axis]: nextInputAxisState,
     },
-    userEditedThumb: { ...state.userEditedThumb, [axis]: true },
+    exploration: markThumbAxisEdited(state.exploration, axis),
   };
 }

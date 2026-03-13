@@ -58,17 +58,8 @@ export function handleApplyPresetFunctional(state) {
 
 export function handleApplyPresetNeutral(state, action) {
   const neutralPose = createNeutralPose(action.dims);
-  const neutralWithFunctionalCmc = {
-    ...neutralPose,
-    thumb: {
-      ...neutralPose.thumb,
-      CMC_abd: 45,
-      CMC_flex: -12,
-      CMC_opp: 12,
-    },
-  };
+  const { nextThumb, nextInput } = applyCmcClinicalTargets(neutralPose.thumb, state.cmcInput);
 
-  const { nextThumb, nextInput } = applyCmcClinicalTargets(neutralWithFunctionalCmc.thumb, state.cmcInput);
   return resetExplorationState({
     ...state,
     fingers: neutralPose.fingers,
@@ -103,3 +94,4 @@ export function handleApplyPresetZero(state) {
     activePreset: zeroPose.activePreset,
   });
 }
+

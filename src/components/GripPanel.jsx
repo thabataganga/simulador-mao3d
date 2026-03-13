@@ -1,4 +1,6 @@
-import { LabeledSlider } from "./LabeledSlider";
+﻿import { LabeledSlider } from "./LabeledSlider";
+
+const ACTIVE_MODE_STYLE = { backgroundColor: "var(--app-color-blue)", color: "#fff", borderColor: "var(--app-color-blue)" };
 
 export function GripPanel({ grip, globalMode, onGlobalMode, onGrip, onClearHighlight }) {
   return (
@@ -7,7 +9,7 @@ export function GripPanel({ grip, globalMode, onGlobalMode, onGrip, onClearHighl
         <button
           type="button"
           className="px-2 py-1 border rounded text-xs"
-          style={globalMode === "functional" ? { backgroundColor: "var(--lmb-blue)", color: "#fff" } : null}
+          style={globalMode === "functional" ? ACTIVE_MODE_STYLE : null}
           onClick={() => {
             onClearHighlight?.();
             onGlobalMode("functional");
@@ -18,7 +20,7 @@ export function GripPanel({ grip, globalMode, onGlobalMode, onGrip, onClearHighl
         <button
           type="button"
           className="px-2 py-1 border rounded text-xs"
-          style={globalMode === "pinch" ? { backgroundColor: "var(--lmb-blue)", color: "#fff" } : null}
+          style={globalMode === "pinch" ? ACTIVE_MODE_STYLE : null}
           onClick={() => {
             onClearHighlight?.();
             onGlobalMode("pinch");
@@ -41,4 +43,3 @@ export function GripPanel({ grip, globalMode, onGlobalMode, onGrip, onClearHighl
     </div>
   );
 }
-

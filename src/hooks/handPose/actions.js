@@ -2,6 +2,12 @@
  * @typedef {{ eventName: string, payload: object, at: number }} HandMetricDetail
  */
 
+import { PERC_OPTIONS } from "../../constants/anthropometry";
+
+const VALID_SEX = new Set(["masculino", "feminino"]);
+const MIN_AGE = 5;
+const MAX_AGE = 90;
+
 export function createMetricTracker(target = typeof window !== "undefined" ? window : null) {
   return (eventName, payload = {}) => {
     if (!target) return;
@@ -27,16 +33,21 @@ export function createPoseActions({ dispatch, track, dims, globalMode }) {
       track("global_mode_changed", { value });
     },
     setSex: value => {
+      if (!VALID_SEX.has(value)) return;
       dispatch({ type: "SET_ANTHROPOMETRY", value: { sex: value } });
       track("anthropometry_changed", { field: "sex", value });
     },
     setPercentile: value => {
-      dispatch({ type: "SET_ANTHROPOMETRY", value: { percentile: value } });
-      track("anthropometry_changed", { field: "percentile", value });
+      const percentile = Number(value);
+      if (!PERC_OPTIONS.includes(percentile)) return;
+      dispatch({ type: "SET_ANTHROPOMETRY", value: { percentile } });
+      track("anthropometry_changed", { field: "percentile", value: percentile });
     },
     setAge: value => {
-      dispatch({ type: "SET_ANTHROPOMETRY", value: { age: value } });
-      track("anthropometry_changed", { field: "age", value });
+      const age = Number(value);
+      if (!Number.isFinite(age) || age < MIN_AGE || age > MAX_AGE) return;
+      dispatch({ type: "SET_ANTHROPOMETRY", value: { age } });
+      track("anthropometry_changed", { field: "age", value: age });
     },
     updateGlobalD2D5: (key, value) => dispatch({ type: "SET_GLOBAL_FINGER_ANGLE", key, value }),
     setThumbVal: (key, value) => dispatch({ type: "SET_THUMB_ANGLE", key, value }),
