@@ -1,4 +1,5 @@
-export { createMetricTracker, createPoseActions } from "./actions";
+﻿export { createMetricTracker, createPoseActions } from "./actions";
+export { createExplorationState, markThumbAxisEdited, resetExplorationState, restoreThumbFromSnapshot, snapshotEditedThumb } from "./explorationState";
 export { createHandPoseInitialState, createUseHandPoseInitialState } from "./initialState";
 export { poseReducer } from "./reducer";
 export {

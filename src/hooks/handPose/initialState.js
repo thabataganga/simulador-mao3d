@@ -1,7 +1,8 @@
-import { createDefaultCmcInputState } from "../../domain/thumbCmcClinical";
+﻿import { createDefaultCmcInputState } from "../../domain/thumbCmcClinical";
 import { getKapandjiLevelFromCommand } from "../../domain/thumbKapandji";
 import { applyGlobalGripToPose, createZeroPose } from "../../domain/pose";
-import { INITIAL_ANTHROPOMETRY, ZERO_OVERLAY } from "./constants";
+import { INITIAL_ANTHROPOMETRY } from "./constants";
+import { createExplorationState } from "./explorationState";
 import { applyCmcClinicalTargets } from "./helpers";
 
 export function createHandPoseInitialState() {
@@ -32,12 +33,9 @@ export function createHandPoseInitialState() {
       rigDirection: nextThumb.CMC_opp >= 0 ? "oposicao" : "retroposicao",
       rigMagnitudeDeg: Math.abs(nextThumb.CMC_opp),
     },
-    isExplorationMode: false,
-    exploreOverlayState: { ...ZERO_OVERLAY },
-    explorationKapandjiTarget: initialKapandji,
-    explorationRigBaseline: null,
-    userEditedThumb: {},
-    explorationSnapshotThumb: {},
+    exploration: createExplorationState({
+      kapandjiTarget: initialKapandji,
+    }),
     wrist: functionalPose.wrist,
     grip: 50,
     globalMode: "functional",

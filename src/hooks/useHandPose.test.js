@@ -1,8 +1,19 @@
-import { applyGlobalGripToPose, createNeutralPose } from "../domain/pose";
+﻿import { applyGlobalGripToPose, createNeutralPose } from "../domain/pose";
 import { buildProfile, makeDims } from "../utils/anthropometry/profile";
 import { buildCmcInputStateForAxis, createDefaultCmcInputState } from "../domain/thumb";
 import { createPoseActions } from "./handPose/actions";
+import { createExplorationState } from "./handPose/explorationState";
 import { __testables } from "./useHandPose";
+
+function withExploration(state, exploration = {}) {
+  return {
+    ...state,
+    exploration: createExplorationState({
+      ...state.exploration,
+      ...exploration,
+    }),
+  };
+}
 
 describe("useHandPose reducer", () => {
   test("APPLY_GRIP in pinch mode resolves CMC via clinical solver", () => {
@@ -107,13 +118,15 @@ describe("useHandPose reducer", () => {
   });
 
   test("SET_OPPOSITION_ESTIMATE is ignored while exploration is active", () => {
-    const state = {
-      ...__testables.createInitialState(),
-      anthropometry: { sex: "masculino", percentile: 50, age: 25 },
-      isExplorationMode: true,
-      kapandjiEstimatedFromRig: 4,
-      thumbOppRig: { level: 4, rigDirection: "oposicao", rigMagnitudeDeg: 16 },
-    };
+    const state = withExploration(
+      {
+        ...__testables.createInitialState(),
+        anthropometry: { sex: "masculino", percentile: 50, age: 25 },
+        kapandjiEstimatedFromRig: 4,
+        thumbOppRig: { level: 4, rigDirection: "oposicao", rigMagnitudeDeg: 16 },
+      },
+      { isActive: true },
+    );
 
     const next = __testables.poseReducer(state, {
       type: "SET_OPPOSITION_ESTIMATE",
@@ -140,71 +153,77 @@ describe("useHandPose reducer", () => {
   });
 
   test("exploration lifecycle enters, overlays, restores and exits", () => {
-    const base = {
-      ...__testables.createInitialState(),
-      anthropometry: { sex: "masculino", percentile: 50, age: 25 },
-      thumb: { CMC_abd: 10, CMC_flex: -8, CMC_opp: 12, MCP_flex: 4, IP: 2 },
-      thumbOppRig: { level: 4, rigDirection: "oposicao", rigMagnitudeDeg: 16 },
-      userEditedThumb: { CMC_abd: true, CMC_opp: true },
-    };
+    const base = withExploration(
+      {
+        ...__testables.createInitialState(),
+        anthropometry: { sex: "masculino", percentile: 50, age: 25 },
+        thumb: { CMC_abd: 10, CMC_flex: -8, CMC_opp: 12, MCP_flex: 4, IP: 2 },
+        thumbOppRig: { level: 4, rigDirection: "oposicao", rigMagnitudeDeg: 16 },
+      },
+      { userEditedThumb: { CMC_abd: true, CMC_opp: true } },
+    );
 
     const entered = __testables.poseReducer(base, { type: "ENTER_OPPOSITION_EXPLORATION" });
-    expect(entered.isExplorationMode).toBe(true);
-    expect(entered.explorationSnapshotThumb).toEqual({ CMC_abd: 10, CMC_opp: 12 });
-    expect(entered.explorationRigBaseline).toEqual({ level: 4, rigDirection: "oposicao", rigMagnitudeDeg: 16 });
+    expect(entered.exploration.isActive).toBe(true);
+    expect(entered.exploration.snapshotThumb).toEqual({ CMC_abd: 10, CMC_opp: 12 });
+    expect(entered.exploration.rigBaseline).toEqual({ level: 4, rigDirection: "oposicao", rigMagnitudeDeg: 16 });
 
     const updated = __testables.poseReducer(entered, {
       type: "UPDATE_OPPOSITION_EXPLORATION",
       value: { kapandjiTarget: 20 },
     });
-    expect(updated.isExplorationMode).toBe(true);
-    expect(updated.exploreOverlayState.CMC_opp).toBe(58);
-    expect(updated.explorationKapandjiTarget).toBe(10);
+    expect(updated.exploration.isActive).toBe(true);
+    expect(updated.exploration.overlay.CMC_opp).toBe(58);
+    expect(updated.exploration.kapandjiTarget).toBe(10);
 
     const changedThumb = { ...updated, thumb: { ...updated.thumb, CMC_abd: 50, CMC_opp: -30 } };
     const restored = __testables.poseReducer(changedThumb, { type: "RESTORE_USER_INPUT_DATA" });
     expect(restored.thumb.CMC_abd).toBe(10);
     expect(restored.thumb.CMC_opp).toBe(12);
-    expect(restored.isExplorationMode).toBe(false);
-    expect(restored.explorationRigBaseline).toBeNull();
+    expect(restored.exploration.isActive).toBe(false);
+    expect(restored.exploration.rigBaseline).toBeNull();
 
     const exited = __testables.poseReducer(updated, { type: "EXIT_OPPOSITION_EXPLORATION" });
-    expect(exited.isExplorationMode).toBe(false);
-    expect(exited.exploreOverlayState.CMC_opp).toBe(0);
-    expect(exited.explorationKapandjiTarget).toBe(base.kapandjiEstimatedFromRig);
-    expect(exited.explorationRigBaseline).toBeNull();
+    expect(exited.exploration.isActive).toBe(false);
+    expect(exited.exploration.overlay.CMC_opp).toBe(0);
+    expect(exited.exploration.kapandjiTarget).toBe(base.kapandjiEstimatedFromRig);
+    expect(exited.exploration.rigBaseline).toBeNull();
   });
 
   test("presets reset exploration and user-edit buffers", () => {
     const dims = makeDims(buildProfile("masculino", 50, 25));
-    const base = {
-      ...__testables.createInitialState(),
-      anthropometry: { sex: "masculino", percentile: 50, age: 25 },
-      isExplorationMode: true,
-      exploreOverlayState: { CMC_abd: 2, CMC_flex: 1, CMC_opp: 5, MCP_flex: 0, IP: 0 },
-      explorationKapandjiTarget: 9,
-      explorationRigBaseline: { level: 4, rigDirection: "oposicao", rigMagnitudeDeg: 16 },
-      userEditedThumb: { CMC_abd: true },
-      explorationSnapshotThumb: { CMC_abd: 20 },
-    };
+    const base = withExploration(
+      {
+        ...__testables.createInitialState(),
+        anthropometry: { sex: "masculino", percentile: 50, age: 25 },
+      },
+      {
+        isActive: true,
+        overlay: { CMC_abd: 2, CMC_flex: 1, CMC_opp: 5, MCP_flex: 0, IP: 0 },
+        kapandjiTarget: 9,
+        rigBaseline: { level: 4, rigDirection: "oposicao", rigMagnitudeDeg: 16 },
+        userEditedThumb: { CMC_abd: true },
+        snapshotThumb: { CMC_abd: 20 },
+      },
+    );
 
     const neutral = __testables.poseReducer(base, {
       type: "APPLY_PRESET_NEUTRAL",
       dims,
     });
     expect(neutral.activePreset).toBe("neutro");
-    expect(neutral.isExplorationMode).toBe(false);
-    expect(neutral.userEditedThumb).toEqual({});
-    expect(neutral.explorationSnapshotThumb).toEqual({});
-    expect(neutral.explorationRigBaseline).toBeNull();
+    expect(neutral.exploration.isActive).toBe(false);
+    expect(neutral.exploration.userEditedThumb).toEqual({});
+    expect(neutral.exploration.snapshotThumb).toEqual({});
+    expect(neutral.exploration.rigBaseline).toBeNull();
     expect(neutral.thumb.CMC_opp).toBe(createNeutralPose(dims).thumb.CMC_opp);
 
     const zero = __testables.poseReducer(base, { type: "APPLY_PRESET_ZERO" });
     expect(zero.activePreset).toBe("zero");
-    expect(zero.isExplorationMode).toBe(false);
-    expect(zero.userEditedThumb).toEqual({});
-    expect(zero.explorationSnapshotThumb).toEqual({});
-    expect(zero.explorationRigBaseline).toBeNull();
+    expect(zero.exploration.isActive).toBe(false);
+    expect(zero.exploration.userEditedThumb).toEqual({});
+    expect(zero.exploration.snapshotThumb).toEqual({});
+    expect(zero.exploration.rigBaseline).toBeNull();
   });
 
   test("SET_ANTHROPOMETRY updates partial fields only", () => {
@@ -220,7 +239,6 @@ describe("useHandPose reducer", () => {
     expect(next.anthropometry).toEqual({ sex: "masculino", percentile: 95, age: 25 });
   });
 });
-
 
 describe("anthropometry validation guards", () => {
   test("SET_ANTHROPOMETRY ignores missing or invalid values", () => {
@@ -240,7 +258,6 @@ describe("anthropometry validation guards", () => {
   });
 
   test("pose actions ignore invalid anthropometry commands", () => {
-
     const dispatch = jest.fn();
     const track = jest.fn();
     const actions = createPoseActions({ dispatch, track, dims: {}, globalMode: "functional" });
@@ -254,6 +271,3 @@ describe("anthropometry validation guards", () => {
     expect(track).not.toHaveBeenCalled();
   });
 });
-
-
-

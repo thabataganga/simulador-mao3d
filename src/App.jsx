@@ -1,8 +1,7 @@
-import { lazy, Suspense, useCallback, useEffect, useState } from "react";
+﻿import { lazy, Suspense, useCallback, useEffect, useState } from "react";
 import { RANGES } from "./constants/biomechanics";
-
+import { readQaThumbParams } from "./app/qaThumbParams";
 import { useHandPose } from "./hooks/useHandPose";
-
 import { buildPoseSetupProps, PoseSetupControls } from "./features/pose-controls";
 import {
   buildOrderedAccordionsProps,
@@ -22,44 +21,15 @@ export default function HandSimulatorApp() {
   const { setThumbVal, setActivePreset, setThumbGoniometry, setOppositionEstimate } = poseActions;
 
   useEffect(() => {
-    const link = document.createElement("link");
-    link.rel = "stylesheet";
-    link.href = "https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Montserrat:wght@600;700&display=swap";
-    document.head.appendChild(link);
-    return () => {
-      if (document.head.contains(link)) document.head.removeChild(link);
-    };
-  }, []);
+    const qaThumbConfig = readQaThumbParams(window.location.search);
+    if (!qaThumbConfig) return;
 
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("qaThumb") !== "1") return;
-
-    const kapandjiRaw = params.get("kapandji");
-    if (kapandjiRaw != null) {
-      const kapandjiValue = Number(kapandjiRaw);
-      if (Number.isFinite(kapandjiValue)) setThumbVal("CMC_opp", kapandjiValue);
-    }
-
-    const map = {
-      CMC_abd: "cmc_abd",
-      CMC_flex: "cmc_flex",
-      CMC_opp: "cmc_opp",
-      MCP_flex: "mcp_flex",
-      IP: "ip",
-    };
-
-    Object.entries(map).forEach(([key, queryKey]) => {
-      const raw = params.get(queryKey);
-      if (raw == null) return;
-      const value = Number(raw);
-      if (!Number.isFinite(value)) return;
-      if (key === "CMC_opp" && kapandjiRaw != null) return;
+    Object.entries(qaThumbConfig.thumbValues).forEach(([key, value]) => {
       setThumbVal(key, value);
     });
 
-    setActivePreset("none");
-    setOpenPanel("thumb");
+    setActivePreset(qaThumbConfig.activePreset);
+    setOpenPanel(qaThumbConfig.openPanel);
   }, [setActivePreset, setThumbVal]);
 
   const onClearDebugKey = useCallback(() => clearDebug(setDebugKey), []);
@@ -109,20 +79,9 @@ export default function HandSimulatorApp() {
   });
 
   return (
-    <div
-      className="w-full h-screen text-gray-900 flex overflow-hidden"
-      style={{
-        "--lmb-navy": "#0e1e35",
-        "--lmb-coral": "#f04d4f",
-        "--lmb-teal": "#3bb7a2",
-        "--lmb-ivory": "#f9f8f4",
-        "--lmb-blue": "#10315a",
-        backgroundColor: "var(--lmb-ivory)",
-        fontFamily: '"DM Sans",ui-sans-serif,system-ui',
-      }}
-    >
+    <div className="w-full h-screen text-gray-900 flex overflow-hidden bg-[var(--app-color-ivory)] [font-family:var(--app-font-body)]">
       <aside className="w-[420px] max-w-[45%] h-full border-r border-gray-200 p-5 overflow-y-auto">
-        <h1 className="text-xl font-semibold mb-1" style={{ fontFamily: '"Montserrat","DM Sans",ui-sans-serif' }}>
+        <h1 className="text-xl font-semibold mb-1 [font-family:var(--app-font-heading)]">
           Simulador de Mao 3D
         </h1>
         <p className="text-xs text-gray-500 mb-4">Positivo = flexao/abducao | Negativo = extensao/aducao</p>

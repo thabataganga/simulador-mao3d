@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from "react";
+﻿import { useCallback, useEffect, useRef } from "react";
 import { applyDebugSelection, didGoniometryChange, autoFrameCmcMeasurementView, frameRigToView, syncHandRigOverlays } from "../handRig";
 import {
   applyPoseAndMeasure,
@@ -25,6 +25,7 @@ export function useHandRigRuntime({
   three,
   orbitRef,
   controlsReady = false,
+  requestRender,
   dims,
   fingers,
   thumb,
@@ -91,7 +92,8 @@ export function useHandRigRuntime({
 
   const frameRig = useCallback(() => {
     frameRigToView(handRig.current?.root, orbitRef.current, three?.camera);
-  }, [orbitRef, three]);
+    requestRender?.();
+  }, [orbitRef, requestRender, three]);
 
   const autoFrameCmcView = useCallback(
     ({ instant = false } = {}) => {
@@ -103,8 +105,9 @@ export function useHandRigRuntime({
         camera: three?.camera,
         instant,
       });
+      requestRender?.();
     },
-    [debugKey, dims, orbitRef, three],
+    [debugKey, dims, orbitRef, requestRender, three],
   );
 
   useEffect(() => {
@@ -117,7 +120,8 @@ export function useHandRigRuntime({
       cmcBaselineRef,
       lastRigBuildInputsRef,
     });
-  }, [dims, three?.scene]);
+    requestRender?.();
+  }, [dims, requestRender, three?.scene]);
 
   useEffect(
     () => () => {
@@ -126,8 +130,9 @@ export function useHandRigRuntime({
         handRigRef: handRig,
         lastRigBuildInputsRef,
       });
+      requestRender?.();
     },
-    [],
+    [requestRender],
   );
 
   useEffect(() => {
@@ -157,17 +162,19 @@ export function useHandRigRuntime({
 
     emitThumbGoniometry(measuredWithOpposition);
     emitOppositionEstimate(measuredWithOpposition);
+    requestRender?.();
   }, [
+    debugKey,
     dims,
     emitThumbGoniometry,
     emitOppositionEstimate,
     fingers,
+    requestRender,
     three,
     thumb,
     thumbClinical,
     thumbGoniometry,
     wrist,
-    debugKey,
   ]);
 
   useEffect(() => {
@@ -182,7 +189,8 @@ export function useHandRigRuntime({
       autoFrameCmcView,
       lastDebugKeyRef,
     });
-  }, [autoFrameCmcView, controlsReady, debugKey, dims, thumb, thumbClinical, three]);
+    requestRender?.();
+  }, [autoFrameCmcView, controlsReady, debugKey, dims, requestRender, thumb, thumbClinical, three]);
 
   useEffect(() => {
     const onResize = createResizeOverlaySyncHandler({
@@ -196,4 +204,3 @@ export function useHandRigRuntime({
 
   return handRig;
 }
-

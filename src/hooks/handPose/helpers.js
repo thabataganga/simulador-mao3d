@@ -1,8 +1,8 @@
-import { RANGES, THUMB_RANGE_KEY } from "../../constants/biomechanics";
+﻿import { RANGES, THUMB_RANGE_KEY } from "../../constants/biomechanics";
 import { clamp } from "../../utils/math/core";
 import { buildCmcInputStateForAxis } from "../../domain/thumbCmcClinical";
-import { clampKapandjiLevel } from "../../domain/thumbKapandji";
-import { CMC_AXIS_DIRECTIONS, ZERO_OVERLAY } from "./constants";
+import { CMC_AXIS_DIRECTIONS } from "./constants";
+import { resetExplorationState as resetExplorationModelState } from "./explorationState";
 
 export function normalizeOppositionMetric(value, fallbackLevel) {
   if (Number.isFinite(value)) {
@@ -37,12 +37,9 @@ function clampThumbAxis(key, value) {
 export function resetExplorationState(state) {
   return {
     ...state,
-    isExplorationMode: false,
-    exploreOverlayState: { ...ZERO_OVERLAY },
-    explorationKapandjiTarget: clampKapandjiLevel(state?.kapandjiEstimatedFromRig),
-    explorationRigBaseline: null,
-    userEditedThumb: {},
-    explorationSnapshotThumb: {},
+    exploration: resetExplorationModelState(state.exploration, state?.kapandjiEstimatedFromRig, {
+      keepUserEditedThumb: false,
+    }),
   };
 }
 
@@ -86,4 +83,3 @@ export function applyCmcClinicalTargets(thumb, prevInput) {
 
   return { nextThumb, nextInput };
 }
-

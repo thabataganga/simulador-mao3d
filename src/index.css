@@ -1,8 +1,24 @@
-/* Carrega o Tailwind v4 */
+﻿/* Carrega o Tailwind v4 */
 @import "tailwindcss";
 
 /* Base mínima só pra garantir altura e tirar margens */
 @layer base {
+  :root {
+    --app-color-navy: #0e1e35;
+    --app-color-coral: #f04d4f;
+    --app-color-teal: #3bb7a2;
+    --app-color-ivory: #f9f8f4;
+    --app-color-blue: #10315a;
+    --app-font-body: "DM Sans", ui-sans-serif, system-ui;
+    --app-font-heading: "Montserrat", "DM Sans", ui-sans-serif;
+  }
+
   html, body, #root { height: 100%; }
-  body { margin: 0; }
+
+  body {
+    margin: 0;
+    background-color: var(--app-color-ivory);
+    color: #111827;
+    font-family: var(--app-font-body);
+  }
 }

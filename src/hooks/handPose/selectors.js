@@ -1,4 +1,4 @@
-import { buildProfile, makeDims } from "../../utils/anthropometry/profile";
+﻿import { buildProfile, makeDims } from "../../utils/anthropometry/profile";
 import { buildThumbCmcClinicalModel } from "../../domain/thumbCmcClinical";
 import { buildThumbOppositionClinicalModel, resolveKapandjiOperationalPose } from "../../domain/thumbKapandji";
 import { calculateGlobalD2D5, createSceneInput } from "../../domain/pose";
@@ -68,9 +68,9 @@ export function selectPoseState(state, derived) {
     activePreset: state.activePreset,
     thumbGoniometry: derived.thumbGoniometry,
     thumbClinical: derived.thumbClinical,
-    isExplorationMode: state.isExplorationMode,
-    exploreOverlayState: state.exploreOverlayState,
-    explorationKapandjiTarget: state.explorationKapandjiTarget,
+    isExplorationMode: state.exploration.isActive,
+    exploreOverlayState: state.exploration.overlay,
+    explorationKapandjiTarget: state.exploration.kapandjiTarget,
     profile: derived.profile,
     dims: derived.dims,
     globalD2D5: derived.globalD2D5,
@@ -83,4 +83,3 @@ export function selectPoseState(state, derived) {
 export function selectSceneInput(dims, fingers, renderedThumb, wrist) {
   return createSceneInput({ dims, fingers, thumb: renderedThumb, wrist });
 }
-

@@ -1,4 +1,4 @@
-import { createHandPoseFixture } from "../fixtures/handPose.fixture";
+﻿import { createHandPoseFixture } from "../fixtures/handPose.fixture";
 import { poseReducer } from "../../hooks/handPose/reducer";
 import {
   selectDims,
@@ -12,10 +12,14 @@ import {
 function toSceneState(state) {
   const profile = selectProfile(state.anthropometry);
   const dims = selectDims(profile);
-  const renderedThumb = selectRenderedThumb(state.thumb, state.exploreOverlayState, state.isExplorationMode);
+  const renderedThumb = selectRenderedThumb(state.thumb, state.exploration.overlay, state.exploration.isActive);
   const sceneInput = selectSceneInput(dims, state.fingers, renderedThumb, state.wrist);
   const thumbGoniometry = selectThumbGoniometry(state.thumb, state.thumbMeasured, state.cmcInput);
-  const thumbClinical = selectThumbClinical(renderedThumb, state.kapandjiEstimatedFromRig, state.thumbOppRig);
+  const thumbClinical = selectThumbClinical(renderedThumb, state.kapandjiEstimatedFromRig, state.thumbOppRig, {
+    isExplorationMode: state.exploration.isActive,
+    explorationKapandjiTarget: state.exploration.kapandjiTarget,
+    explorationRigBaseline: state.exploration.rigBaseline,
+  });
 
   return {
     dims,

@@ -1,5 +1,6 @@
-import { AnthropometryForm } from "./AnthropometryForm";
+﻿import { AnthropometryForm } from "./AnthropometryForm";
 import { GripPanel } from "./GripPanel";
+import { PresetButtons } from "./PresetButtons";
 import { ThumbPanel } from "./ThumbPanel";
 
 function getControl(wrapperElement) {
@@ -80,6 +81,11 @@ describe("GripPanel", () => {
     expect(slider.props.max).toBe(100);
     expect(slider.props.value).toBe(30);
     expect(slider.props.unit).toBe("%");
+    expect(pinchButton.props.style).toEqual({
+      backgroundColor: "var(--app-color-blue)",
+      color: "#fff",
+      borderColor: "var(--app-color-blue)",
+    });
 
     slider.props.onChange(88);
     expect(onGrip).toHaveBeenCalledWith(88);
@@ -102,6 +108,33 @@ describe("GripPanel", () => {
     const slider = element.props.children[1];
     expect(slider.props.label).toBe("Fechamento (funcional) 0-100");
     expect(slider.props.unit).toBe("%");
+  });
+});
+
+describe("PresetButtons", () => {
+  test("uses current app theme token for the active preset", () => {
+    const element = PresetButtons({
+      activePreset: "neutro",
+      onFunctional: jest.fn(),
+      onNeutral: jest.fn(),
+      onZero: jest.fn(),
+    });
+
+    const [functionalButton, neutralButton, zeroButton] = element.props.children;
+
+    expect(neutralButton.props.style).toEqual({
+      backgroundColor: "var(--app-color-blue)",
+      color: "#fff",
+      borderColor: "var(--app-color-blue)",
+    });
+    expect(functionalButton.props.style).toEqual({
+      color: "var(--app-color-blue)",
+      borderColor: "var(--app-color-blue)",
+    });
+    expect(zeroButton.props.style).toEqual({
+      color: "var(--app-color-blue)",
+      borderColor: "var(--app-color-blue)",
+    });
   });
 });
 
